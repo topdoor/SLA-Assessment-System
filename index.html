@@ -1586,7 +1586,7 @@ let S={
   activeImpRow:null, backPage:"my-eval", uploadData:null, uploadFile:"",
 };
 const CFG_KEY="sla_cfg_kor_improvement_only_20260625";
-const DEFAULT_APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbyigM1t4BtW6s_hGg4aC6JyozpJmIzUnEkdFjo9sccO_61W0SL3s6pL2yszYhwd7Dn4Ug/exec";
+const DEFAULT_APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbySLve_3-_v3t2NNfbvPqLNNUksxkDrpYVMOtldCFMVxIzPce01m5J2v82GmjuHRUy7eA/exec";
 
 // ══════════════════════════════════════════════════════════
 //  UTILS
@@ -2816,16 +2816,15 @@ function renderTrendEmpty(){
 let npCurrent=0;
 const NP_SKIP_KEY="sla_notice_skip_";
 
-function showNoticePopupIfNeeded(){
-  // 오늘 날짜 키
+async function showNoticePopupIfNeeded(){
   const today=new Date().toISOString().split("T")[0];
   const skipKey=NP_SKIP_KEY+today;
-  if(localStorage.getItem(skipKey)==="1")return; // 오늘 하루 보지 않기 체크된 경우
+  if(localStorage.getItem(skipKey)==="1")return;
 
-  const notices=getNotices();
+  // Sheets에서 최신 공지 불러오기
+  const notices=await fetchNoticesFromSheets();
   if(!notices.length)return;
 
-  // 최신순 정렬
   const sorted=[...notices].reverse();
   npCurrent=0;
   renderNoticePopup(sorted);
@@ -2904,26 +2903,75 @@ function closeNoticePopup(){
 // ══════════════════════════════════════════════════════════
 const NOTICE_KEY="sla_notices_v1";
 
-function getNotices(){
-  try{return JSON.parse(localStorage.getItem(NOTICE_KEY)||"[]")}
-  catch(e){return[]}
+// ── 로컬 캐시 (Sheets 미연결 폴백용) ──
+function getNoticesLocal(){
+  try{return JSON.parse(localStorage.getItem(NOTICE_KEY)||"[]")}catch(e){return[]}
 }
-function saveNotices(arr){
+function saveNoticesLocal(arr){
   try{localStorage.setItem(NOTICE_KEY,JSON.stringify(arr))}catch(e){}
 }
 
-function loadNotice(){
+// ── Sheets에서 공지 불러오기 ──
+async function fetchNoticesFromSheets(){
+  if(!S.cfg.url)return getNoticesLocal();
+  try{
+    const d=await sheetsGet("공지사항",{});
+    if(d?.success&&Array.isArray(d.data)&&d.data.length){
+      const notices=d.data.map(r=>({
+        id:    r.id||r["공지ID"]||String(Date.now()),
+        type:  r.type||r["유형"]||"일반",
+        title: r.title||r["제목"]||"",
+        body:  r.body||r["내용"]||"",
+        author:r.author||r["작성자"]||"유통지원팀",
+        date:  r.date||r["작성일"]||"",
+        active:r.active||r["활성"]||"Y",
+      })).filter(n=>n.title&&n.active!=="N");
+      // 로컬 캐시 갱신
+      saveNoticesLocal(notices);
+      return notices;
+    }
+  }catch(e){}
+  return getNoticesLocal();
+}
+
+// ── Sheets에 공지 저장 ──
+async function saveNoticeToSheets(notice){
+  if(!S.cfg.url){
+    const arr=getNoticesLocal();arr.push(notice);saveNoticesLocal(arr);return;
+  }
+  await sheetsPost("save_notice",{
+    id:notice.id, type:notice.type, title:notice.title,
+    body:notice.body, author:notice.author, date:notice.date, active:"Y"
+  });
+  // 로컬 캐시도 갱신
+  const arr=getNoticesLocal();arr.push(notice);saveNoticesLocal(arr);
+}
+
+// ── Sheets에서 공지 삭제 ──
+async function deleteNoticeFromSheets(id){
+  if(!S.cfg.url){
+    saveNoticesLocal(getNoticesLocal().filter(n=>n.id!==id));return;
+  }
+  await sheetsPost("delete_notice",{id});
+  saveNoticesLocal(getNoticesLocal().filter(n=>n.id!==id));
+}
+
+async function loadNotice(){
   const u=S.user;
   const isAdmin=u?.role==="admin";
   document.getElementById("notice-sub").textContent=
     isAdmin?"공지를 작성하고 도매상에게 전달하세요":"유통지원팀의 공지사항을 확인하세요";
   const addBtn=document.getElementById("notice-add-btn");
   if(addBtn)addBtn.style.display=isAdmin?"inline-flex":"none";
-  renderNotices();
+  loading(true);
+  const notices=await fetchNoticesFromSheets();
+  loading(false);
+  S._notices=notices;
+  renderNotices(notices);
 }
 
-function renderNotices(){
-  const notices=getNotices();
+function renderNotices(notices){
+  if(!notices)notices=S._notices||getNoticesLocal();
   const list=document.getElementById("notice-list");
   if(!notices.length){
     list.innerHTML='<div class="empty"><div class="ei">📢</div><p>등록된 공지가 없습니다</p></div>';
@@ -2935,7 +2983,7 @@ function renderNotices(){
       <span class="notice-badge">${n.type||"일반"}</span>
       <div class="notice-content">
         <div class="notice-title">${n.title}</div>
-        <div class="notice-body">${n.body.replace(/\n/g,"<br>")}</div>
+        <div class="notice-body">${(n.body||"").replace(/\n/g,"<br>")}</div>
         <div class="notice-meta">${n.author||"유통지원팀"} · ${n.date||""}</div>
       </div>
       ${S.user?.role==="admin"?`<button class="btn btn-s btn-sm" onclick="deleteNotice('${n.id}')">삭제</button>`:""}
@@ -2951,28 +2999,35 @@ function cancelNotice(){
   document.getElementById("notice-title-input").value="";
   document.getElementById("notice-body-input").value="";
 }
-function submitNotice(){
+async function submitNotice(){
   const title=document.getElementById("notice-title-input").value.trim();
   const body=document.getElementById("notice-body-input").value.trim();
   const type=document.getElementById("notice-type").value;
   if(!title||!body){toast("제목과 내용을 입력하세요","err");return;}
-  const notices=getNotices();
-  notices.push({
-    id:Date.now().toString(),
-    type,title,body,
+  const notice={
+    id:Date.now().toString(), type, title, body,
     author:S.user?.name||"관리자",
     date:new Date().toLocaleDateString("ko-KR"),
-  });
-  saveNotices(notices);
-  cancelNotice();
-  renderNotices();
-  toast("공지가 등록되었습니다 ✓","ok");
+    active:"Y",
+  };
+  loading(true);
+  try{
+    await saveNoticeToSheets(notice);
+    loading(false);
+    cancelNotice();
+    await loadNotice();
+    toast("공지가 등록되었습니다 ✓","ok");
+  }catch(e){loading(false);toast("등록 오류: "+e.message,"err")}
 }
-function deleteNotice(id){
+async function deleteNotice(id){
   if(!confirm("이 공지를 삭제하시겠습니까?"))return;
-  saveNotices(getNotices().filter(n=>n.id!==id));
-  renderNotices();
-  toast("삭제되었습니다","ok");
+  loading(true);
+  try{
+    await deleteNoticeFromSheets(id);
+    loading(false);
+    await loadNotice();
+    toast("삭제되었습니다","ok");
+  }catch(e){loading(false);toast("삭제 오류: "+e.message,"err")}
 }
 
 // ══════════════════════════════════════════════════════════
