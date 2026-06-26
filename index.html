@@ -1533,6 +1533,53 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
         <div class="pt">📤 평가 데이터 업로드</div>
         <div class="ps">CSV 파일을 업로드하면 평가결과가 자동 재계산됩니다</div>
       </div></div>
+
+      <!-- 클레임 자동 반영 카드 -->
+      <div class="card" style="border-left:4px solid var(--gold)">
+        <div class="card-t">🔗 고객클레임 점수 자동 반영</div>
+        <div style="font-size:13px;color:var(--gray-600);line-height:1.7;margin-bottom:14px">
+          클레임 DB에서 거점별 배송지연·오배송·오출하·불량파손 건수를 자동 집계하여<br>
+          <strong style="color:var(--navy)">항목별 발생율(%)</strong> 계산 후 SLA 점수를 반영합니다.
+        </div>
+        <div style="background:var(--gray-50);border-radius:9px;padding:12px 14px;font-size:12px;color:var(--gray-600);margin-bottom:14px;line-height:1.8">
+          <strong style="color:var(--navy)">점수 기준</strong> &nbsp;
+          0.1% 이하 → 10점 &nbsp;|&nbsp;
+          0.1%~0.2% → 8점 &nbsp;|&nbsp;
+          0.2%~0.3% → 6점 &nbsp;|&nbsp;
+          0.3%~0.5% → 4점 &nbsp;|&nbsp;
+          0.5% 이상 → 2점
+        </div>
+        <div class="frow" style="align-items:center">
+          <select id="claim-month" style="padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:13px">
+            <option value="">평가월 선택</option>
+          </select>
+          <button class="btn btn-p" onclick="runClaimScore()" id="claim-btn">
+            📊 클레임 점수 자동 반영
+          </button>
+          <span id="claim-status" style="font-size:12px;color:var(--gray-400)"></span>
+        </div>
+        <!-- 결과 미리보기 -->
+        <div id="claim-result" style="display:none;margin-top:14px">
+          <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px">집계 결과 미리보기</div>
+          <div class="tw">
+            <table style="table-layout:fixed;width:100%">
+              <colgroup>
+                <col style="width:5%"><col style="width:17%"><col style="width:8%">
+                <col style="width:17%"><col style="width:17%"><col style="width:17%"><col style="width:17%">
+              </colgroup>
+              <thead><tr>
+                <th>코드</th><th style="text-align:left">평가단위</th><th>주문건수</th>
+                <th>배송지연</th><th>오배송</th><th>오출하</th><th>불량파손</th>
+              </tr></thead>
+              <tbody id="claim-tbody"></tbody>
+            </table>
+          </div>
+          <div class="brow" style="margin-top:12px">
+            <button class="btn btn-p" onclick="saveClaimScore()">✅ SLA Sheets에 저장</button>
+            <button class="btn btn-s" onclick="cancelClaimResult()">취소</button>
+          </div>
+        </div>
+      </div>
       <div class="card">
         <div class="card-t">📋 업로드 양식 안내</div>
         <div style="background:var(--gray-50);border-radius:9px;padding:13px 15px;font-size:13px;color:var(--gray-600);line-height:1.9;margin-bottom:14px">
@@ -1868,7 +1915,7 @@ function buildReasonText(itemName, score, maxScore, evalType, rawReason) {
 
   if (unit === "%") {
     // 비율형 항목: "DCM 연동률 87.5% — 기준 90% 미달 / 미연동 약 3개처"
-    const rateStr = rate.toFixed(1);
+    const rateStr = rate.toFixed(2);
     const targetStr = target !== undefined ? ` (기준 ${target}%)` : "";
     const countStr = estCount > 0 ? ` / 미달성 약 ${estCount}${countUnit}` : "";
     return `${item} ${rateStr}%${targetStr} 미달${countStr}`;
@@ -2285,7 +2332,7 @@ function fillMonths(){
     const d=new Date(now.getFullYear(),now.getMonth()-i,1);
     months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`);
   }
-  ["dash-month","my-month","imp-month","co-month"].forEach(sid=>{
+  ["dash-month","my-month","imp-month","co-month","claim-month"].forEach(sid=>{
     const el=document.getElementById(sid);
     if(!el)return;
     const cur=el.value;
@@ -2593,7 +2640,7 @@ async function openDetail(uid,evalType,month,fromPage){
 
   let details=[];
   if(S.cfg.url){
-    try{loading(true);const d=await sheetsGet("항목별상세점수",{eval_month:month,unit_id:uid,eval_type:evalType});loading(false);details=d?.data||[]}
+    try{loading(true);const d=await sheetsGet("항목별상세점수",{eval_month:month,unit_id:uid});loading(false);details=d?.data||[]}
     catch(e){loading(false);toast("오류: "+e.message,"err")}
   }
   document.getElementById("det-tbody").innerHTML=details.map(row=>{
@@ -2923,6 +2970,111 @@ function onFile(e){
     document.getElementById("preview-area").style.display="block";
   };
   reader.readAsText(file,"UTF-8");
+}
+
+// ══════════════════════════════════════════════════════════
+//  클레임 점수 자동 반영
+// ══════════════════════════════════════════════════════════
+const CLAIM_SHEET_ID = "1Nv3R7p5rMBjsEH471K8WksanjLoPkUs3yxpfDiiH1eM";
+
+// 발생율 → 점수 환산 (소수점 2자리 기준)
+function claimRateToScore(ratePct){
+  if(ratePct<=0.1)  return 10;
+  if(ratePct<=0.2)  return 8;
+  if(ratePct<=0.3)  return 6;
+  if(ratePct<0.5)   return 4;
+  return 2;
+}
+
+// 결과 임시 저장
+let claimScoreCache=[];
+
+async function runClaimScore(){
+  const month=document.getElementById("claim-month").value;
+  if(!month){toast("평가월을 선택하세요","err");return;}
+  if(!S.cfg.url){toast("Apps Script URL을 먼저 설정하세요","err");return;}
+
+  const btn=document.getElementById("claim-btn");
+  const status=document.getElementById("claim-status");
+  btn.disabled=true;
+  status.textContent="집계 중...";
+  loading(true);
+
+  try{
+    const d=await sheetsPost("calc_claim_score",{
+      eval_month:month,
+      claim_sheet_id:CLAIM_SHEET_ID,
+    });
+    loading(false);
+    if(!d.success)throw new Error(d.error||"집계 실패");
+
+    claimScoreCache=d.results||[];
+    renderClaimResult(claimScoreCache,month);
+    status.textContent=`${claimScoreCache.length}개 거점 집계 완료`;
+    toast("집계 완료 ✓ 결과를 확인 후 저장하세요","ok");
+  }catch(e){
+    loading(false);
+    status.textContent="오류: "+e.message;
+    toast("집계 오류: "+e.message,"err");
+  }
+  btn.disabled=false;
+}
+
+function renderClaimResult(results,month){
+  const tbody=document.getElementById("claim-tbody");
+  const UNIT_NAME={
+    W001:'김포 이지메디컴',W002:'향남 이지메디컴',W003:'원주 백제약품',
+    W004:'대전 백제약품',W005:'평택 복산나이스',W006:'대구 아이팜코리아',
+    W007:'광주 유진약품',W008:'부산 복산나이스',W009:'영남 백제약품',
+    W010:'평택 백제약품',W011:'파주 백제약품',
+  };
+
+  tbody.innerHTML=results.map(r=>{
+    const mkCell=(item)=>{
+      const score=r.items[item].score;
+      const rate=r.items[item].rate.toFixed(2);
+      const cnt=r.items[item].cnt;
+      const color=score===10?'var(--mint)':score>=8?'#2563EB':score>=6?'var(--gold)':'var(--red)';
+      return `<td style="text-align:center;font-size:12px">
+        <span style="font-weight:700;color:${color}">${score}점</span><br>
+        <span style="font-size:10px;color:var(--gray-400)">${rate}%(${cnt}건)</span>
+      </td>`;
+    };
+    return`<tr>
+      <td style="text-align:center;font-size:11px;color:var(--gray-400)">${r.unit_id}</td>
+      <td class="left" style="font-size:12px">${UNIT_NAME[r.unit_id]||r.unit_id}</td>
+      <td style="text-align:center;font-size:11px">${r.total_order.toLocaleString()}</td>
+      ${mkCell('배송지연')}${mkCell('오배송')}${mkCell('오출하')}${mkCell('불량및파손')}
+    </tr>`;
+  }).join("")||'<tr><td colspan="7" style="text-align:center;padding:16px;color:var(--gray-400)">데이터 없음</td></tr>';
+
+  document.getElementById("claim-result").style.display="block";
+}
+
+async function saveClaimScore(){
+  const month=document.getElementById("claim-month").value;
+  if(!claimScoreCache.length){toast("먼저 집계를 실행하세요","err");return;}
+  loading(true);
+  try{
+    const d=await sheetsPost("save_claim_score",{
+      eval_month:month,
+      results:claimScoreCache,
+    });
+    loading(false);
+    if(!d.success)throw new Error(d.error||"저장 실패");
+    toast(`클레임 점수 저장 완료 ✓ (${d.saved_rows||0}개 항목)`,"ok");
+    cancelClaimResult();
+    loadUploadHist();
+  }catch(e){
+    loading(false);
+    toast("저장 오류: "+e.message,"err");
+  }
+}
+
+function cancelClaimResult(){
+  claimScoreCache=[];
+  document.getElementById("claim-result").style.display="none";
+  document.getElementById("claim-status").textContent="";
 }
 
 function cancelUpload(){
