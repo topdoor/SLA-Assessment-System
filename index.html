@@ -2458,6 +2458,7 @@ function buildSidebar(){
     <div class="sb-item on" data-p="my-eval" onclick="navTo('my-eval')"><span class="ico">📋</span> 평가 현황</div>
     <div class="sb-item" data-p="imp" onclick="navTo('imp')"><span class="ico">📝</span> 개선사항 제출</div>
     <div class="sb-item" data-p="trend" onclick="navTo('trend')"><span class="ico">📈</span> 등급 추이</div>
+    <div class="sb-item" data-p="claim-status" onclick="navTo('claim-status')"><span class="ico">🚨</span> 클레임 현황</div>
     <div class="sb-sec">안내</div>
     <div class="sb-item" data-p="notice" onclick="navTo('notice')"><span class="ico">📢</span> 공지사항</div>
     <div class="sb-item" data-p="crit" onclick="navTo('crit')"><span class="ico">📏</span> 평가기준</div>
@@ -3360,9 +3361,18 @@ async function loadClaimStatus() {
   try {
     const d = await sheetsGet("항목별상세점수", { eval_month: month });
     loading(false);
-    const rows = (d?.data || []).filter(r =>
+    let rows = (d?.data || []).filter(r =>
       ["배송지연 발생율","오배송 발생율","오출하 발생율","불량및파손 발생율"].includes(r.item_name)
     );
+
+    // 도매상 로그인 시 자사 거점만 필터링
+    const u = S.user;
+    if (u && u.role !== "admin") {
+      const myUnits = new Set(
+        UNITS.filter(x => x.co === u.co).map(x => x.id)
+      );
+      rows = rows.filter(r => myUnits.has(r.unit_id));
+    }
 
     if (!rows.length) {
       document.getElementById("cs-cards").innerHTML =
