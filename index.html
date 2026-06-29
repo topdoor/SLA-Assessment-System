@@ -1042,123 +1042,6 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
   #splash .sp-btn{padding:11px 36px !important;font-size:12px !important;}
 }
 
-
-/* ── DETAIL TABLE WIDTH TUNING ── */
-#det-eval-table{overflow-x:visible;width:100%;}
-#det-eval-table *{min-width:0;}
-
-
-
-/* ══ 상세 상단 요약 카드 ══ */
-.detail-hero{
-  margin-bottom:16px;
-}
-.detail-hero-head{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:16px;
-  margin-bottom:18px;
-}
-.detail-title-wrap{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  min-width:0;
-}
-.detail-page-title{
-  font-size:20px;
-  font-weight:900;
-  color:#111827;
-  letter-spacing:-.5px;
-  line-height:1.2;
-}
-.detail-page-meta{
-  display:none;
-}
-.detail-back-btn{
-  width:32px;
-  height:32px;
-  border-radius:10px;
-  border:1px solid #E5E7EB;
-  background:#fff;
-  color:#64748B;
-  cursor:pointer;
-  font-size:14px;
-  font-weight:800;
-  box-shadow:0 3px 10px rgba(15,23,42,.04);
-  transition:all .14s;
-}
-.detail-back-btn:hover{
-  color:var(--navy);
-  border-color:#C8D4E8;
-  transform:translateX(-1px);
-}
-.detail-score-pill{
-  flex-shrink:0;
-  display:inline-flex;
-  align-items:center;
-  gap:4px;
-  padding:9px 18px;
-  border-radius:999px;
-  background:#EEF7FF;
-  border:1px solid #A8D0FF;
-  color:#1E64B7;
-  font-size:15px;
-  font-weight:800;
-  box-shadow:0 5px 14px rgba(30,100,183,.08);
-}
-.detail-score-pill strong{font-size:16px;font-weight:900;color:#1259AA}
-.detail-summary-grid{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:14px;
-}
-.detail-summary-card{
-  min-height:116px;
-  border-radius:13px;
-  background:#fff;
-  box-shadow:0 3px 16px rgba(47,52,66,.05);
-  border:1px solid rgba(229,231,235,.65);
-  padding:18px 20px 16px;
-}
-.detail-summary-label{
-  font-size:13px;
-  font-weight:800;
-  color:#8A8F98;
-  margin-bottom:9px;
-}
-.detail-summary-value{
-  font-size:28px;
-  line-height:1;
-  font-weight:900;
-  letter-spacing:-.7px;
-  color:#111827;
-  margin-bottom:8px;
-}
-.detail-summary-card.danger .detail-summary-value{color:#B91C1C}
-.detail-summary-card.pass .detail-summary-value{color:#0E9070}
-.detail-summary-card.total .detail-summary-value{color:#8A5206}
-.detail-summary-unit{
-  font-size:22px;
-  font-weight:900;
-  margin-left:1px;
-}
-.detail-summary-desc{
-  font-size:13px;
-  line-height:1.35;
-  color:#7A7F87;
-  font-weight:700;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-@media(max-width:900px){
-  .detail-hero-head{align-items:flex-start;flex-direction:column;gap:10px}
-  .detail-summary-grid{grid-template-columns:1fr}
-  .detail-score-pill{font-size:14px;padding:8px 15px}
-}
-
 </style>
 </head>
 <body>
@@ -1547,47 +1430,66 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
 
     <!-- 상세 -->
     <div class="pg" id="pg-detail">
-      <div class="detail-hero">
-        <div class="detail-hero-head">
-          <div class="detail-title-wrap">
-            <button class="detail-back-btn" onclick="goBack()" title="뒤로가기">←</button>
-            <div>
-              <div class="detail-page-title">항목별 평가 상세</div>
-              <div class="detail-page-meta" id="det-sub">—</div>
-              <div id="det-title" style="display:none">평가상세</div>
-              <div id="det-ch-badge" style="display:none">—</div>
-              <div id="det-bar" style="display:none"></div>
-            </div>
-          </div>
-          <div class="detail-score-pill">
-            총점 <strong id="det-score">—</strong> / <span id="det-max">—</span>점 · <strong id="det-grade">—</strong>등급
-          </div>
+      <div class="ph">
+        <button class="btn btn-s btn-sm" onclick="goBack()">← 뒤로</button>
+        <div class="ph-left" style="margin-left:12px">
+          <div class="pt" id="det-title">평가상세</div>
+          <div class="ps" id="det-sub">—</div>
         </div>
-        <div class="detail-summary-grid">
-          <div class="detail-summary-card danger">
-            <div class="detail-summary-label">감점 항목</div>
-            <div class="detail-summary-value"><span id="det-deduct-count">—</span><span class="detail-summary-unit">개</span></div>
-            <div class="detail-summary-desc" id="det-deduct-items">—</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div class="card" style="margin:0">
+          <div style="font-size:12px;color:var(--gray-400);font-weight:600">총점 / 만점</div>
+          <div style="font-size:32px;font-weight:900;color:var(--navy-dk);margin:7px 0 5px">
+            <span id="det-score">—</span><span style="font-size:16px;color:var(--gray-400)"> / <span id="det-max">—</span></span>
           </div>
-          <div class="detail-summary-card pass">
-            <div class="detail-summary-label">달성 항목</div>
-            <div class="detail-summary-value"><span id="det-pass-count">—</span><span class="detail-summary-unit">개</span></div>
-            <div class="detail-summary-desc" id="det-pass-desc">100% 달성</div>
-          </div>
-          <div class="detail-summary-card total">
-            <div class="detail-summary-label">총 처리건수</div>
-            <div class="detail-summary-value"><span id="det-total-count">—</span><span class="detail-summary-unit">건</span></div>
-            <div class="detail-summary-desc">평가 기준 모수</div>
-          </div>
+          <div class="sbar"><div class="sbar-f" id="det-bar" style="width:0%"></div></div>
+        </div>
+        <div class="card" style="margin:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:5px">
+          <div style="font-size:12px;color:var(--gray-400);font-weight:600">최종 등급</div>
+          <div id="det-grade" style="font-size:44px;font-weight:900;color:var(--gold)">—</div>
+          <div id="det-ch-badge">—</div>
         </div>
       </div>
       <div class="card" style="padding:0;overflow:hidden">
+        <div class="card-t" style="padding:14px 18px 10px">📊 항목별 평가 상세</div>
         <div id="det-eval-table"></div>
       </div>
     </div>
 
+    <!-- 등급별 도매상 목록 모달 -->
+    <div id="grade-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center">
+      <div style="background:var(--white);border-radius:16px;width:90%;max-width:620px;max-height:75vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+        <div style="padding:16px 22px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div id="grade-modal-title" style="font-size:16px;font-weight:700">등급 도매상 목록</div>
+            <div id="grade-modal-sub" style="font-size:12px;color:var(--gray-400);margin-top:2px"></div>
+          </div>
+          <button onclick="closeGradeModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray-400);padding:4px 8px">✕</button>
+        </div>
+        <div style="overflow-y:auto;padding:14px 22px;flex:1">
+          <div class="tw">
+            <table>
+              <thead><tr>
+                <th style="width:5%">#</th>
+                <th style="width:8%">코드</th>
+                <th style="text-align:left;width:25%">평가단위</th>
+                <th style="text-align:left;width:22%">회사명</th>
+                <th style="width:15%">채널</th>
+                <th style="width:12%">총점</th>
+              </tr></thead>
+              <tbody id="grade-modal-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div style="padding:10px 22px;border-top:1px solid var(--gray-100);text-align:right">
+          <button onclick="closeGradeModal()" class="btn btn-s">닫기</button>
+        </div>
+      </div>
+    </div>
+
     <!-- 클레임 상세 팝업 모달 -->
-    <div id="claim-detail-modal" onclick="if(event.target===this)closeClaimModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center">
+    <div id="claim-detail-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center">
       <div style="background:var(--white);border-radius:16px;width:90%;max-width:860px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.18)">
         <div style="padding:18px 22px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;justify-content:space-between">
           <div>
@@ -1883,7 +1785,12 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
         <div class="chart-card">
-          <div class="chart-card-t">등급 분포</div>
+          <div class="chart-card-t" style="display:flex;align-items:center;justify-content:space-between">
+            <span>등급 분포</span>
+            <select id="grade-dist-month" onchange="updateGradeDist()" style="font-size:11px;padding:3px 8px;border:1px solid var(--gray-200);border-radius:6px;color:var(--navy)">
+              <option value="">최근월</option>
+            </select>
+          </div>
           <div class="chart-wrap" style="height:200px"><canvas id="chart-grade" class="chart-canvas"></canvas></div>
         </div>
         <div class="chart-card">
@@ -1894,6 +1801,31 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
     </div>
 
     <!-- ══ 공지사항 ══ -->
+    <!-- 클레임 현황 -->
+    <div class="pg" id="pg-claim-status">
+      <div class="ph"><div class="ph-left">
+        <div class="pt">🚨 클레임 현황</div>
+        <div class="ps">거점별 클레임 발생 건수 및 발생율</div>
+      </div></div>
+      <div class="frow" style="margin-bottom:16px">
+        <select id="cs-month" onchange="loadClaimStatus()" style="padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:13px">
+          <option value="">평가월 선택</option>
+        </select>
+        <button class="btn btn-s" onclick="loadClaimStatus()">조회</button>
+      </div>
+      <div id="cs-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px"></div>
+      <div class="card" id="cs-table-card" style="display:none">
+        <div class="card-t" id="cs-table-title">거점별 클레임 발생율 상세</div>
+        <div class="tw"><table>
+          <thead><tr>
+            <th>코드</th><th style="text-align:left">평가단위</th><th>주문건수</th>
+            <th>배송지연</th><th>오배송</th><th>오출하</th><th>불량파손</th><th>합계점수</th>
+          </tr></thead>
+          <tbody id="cs-tbody"></tbody>
+        </table></div>
+      </div>
+    </div>
+
     <div class="pg" id="pg-notice">
       <div class="ph"><div class="ph-left">
         <div class="pt">📢 공지사항</div>
@@ -2490,7 +2422,7 @@ function fillMonths(){
     const d=new Date(now.getFullYear(),now.getMonth()-i,1);
     months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`);
   }
-  ["dash-month","my-month","imp-month","co-month","claim-month"].forEach(sid=>{
+  ["dash-month","my-month","imp-month","co-month","claim-month","cs-month","grade-dist-month"].forEach(sid=>{
     const el=document.getElementById(sid);
     if(!el)return;
     const cur=el.value;
@@ -2511,6 +2443,7 @@ function buildSidebar(){
     <div class="sb-item on" data-p="dashboard" onclick="navTo('dashboard')"><span class="ico">📊</span> 종합 대시보드</div>
     <div class="sb-item" data-p="companies" onclick="navTo('companies')"><span class="ico">🏢</span> 회사별 현황</div>
     <div class="sb-item" data-p="trend" onclick="navTo('trend')"><span class="ico">📈</span> 등급 추이 차트</div>
+    <div class="sb-item" data-p="claim-status" onclick="navTo('claim-status')"><span class="ico">🚨</span> 클레임 현황</div>
     <div class="sb-sec">관리</div>
     <div class="sb-item" data-p="imp" onclick="navTo('imp')"><span class="ico">📝</span> 개선사항 현황</div>
     <div class="sb-item" data-p="upload" onclick="navTo('upload')"><span class="ico">📤</span> 데이터 업로드</div>
@@ -2805,57 +2738,19 @@ async function openDetail(uid,evalType,month,fromPage){
   S.detailCtx = { uid, month };
 
   const CLAIM_ITEMS = ["배송지연 발생율","오배송 발생율","오출하 발생율","불량및파손 발생율"];
-  // 컬럼은 고정 px가 아니라 비율(%)로 구성해 가로 스크롤 없이 화면 폭에 맞춰 반응하도록 설정
-  const BASIC_GRID_COLS = "21% 52% 8% 4% 15%";              // 평가항목 · 달성률 · 점수 · 만점 · 상태
-  const CLAIM_GRID_COLS = "21% 12% 8% 4% 15% 34% 6%";       // 평가항목 · 달성률 · 점수 · 만점 · 상태 · 감점사유 · 상세
 
   if(!details.length){
-    ["det-deduct-count","det-pass-count","det-total-count"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent="—";});
-    const di=document.getElementById("det-deduct-items"); if(di) di.textContent="상세 데이터 없음";
-    const pd=document.getElementById("det-pass-desc"); if(pd) pd.textContent="상세 데이터 없음";
     document.getElementById("det-eval-table").innerHTML=`<div class="empty" style="padding:24px"><p>상세 데이터 없음</p></div>`;
   } else {
     const basicRows = details.filter(r=>!CLAIM_ITEMS.includes(r.item_name));
     const claimRows = details.filter(r=>CLAIM_ITEMS.includes(r.item_name));
-
-    const deductedRows = details.filter(row => {
-      const s = parseFloat(row.score);
-      const m = parseFloat(row.max_score);
-      return !isNaN(s) && !isNaN(m) && s < m;
-    });
-    const passRows = details.filter(row => {
-      const s = parseFloat(row.score);
-      const m = parseFloat(row.max_score);
-      return !isNaN(s) && !isNaN(m) && s >= m;
-    });
-    const shortItemName = name => String(name||"")
-      .replace(/ 발생율/g, "")
-      .replace(/관리$/g, "관리")
-      .trim();
-    const deductNames = deductedRows.map(row => shortItemName(row.item_name)).filter(Boolean);
-    let deductLabel = "감점 항목 없음";
-    if(deductNames.length){
-      deductLabel = deductNames.slice(0,2).join(" · ");
-      if(deductNames.length>2) deductLabel += ` 외 ${deductNames.length-2}건`;
-    }
-    const reasonPool = details.map(row => buildReasonText(row.item_name,row.score,row.max_score,evalType,row.reason)).join(" ");
-    const denomMatches = [...reasonPool.matchAll(/\/\s*([0-9,]+)\s*건/g)]
-      .map(m => parseInt(m[1].replace(/,/g,""),10))
-      .filter(n => !isNaN(n));
-    const totalCount = denomMatches.length ? Math.max(...denomMatches) : null;
-    const setText = (id,val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
-    setText("det-deduct-count", deductedRows.length);
-    setText("det-deduct-items", deductLabel);
-    setText("det-pass-count", passRows.length);
-    setText("det-pass-desc", passRows.length ? "100% 달성" : "달성 항목 없음");
-    setText("det-total-count", totalCount ? totalCount.toLocaleString("ko-KR") : "—");
 
     function makeProgressBar(score, max){
       const pct = max ? Math.min((parseFloat(score)/parseFloat(max))*100,100) : 0;
       const state = pct < 60 ? "fail" : pct < 100 ? "warn" : "pass";
       const barColor = state==="fail"?"#E24B4A":state==="warn"?"#EF9F27":"#1D9E75";
       const pctColor = state==="fail"?"#A32D2D":state==="warn"?"#854F0B":"#0F6E56";
-      return `<div style="display:flex;align-items:center;gap:6px;padding:7px 14px">
+      return `<div style="display:flex;align-items:center;gap:6px;padding:10px 14px">
         <div style="flex:1;height:6px;border-radius:3px;background:#e5e7eb;overflow:hidden">
           <div style="height:100%;border-radius:3px;background:${barColor};width:${pct}%"></div>
         </div>
@@ -2877,29 +2772,33 @@ async function openDetail(uid,evalType,month,fromPage){
       const badgeLabel = state==="fail"?"미달":state==="warn"?"초과":"달성";
       const reasonColor = state==="fail"?"#A32D2D":state==="warn"?"#854F0B":"#9CA3AF";
 
-      const gridCols = showReason ? CLAIM_GRID_COLS : BASIC_GRID_COLS;
+      const gridCols = showReason
+        ? "160px 140px 60px 60px 58px 1fr 70px"
+        : "160px 1fr 60px 60px 58px";
 
       const detailBtn = showDetail
-        ? `<div style="padding:6px 8px;display:flex;justify-content:center">
-            <button onclick="openClaimDetail('${row.item_name}','${uid}','${month}')"
-              title="클레임 원본 상세 보기"
-              style="font-size:12px;color:#185FA5;background:#F4FAFF;border:0.5px solid #B5D4F4;border-radius:6px;padding:4px 11px;cursor:pointer;white-space:nowrap;font-weight:700;box-shadow:0 1px 3px rgba(24,95,165,.08)">상세</button>
+        ? `<div style="padding:8px 10px;display:flex;justify-content:center">
+            <button onclick="toggleDetPanel(this,'dpanel-${row.item_name.replace(/\s/g,'_')}')" 
+              style="font-size:12px;color:#185FA5;background:none;border:0.5px solid #B5D4F4;border-radius:6px;padding:3px 10px;cursor:pointer;white-space:nowrap">상세 ▾</button>
           </div>` : "";
 
       const reasonCell = showReason
-        ? `<div style="padding:7px 12px;font-size:12px;color:${reasonColor};line-height:1.35;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${reasonText}">${reasonText}</div>` : "";
+        ? `<div style="padding:10px 14px;font-size:12px;color:${reasonColor}">${reasonText}</div>` : "";
 
-      // 상세 내용은 표 안에서 펼치지 않고, 상세 버튼 클릭 시 클레임 원본 모달로 확인
-      const detailPanel = "";
+      const panelId = `dpanel-${row.item_name.replace(/\s/g,'_')}`;
+      const detailPanel = showDetail ? `
+        <div id="${panelId}" style="display:none;border-top:0.5px solid #e5e7eb;padding:12px 16px;font-size:12px;color:#555;background:#f8f9fb">
+          <p>${reasonText}</p>
+        </div>` : "";
 
       return `
         <div style="border-top:0.5px solid #e5e7eb">
-          <div style="display:grid;grid-template-columns:${gridCols};align-items:center;background:${rowBg};width:100%">
-            <div style="padding:8px 14px;font-size:13px;font-weight:500;color:${nameColor}">${row.item_name}</div>
+          <div style="display:grid;grid-template-columns:${gridCols};align-items:center;background:${rowBg}">
+            <div style="padding:10px 14px;font-size:13px;font-weight:500;color:${nameColor}">${row.item_name}</div>
             ${makeProgressBar(row.score, row.max_score)}
-            <div style="padding:8px 8px;text-align:center;font-size:14px;font-weight:500;color:#1F2937">${fs(row.score)}</div>
-            <div style="padding:8px 8px;text-align:center;font-size:11px;color:#9CA3AF">/ ${fs(row.max_score)}</div>
-            <div style="padding:8px 8px;display:flex;justify-content:center">
+            <div style="padding:10px 8px;text-align:center;font-size:14px;font-weight:500;color:#1F2937">${fs(row.score)}</div>
+            <div style="padding:10px 8px;text-align:center;font-size:11px;color:#9CA3AF">/ ${fs(row.max_score)}</div>
+            <div style="padding:10px 8px;display:flex;justify-content:center">
               <span style="font-size:11px;font-weight:500;padding:3px 8px;border-radius:10px;background:${badgeBg};color:${badgeColor};border:0.5px solid ${badgeBorder}">${badgeLabel}</span>
             </div>
             ${reasonCell}
@@ -2913,10 +2812,10 @@ async function openDetail(uid,evalType,month,fromPage){
 
     // 기본 운영 헤더
     html += `
-      <div style="display:grid;grid-template-columns:${BASIC_GRID_COLS};background:#2F3B52;width:100%">
+      <div style="display:grid;grid-template-columns:160px 1fr 60px 60px 58px;background:#2F3B52">
         <div style="padding:9px 14px;font-size:12px;font-weight:500;color:#C8D4E8">평가항목</div>
         <div style="padding:9px 14px;font-size:12px;font-weight:500;color:#C8D4E8">달성률</div>
-        <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">점수</div>
+        <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">획득</div>
         <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">만점</div>
         <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">상태</div>
       </div>
@@ -2928,13 +2827,13 @@ async function openDetail(uid,evalType,month,fromPage){
 
     // 고객 클레임 헤더
     html += `
-      <div style="display:grid;grid-template-columns:${CLAIM_GRID_COLS};background:#2F3B52;border-top:1.5px solid #4a5a72;width:100%">
+      <div style="display:grid;grid-template-columns:160px 140px 60px 60px 58px 1fr 70px;background:#2F3B52;border-top:1.5px solid #4a5a72">
         <div style="padding:9px 14px;font-size:12px;font-weight:500;color:#C8D4E8">평가항목</div>
         <div style="padding:9px 14px;font-size:12px;font-weight:500;color:#C8D4E8">달성률</div>
-        <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">점수</div>
+        <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">획득</div>
         <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">만점</div>
         <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">상태</div>
-        <div style="padding:9px 12px;font-size:12px;font-weight:500;color:#C8D4E8">감점사유</div>
+        <div style="padding:9px 14px;font-size:12px;font-weight:500;color:#C8D4E8">감점사유</div>
         <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">상세</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;padding:7px 16px;background:#F5F7FA;border-top:0.5px solid #e5e7eb">
@@ -3439,8 +3338,250 @@ function closeClaimModal() {
 }
 // ESC 키로 닫기
 document.addEventListener("keydown", e => {
-  if (e.key === "Escape") closeClaimModal();
+  if (e.key === "Escape") { closeClaimModal(); closeGradeModal(); }
 });
+
+// ══════════════════════════════════════════════════════════
+//  클레임 현황 페이지
+// ══════════════════════════════════════════════════════════
+const UNIT_NAME_MAP = {
+  W001:"김포 이지메디컴",W002:"향남 이지메디컴",W003:"원주 백제약품",
+  W004:"대전 백제약품",W005:"평택 복산나이스",W006:"대구 아이팜코리아",
+  W007:"광주 유진약품",W008:"부산 복산나이스",W009:"영남 백제약품",
+  W010:"평택 백제약품",W011:"파주 백제약품",
+};
+
+async function loadClaimStatus() {
+  const month = document.getElementById("cs-month")?.value;
+  if (!month) return;
+  if (!S.cfg.url) { toast("Apps Script URL을 먼저 설정하세요","err"); return; }
+
+  loading(true);
+  try {
+    const d = await sheetsGet("항목별상세점수", { eval_month: month });
+    loading(false);
+    const rows = (d?.data || []).filter(r =>
+      ["배송지연 발생율","오배송 발생율","오출하 발생율","불량및파손 발생율"].includes(r.item_name)
+    );
+
+    if (!rows.length) {
+      document.getElementById("cs-cards").innerHTML =
+        `<div style="grid-column:1/-1;padding:30px;text-align:center;color:var(--gray-400)">
+          ${month} 클레임 데이터가 없습니다.<br>
+          <small>📤 데이터 업로드 → 클레임 점수 자동 반영을 먼저 실행하세요</small>
+        </div>`;
+      document.getElementById("cs-table-card").style.display = "none";
+      return;
+    }
+
+    // reason 파싱: "0.12% (9건/7,537건)" → { rate:"0.12%", cnt:9, total:7537 }
+    function parseReason(reason) {
+      if (!reason) return { rate:"—", cnt:0, total:0 };
+      const m = reason.match(/([\d.]+)%\s*\((\d+)건\/([\d,]+)건\)/);
+      if (!m) return { rate: reason.split("%")[0]+"%"||"—", cnt:0, total:0 };
+      return {
+        rate: m[1] + "%",
+        cnt:  parseInt(m[2]) || 0,
+        total: parseInt(m[3].replace(/,/g,"")) || 0,
+      };
+    }
+
+    // 거점별 그룹핑
+    const grouped = {};
+    rows.forEach(r => {
+      if (!grouped[r.unit_id]) grouped[r.unit_id] = { unit_id:r.unit_id, items:{} };
+      const p = parseReason(r.reason);
+      grouped[r.unit_id].items[r.item_name] = {
+        score: parseFloat(r.score)||0,
+        reason: r.reason||"",
+        rate: p.rate, cnt: p.cnt, total: p.total,
+      };
+    });
+
+    // 주문건수: 배송지연 발생율의 total 사용 (4개 항목 동일)
+    Object.values(grouped).forEach(g => {
+      const first = Object.values(g.items)[0];
+      g.total_order = first ? first.total : 0;
+      // 총 클레임 건수
+      g.total_cnt = Object.values(g.items).reduce((s,v)=>s+v.cnt,0);
+    });
+
+    // ── 카드 렌더링 ──
+    const cards = document.getElementById("cs-cards");
+    cards.innerHTML = Object.values(grouped).sort((a,b)=>a.unit_id.localeCompare(b.unit_id)).map(g => {
+      const totalScore = Object.values(g.items).reduce((s,v)=>s+v.score,0);
+      const maxScore   = Object.keys(g.items).length * 10;
+      const hasDeduct  = totalScore < maxScore;
+      const color      = hasDeduct ? "var(--red)" : "var(--mint)";
+      const items      = ["배송지연 발생율","오배송 발생율","오출하 발생율","불량및파손 발생율"];
+
+      const itemRows = items.map(item => {
+        const v = g.items[item];
+        if (!v) return "";
+        const label = item.replace(" 발생율","");
+        const ded   = v.score < 10;
+        return `<div onclick="openClaimDetail('${item}','${g.unit_id}','${month}')"
+          style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:4px 6px;
+          border-bottom:0.5px solid var(--gray-100);cursor:pointer;border-radius:4px;transition:background .15s"
+          onmouseover="this.style.background='var(--gray-50)'" onmouseout="this.style.background=''">
+          <span style="color:var(--gray-500)">${label}</span>
+          <span style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:10px;color:var(--gray-400)">${v.cnt}건 ${v.rate}</span>
+            <span style="font-weight:700;color:${ded?"var(--red)":"var(--gray-600)"}">${v.score}점${ded?" ▼":""}
+              <span style="color:var(--gray-300);font-size:9px"> 🔍</span>
+            </span>
+          </span>
+        </div>`;
+      }).join("");
+
+      return `<div class="card" style="padding:14px;border-top:3px solid ${color}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+          <div>
+            <div style="font-size:11px;color:var(--gray-400)">${g.unit_id}</div>
+            <div style="font-size:13px;font-weight:700;color:var(--navy)">${UNIT_NAME_MAP[g.unit_id]||g.unit_id}</div>
+            <div style="font-size:11px;color:var(--gray-400);margin-top:2px">
+              주문 ${g.total_order.toLocaleString()}건 · 클레임 ${g.total_cnt}건
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:22px;font-weight:900;color:${color}">${totalScore}</div>
+            <div style="font-size:10px;color:var(--gray-400)">/ ${maxScore}점</div>
+          </div>
+        </div>
+        ${itemRows}
+      </div>`;
+    }).join("");
+
+    // ── 테이블 렌더링 ──
+    const tbody = document.getElementById("cs-tbody");
+    tbody.innerHTML = Object.values(grouped).sort((a,b)=>a.unit_id.localeCompare(b.unit_id)).map(g => {
+      const items      = ["배송지연 발생율","오배송 발생율","오출하 발생율","불량및파손 발생율"];
+      const totalScore = Object.values(g.items).reduce((s,v)=>s+v.score,0);
+      const mkCell = (itemName) => {
+        const v = g.items[itemName];
+        if (!v) return `<td style="text-align:center;color:var(--gray-300)">—</td>`;
+        const ded = v.score < 10;
+        return `<td style="text-align:center;cursor:pointer" onclick="openClaimDetail('${itemName}','${g.unit_id}','${month}')" title="상세 보기">
+          <span style="font-weight:700;color:${ded?"var(--red)":"var(--mint)"}">${v.score}점</span><br>
+          <span style="font-size:10px;color:var(--gray-400)">${v.cnt}건 / ${v.rate} 🔍</span>
+        </td>`;
+      };
+      return `<tr>
+        <td style="text-align:center;font-size:11px;color:var(--gray-400)">${g.unit_id}</td>
+        <td style="font-size:12px">${UNIT_NAME_MAP[g.unit_id]||g.unit_id}</td>
+        <td style="text-align:center;font-size:12px">
+          ${g.total_order.toLocaleString()}<br>
+          <span style="font-size:10px;color:${g.total_cnt>0?"#E53E3E":"var(--gray-400)"}">클레임 ${g.total_cnt}건</span>
+        </td>
+        ${items.map(mkCell).join("")}
+        <td style="text-align:center;font-weight:700;color:${totalScore<40?"var(--red)":"var(--mint)"}">${totalScore}/40</td>
+      </tr>`;
+    }).join("");
+
+    document.getElementById("cs-table-title").textContent = `${month} 거점별 클레임 발생율 상세`;
+    document.getElementById("cs-table-card").style.display = "";
+
+  } catch(e) {
+    loading(false);
+    toast("오류: " + e.message, "err");
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  등급 분포 차트 함수
+// ══════════════════════════════════════════════════════════
+function renderGradeDist(filtered, targetMonth) {
+  const data = filtered.filter(r => r._month === targetMonth);
+  const gradeCounts = {S:0,A:0,B:0,C:0,D:0};
+  const gradeUnits  = {S:[],A:[],B:[],C:[],D:[]};
+  data.forEach(r => {
+    const g = r.grade?.trim();
+    if (g && gradeCounts[g] !== undefined) {
+      gradeCounts[g]++;
+      gradeUnits[g].push({ unit_id: r.unit_id, unit_name: r.unit_name||r.unit_id, company_name: r.company_name||"", eval_type: r.eval_type||"", total_score: r.total_score||"" });
+    }
+  });
+
+  // 전역 저장 (클릭 시 사용)
+  S._gradeUnits = gradeUnits;
+  S._gradeMonth = targetMonth;
+
+  if(chartGrade) chartGrade.destroy();
+  const ctx2 = document.getElementById("chart-grade")?.getContext("2d");
+  const gradeMax = Math.max(...Object.values(gradeCounts));
+  if(!ctx2) return;
+
+  chartGrade = new Chart(ctx2, {
+    type: "bar",
+    data: {
+      labels: ["S등급","A등급","B등급","C등급","D등급"],
+      datasets: [{
+        label: "단위 수",
+        data: [gradeCounts.S,gradeCounts.A,gradeCounts.B,gradeCounts.C,gradeCounts.D],
+        backgroundColor: ["#0EA5E9","#2563EB","#4B5563","#D97706","#B91C1C"],
+        borderRadius: 6, borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: {display:false},
+        tooltip: {callbacks:{label:ctx=>`${ctx.parsed.y}개 단위 (클릭하여 목록 보기)`}},
+        datalabels: {
+          display: true, anchor:"end", align:"top",
+          color:"#374151", font:{size:12,weight:"bold"},
+          formatter: v => v>0 ? `${v}개` : "",
+        }
+      },
+      scales: {
+        y: { beginAtZero:true, max:gradeMax+2, ticks:{stepSize:1,precision:0}, grid:{color:"rgba(0,0,0,.05)"} },
+        x: { grid:{display:false} }
+      },
+      onClick: (evt, elements) => {
+        if (!elements.length) return;
+        const grades = ["S","A","B","C","D"];
+        const grade = grades[elements[0].index];
+        openGradeModal(grade);
+      }
+    }
+  });
+}
+
+function updateGradeDist() {
+  const sel = document.getElementById("grade-dist-month");
+  const month = sel?.value || S._trendLastMonth;
+  if (S._trendFiltered) renderGradeDist(S._trendFiltered, month);
+}
+
+function openGradeModal(grade) {
+  const units = S._gradeUnits?.[grade] || [];
+  const month = S._gradeMonth || "";
+  const GRADE_COLOR = {S:"#0EA5E9",A:"#2563EB",B:"#4B5563",C:"#D97706",D:"#B91C1C"};
+  const color = GRADE_COLOR[grade] || "#374151";
+
+  const modal = document.getElementById("grade-modal");
+  document.getElementById("grade-modal-title").textContent = `${grade}등급 도매상 목록`;
+  document.getElementById("grade-modal-sub").textContent = `${month} 기준 · ${units.length}개 단위`;
+  document.getElementById("grade-modal-title").style.color = color;
+
+  const tbody = document.getElementById("grade-modal-tbody");
+  tbody.innerHTML = units.length
+    ? units.map((u,i) => `<tr>
+        <td style="text-align:center;font-size:11px;color:var(--gray-400)">${i+1}</td>
+        <td style="font-size:11px;color:var(--gray-400)">${u.unit_id}</td>
+        <td style="font-size:13px;font-weight:500">${u.unit_name}</td>
+        <td style="font-size:12px;color:var(--gray-500)">${u.company_name}</td>
+        <td style="font-size:11px;color:var(--gray-400)">${u.eval_type}</td>
+        <td style="text-align:center;font-weight:700;color:${color}">${u.total_score ? parseFloat(u.total_score).toFixed(1)+"점" : "—"}</td>
+      </tr>`).join("")
+    : `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--gray-400)">${grade}등급 단위 없음</td></tr>`;
+
+  modal.style.display = "flex";
+}
+
+function closeGradeModal() {
+  document.getElementById("grade-modal").style.display = "none";
+}
 
 function cancelUpload(){
   S.uploadData=null;S.uploadFile="";
@@ -3609,47 +3750,22 @@ async function loadTrend(){
 
   // ── 차트2: 등급 분포 — 세로 막대 ──
   const lastMonth=months.filter(m=>filtered.some(r=>r._month===m)).pop()||months[months.length-1];
-  const lastData=filtered.filter(r=>r._month===lastMonth);
-  const gradeCounts={S:0,A:0,B:0,C:0,D:0};
-  lastData.forEach(r=>{const g=r.grade?.trim();if(g&&gradeCounts[g]!==undefined)gradeCounts[g]++});
 
-  if(chartGrade)chartGrade.destroy();
-  const ctx2=document.getElementById("chart-grade")?.getContext("2d");
-  const gradeMax=Math.max(...Object.values(gradeCounts));
-  if(ctx2)chartGrade=new Chart(ctx2,{
-    type:"bar",
-    data:{
-      labels:["S등급","A등급","B등급","C등급","D등급"],
-      datasets:[{
-        label:"단위 수",
-        data:[gradeCounts.S,gradeCounts.A,gradeCounts.B,gradeCounts.C,gradeCounts.D],
-        backgroundColor:["#0EA5E9","#2563EB","#4B5563","#D97706","#B91C1C"],
-        borderRadius:6,borderSkipped:false,
-      }]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{
-        legend:{display:false},
-        tooltip:{callbacks:{label:ctx=>`${ctx.parsed.y}개 단위`}},
-        datalabels:{
-          display:true,
-          anchor:"end",align:"top",
-          color:"#374151",font:{size:12,weight:"bold"},
-          formatter:v=>v>0?`${v}개`:"",
-        }
-      },
-      scales:{
-        y:{
-          beginAtZero:true,
-          max:gradeMax+2,   // 최대값 + 여백 2 → 라벨 짤림 방지
-          ticks:{stepSize:1,precision:0},
-          grid:{color:"rgba(0,0,0,.05)"}
-        },
-        x:{grid:{display:false}}
-      }
-    }
-  });
+  // grade-dist-month 셀렉트 초기화 (가용 월 목록)
+  const gdSel=document.getElementById("grade-dist-month");
+  if(gdSel){
+    const availMonths=[...new Set(filtered.map(r=>r._month))].filter(Boolean).sort().reverse();
+    const curGdVal=gdSel.value;
+    gdSel.innerHTML='<option value="">최근월</option>';
+    availMonths.forEach(m=>gdSel.innerHTML+=`<option value="${m}">${m}</option>`);
+    if(curGdVal) gdSel.value=curGdVal;
+  }
+
+  // 전역 filtered 저장 (updateGradeDist에서 사용)
+  S._trendFiltered=filtered;
+  S._trendLastMonth=lastMonth;
+
+  renderGradeDist(filtered, gdSel?.value||lastMonth);
 
   // ── 차트3: 채널별 평균 점수 + 점수 표기 ──
   const chLabels=["거점도매","종합도매","VC"];
