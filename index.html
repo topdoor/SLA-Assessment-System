@@ -2393,6 +2393,7 @@ async function doLogin(){
     document.getElementById("l-err").classList.add("on");return;
   }
   S.user=user;
+  console.log("[SLA] 로그인:", JSON.stringify({id:user.id, role:user.role, co:user.co}));
   initApp();
 }
 
@@ -3357,21 +3358,30 @@ async function loadClaimStatus() {
   if (!month) return;
   if (!S.cfg.url) { toast("Apps Script URL을 먼저 설정하세요","err"); return; }
 
+  const cu = S.user;  // 현재 로그인 사용자
+  const isAdmin = cu && cu.role === "admin";
+
+  // 도매상: 자사 unit_id 목록 미리 계산
+  let myUnitIdSet = null;
+  if (!isAdmin && cu) {
+    myUnitIdSet = new Set(UNITS.filter(x => x.co === cu.co).map(x => x.id));
+  }
+
   loading(true);
   try {
-    const d = await sheetsGet("항목별상세점수", { eval_month: month });
+    // 관리자: 전체 조회 / 도매상: company_id 파라미터로 서버측 필터링 요청
+    const params = { eval_month: month };
+    if (!isAdmin && cu) params.company_id = cu.co;
+
+    const d = await sheetsGet("항목별상세점수", params);
     loading(false);
     let rows = (d?.data || []).filter(r =>
       ["배송지연 발생율","오배송 발생율","오출하 발생율","불량및파손 발생율"].includes(r.item_name)
     );
 
-    // 도매상 로그인 시 자사 거점만 필터링
-    const u = S.user;
-    if (u && u.role !== "admin") {
-      const myUnits = new Set(
-        UNITS.filter(x => x.co === u.co).map(x => x.id)
-      );
-      rows = rows.filter(r => myUnits.has(r.unit_id));
+    // 도매상: 클라이언트 측 이중 필터링 (서버 필터가 안 될 경우 대비)
+    if (!isAdmin && myUnitIdSet) {
+      rows = rows.filter(r => myUnitIdSet.has(r.unit_id));
     }
 
     if (!rows.length) {
