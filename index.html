@@ -3617,8 +3617,12 @@ async function uploadToSheets(){
     loading(true);
     const d=await sheetsPost("upload_eval_data",{file_name:S.uploadFile,content:S.uploadData,uploaded_by:S.user.id});
     loading(false);
-    if(d.success){toast(`업로드 완료 ✓ (${d.result?.rows||0}행 반영)`,"ok");cancelUpload();loadUploadHist()}
-    else toast("오류: "+d.error,"err");
+    const rows = d?.result?.rows || d?.rows || 0;
+    if(d.success || d.rows !== undefined){
+      toast(`업로드 완료 ✓ (${rows}행 반영)`,"ok");
+      cancelUpload();
+      loadUploadHist();
+    } else toast("오류: "+(d.error||d.message||JSON.stringify(d)),"err");
   }catch(e){loading(false);toast("업로드 오류: "+e.message,"err")}
 }
 
