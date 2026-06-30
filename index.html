@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="translate" content="no">
-<title>SLA 도매상 평가시스템 · 대웅제약 유통지원팀</title>
+<title>블록형 거점도매 평가시스템 · 대웅제약 유통지원팀</title>
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
@@ -434,6 +434,13 @@ td.left{text-align:left;font-weight:600}
 .bS{background:#0EA5E9;color:#fff}.bA{background:#2563EB;color:#fff}
 .bB{background:var(--gray-600);color:#fff}.bC{background:#D97706;color:#fff}
 .bD{background:var(--red);color:#fff}
+.pending-msg{display:inline-block;font-size:11px;line-height:1.35;color:#6B7280;font-weight:700;white-space:normal}
+.pending-msg small{display:block;font-size:10px;color:#9CA3AF;font-weight:600;margin-top:2px}
+.partial-msg{display:inline-block;font-size:11px;line-height:1.35;color:#C07800;font-weight:800;white-space:normal}
+.partial-msg small{display:block;font-size:10px;color:#9CA3AF;font-weight:600;margin-top:2px}
+tr.pending-row{background:#FAFAFA}
+tr.pending-row:hover{background:#F3F4F6}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
 .ch{font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px}
 .ch-거점{background:#EEF2FF;color:#3730A3}
 .ch-종합{background:#F0FDF4;color:#14532D}
@@ -1042,6 +1049,26 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
   #splash .sp-btn{padding:11px 36px !important;font-size:12px !important;}
 }
 
+
+
+/* ══ TITLE NO-WRAP OVERRIDE ══ */
+#splash .sp-title,
+.login-hero-title,
+.sb-brand,
+.login-right-title{
+  white-space:nowrap !important;
+  word-break:keep-all !important;
+}
+#splash .sp-title{font-size:22px !important;letter-spacing:-1.1px !important;}
+.login-hero-title{font-size:26px !important;letter-spacing:-1.3px !important;}
+.sb-brand{font-size:10.5px !important;letter-spacing:-.7px !important;line-height:1.18 !important;}
+.login-right-title{font-size:23px !important;letter-spacing:-1px !important;}
+@media(max-width:640px){
+  #splash .sp-title{font-size:18px !important;}
+  .login-hero-title{font-size:21px !important;}
+  .login-right-title{font-size:19px !important;}
+}
+
 </style>
 </head>
 <body>
@@ -1054,7 +1081,7 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
   <div class="splash-inner">
     <div class="sp-logo"><img src="data:image/png;base64,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" alt="대웅제약"></div>
     <div class="sp-ui">
-      <div class="sp-title">SLA도매평가시스템</div>
+      <div class="sp-title">블록형 거점도매 평가시스템</div>
       <div class="sp-sub">대웅제약 유통지원팀 · Distribution Support Team</div>
       <button class="sp-btn" onclick="toLogin()" aria-label="평가시스템 입장">평가시스템 입장 →</button>
     </div>
@@ -1068,7 +1095,7 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
     <div class="login-left">
       <div class="login-copy">
         <div class="login-badge">대웅제약 유통지원팀</div>
-        <div class="login-hero-title">SLA도매평가시스템</div>
+        <div class="login-hero-title">블록형 거점도매 평가시스템</div>
         <div class="login-hero-sub">도매상 평가 데이터를 효율적으로<br>관리하고 확인할 수 있는 시스템입니다.</div>
       </div>
       <div class="login-card">
@@ -1223,7 +1250,7 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
           </g>
         </svg>
       </div>
-      <div class="login-right-title">스마트 도매상 평가 플랫폼</div>
+      <div class="login-right-title">스마트 거점도매 평가 플랫폼</div>
       <div class="login-keywords">
         <span>도매상 평가</span>
         <span>물류 · 배송</span>
@@ -1232,7 +1259,7 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
       </div>
     </div>
   </div>
-  <div class="login-footer-note">© 대웅제약 유통지원팀 · SLA도매 평가시스템</div>
+  <div class="login-footer-note">© 대웅제약 유통지원팀 · 블록형 거점도매 평가시스템</div>
   </div>
 </div>
 
@@ -1242,7 +1269,7 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
     <div class="sb-top">
       <div class="sb-logo">
         <div class="sb-ico" style="background:none;padding:0"><img src="data:image/png;base64,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" style="width:34px;height:34px;object-fit:contain" alt="대웅제약"></div>
-        <div class="sb-brand">SLA 평가시스템<span>대웅제약 유통지원팀</span></div>
+        <div class="sb-brand">블록형 거점도매 평가시스템<span>대웅제약 유통지원팀</span></div>
       </div>
       <div class="sb-user">
         <div class="sb-uname" id="sb-nm">—</div>
@@ -1659,6 +1686,7 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
         <input type="file" id="file-in" accept=".csv,.xlsx" style="display:none" onchange="onFile(event)">
         <div id="preview-area" style="display:none">
           <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px">미리보기 (상위 5행)</div>
+          <div id="preview-summary" style="font-size:12px;color:var(--gray-600);line-height:1.7;margin-bottom:10px;background:var(--gray-50);border-radius:8px;padding:10px 12px"></div>
           <div class="tw" id="preview-tbl"></div>
           <div class="brow" style="margin-top:12px">
             <button class="btn btn-p" onclick="uploadToSheets()">Google Sheets에 반영</button>
@@ -1710,7 +1738,7 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
           <div>
             <div class="cfg-field">
               <label>시스템 제목 (선택)</label>
-              <input type="text" id="cfg-title" placeholder="SLA도매평가시스템">
+              <input type="text" id="cfg-title" placeholder="블록형 거점도매 평가시스템">
             </div>
           </div>
         </div>
@@ -1939,6 +1967,12 @@ const GRADE_GUIDE={
   "VC":"S: 112점 이상(원점수) / A: 100점 이상 / B: 80점 이상 / C: 72점 이상 / D: 72점 미만",
 };
 
+// ── 고객 클레임 항목 표준명
+// 클레임 현황/항목별상세점수/별도 클레임 시트의 컬럼명이 조금 달라도
+// 월별 총점 재집계와 상세 화면에서 동일하게 인식하도록 표준화합니다.
+const CLAIM_ITEM_NAMES=["배송지연 발생율","오배송 발생율","오출하 발생율","불량및파손 발생율"];
+const CLAIM_STATUS_SHEET_NAMES=["클레임현황","클레임 현황","고객클레임","고객 클레임","고객클레임점수","클레임점수"];
+
 // ── 항목별 배점 기준 (score→% 역산용) ──
 // 각 항목의 만점과 "기준 달성률(%)"을 정의
 // 달성률 = score / max_score * 100
@@ -2029,9 +2063,34 @@ let S={
   user:null, tab:"company", cfg:{}, page:null,
   results:[], details:[], imps:[], criteria:[], uploads:[],
   activeImpRow:null, backPage:"my-eval", uploadData:null, uploadFile:"",
+  _cache:{sheets:new Map(),monthly:new Map(),details:new Map()},
+  // 이전 파일에서 저장된 잘못된 파라미터명을 따라가지 않도록 항상 sheet부터 시작합니다.
+  _sheetParamName:"sheet",
+  _claimSheetName:localStorage.getItem("sla_claim_sheet_name")||"",
 };
-const CFG_KEY="sla_cfg_kor_improvement_only_20260625";
+// URL/파라미터 캐시 오염을 피하기 위해 새 설정 키를 사용합니다.
+const CFG_KEY="sla_cfg_kor_force_working_20260630_v3_detail_summary";
+// 사용자가 기존에 5월 데이터를 정상 조회하던 HTML의 기본 Apps Script URL입니다.
 const DEFAULT_APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbySLve_3-_v3t2NNfbvPqLNNUksxkDrpYVMOtldCFMVxIzPce01m5J2v82GmjuHRUy7eA/exec";
+// 직전 수정본에서 잘못 저장될 수 있었던 URL입니다. 발견되면 위 정상 URL로 교체합니다.
+const WRONG_APPS_SCRIPT_URLS=[
+  "https://script.google.com/macros/s/AKfycby2cusoxz6ELx1rAe_T4Q0D2hSKrscV8Yrs8q-BxqLYOMckyDX8x3wKb03DBzqr5xjQQA/exec"
+];
+
+// ── 6월 거점도매 실적 보조 조회
+// 기존 Apps Script 조회는 그대로 유지하고, 2026-06 거점도매 데이터가 표준 시트에 없을 때만
+// 사용자가 공유한 Google Sheet(gid=1209819208)를 JSONP 방식으로 1회 보조 조회합니다.
+// 공개/공유 권한이 없는 시트는 브라우저 보안상 조회되지 않을 수 있습니다.
+const DIRECT_JUNE_SHEETS=[
+  {
+    id:"1NV277MUUQ5fpa_Es9xEmRxZ6_Xj2yy0cm_-poy4e3uo",
+    gid:"1209819208",
+    month:"2026-06",
+    eval_type:"거점도매",
+    label:"6월 거점도매 실적"
+  }
+];
+
 
 // ══════════════════════════════════════════════════════════
 //  UTILS
@@ -2043,8 +2102,24 @@ function fp(v){
   if(n<=1)n=n*100;
   return n.toFixed(1)+"%";
 }
-function gb(g){if(!g)return`<span class="badge bB">미산정</span>`;const m={S:"bS",A:"bA",B:"bB",C:"bC",D:"bD"};return`<span class="badge ${m[g]||"bB"}">${g}등급</span>`}
+function gb(g){if(g==="산정중")return`<span class="badge bB">산정중</span>`;if(!g)return`<span class="badge bB">미산정</span>`;const m={S:"bS",A:"bA",B:"bB",C:"bC",D:"bD"};return`<span class="badge ${m[g]||"bB"}">${g}등급</span>`}
 function cb(c){const m={"거점도매":"ch-거점","종합도매":"ch-종합","VC":"ch-VC"};return`<span class="ch ${m[c]||""}">${c||"—"}</span>`}
+function isPendingRow(r){return !!(r&&r._pending)}
+function isPartialRow(r){return !!(r&&r._partial)}
+function pendingInline(){return `<span class="pending-msg">평가 산정 중입니다<small>월초에 확인 가능합니다</small></span>`}
+function partialInline(){return `<span class="partial-msg">일부 항목 업데이트<small>전체 평가는 산정 중입니다</small></span>`}
+function scoreDisplay(r){return isPartialRow(r)?partialInline():(isPendingRow(r)?pendingInline():fs(r.total_score))}
+function maxDisplay(r){return (isPendingRow(r)||isPartialRow(r))?"—":fs(r.max_score)}
+function rateDisplay(r){return (isPendingRow(r)||isPartialRow(r))?"—":(r.achievement_rate?fp(r.achievement_rate):"—")}
+function gradeDisplay(r){return (isPendingRow(r)||isPartialRow(r))?gb("산정중"):gb(r.grade)}
+function detailButton(uid,evalType,month,fromPage,r){
+  if(isPendingRow(r)&&!isPartialRow(r))return `<button class="btn btn-s btn-sm" disabled title="평가 산정 중입니다. 월초에 확인 가능합니다.">대기</button>`;
+  const label=isPartialRow(r)?"항목확인":"상세";
+  return `<button class="btn btn-s btn-sm" onclick="openDetail('${uid}','${evalType}','${month}'${fromPage?`,'${fromPage}'`:""})">${label}</button>`;
+}
+function clearDataCache(){
+  S._cache={sheets:new Map(),monthly:new Map(),details:new Map()};
+}
 function unitName(id){return(UNITS.find(u=>u.id===id)||{}).name||id}
 function unitCo(id){return(UNITS.find(u=>u.id===id)||{}).co}
 function coName(id){return(COS.find(c=>c.id===id)||{}).name||id}
@@ -2052,9 +2127,34 @@ function unitCompanyId(uid){return(UNITS.find(u=>u.id===uid)||{}).co||""}
 
 function cleanKey(v){return String(v??"").replace(/\s+/g,"").trim()}
 function monthKey(v){
-  const s=String(v??"").trim();
-  let m=s.match(/(\d{4})[-\/.년\s]+(\d{1,2})/);
+  if(v===null||v===undefined)return"";
+  let s=String(v).replace(/^\uFEFF/,"").trim();
+  if(!s)return"";
+
+  // Google Sheets/Excel 날짜 serial number 대응
+  if(/^\d+(\.\d+)?$/.test(s)){
+    const n=parseFloat(s);
+    if(n>30000){
+      const d=new Date(Math.round((n-25569)*86400*1000));
+      if(!isNaN(d.getTime()))return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}`;
+    }
+    // 202605 형태 대응
+    if(/^\d{6}$/.test(s))return `${s.slice(0,4)}-${s.slice(4,6)}`;
+  }
+
+  // 5월, 06월처럼 연도 없이 들어온 값은 현재 선택 평가월의 연도를 붙여 매칭합니다.
+  let moOnly=s.match(/^(\d{1,2})\s*월$/);
+  if(moOnly){
+    const base=String((typeof S!=="undefined"&&S.cfg&&S.cfg.month)||new Date().getFullYear());
+    const ym=base.match(/(\d{4})/);
+    const y=ym?ym[1]:String(new Date().getFullYear());
+    return `${y}-${String(moOnly[1]).padStart(2,"0")}`;
+  }
+
+  // 2026-05, 2026/5, 2026. 5, 2026년 5월, 2026-05-01 등 대응
+  let m=s.match(/(\d{4})\D{0,6}(\d{1,2})/);
   if(m)return `${m[1]}-${String(m[2]).padStart(2,"0")}`;
+
   const d=new Date(s);
   if(!isNaN(d.getTime()))return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
   return s;
@@ -2159,13 +2259,28 @@ function loading(v){document.getElementById("loading").classList.toggle("on",v)}
 // ══════════════════════════════════════════════════════════
 function loadConfig(){
   const raw=localStorage.getItem(CFG_KEY);
-  S.cfg=raw?JSON.parse(raw):{};
-  if(!S.cfg.url)S.cfg.url=DEFAULT_APPS_SCRIPT_URL;
-  if(!S.cfg.month)S.cfg.month="2026-05";
-  if(!S.cfg.title)S.cfg.title="SLA도매평가시스템";
+  let cfg=raw?JSON.parse(raw):{};
+
+  // 이번 파일은 조회 복구가 목적이므로 직전 파일의 잘못된 URL/파라미터 캐시는 사용하지 않습니다.
+  // 단, 사용자가 이 새 파일에서 직접 저장한 URL만 유지합니다.
+  if(!cfg.url || WRONG_APPS_SCRIPT_URLS.includes(cfg.url)){
+    cfg.url=DEFAULT_APPS_SCRIPT_URL;
+    cfg.lastConnOk=false;
+    cfg.lastConnAt="";
+  }
+
+  // sheetName/name/tab으로 잘못 기억된 경우 데이터가 0건으로 보일 수 있어 강제 초기화합니다.
+  S._sheetParamName="sheet";
+  try{localStorage.setItem("sla_sheet_param_name","sheet");}catch(e){}
+
+  if(!cfg.month)cfg.month="2026-05";
+  if(!cfg.title)cfg.title="블록형 거점도매 평가시스템";
+  S.cfg=cfg;
+  try{localStorage.setItem(CFG_KEY,JSON.stringify(S.cfg));}catch(e){}
+
   document.getElementById("cfg-url").value   =S.cfg.url   ||"";
   document.getElementById("cfg-month").value =S.cfg.month ||"2026-05";
-  document.getElementById("cfg-title").value =S.cfg.title ||"SLA도매평가시스템";
+  document.getElementById("cfg-title").value =S.cfg.title ||"블록형 거점도매 평가시스템";
 }
 function saveConfig(){
   const prev=S.cfg||{};
@@ -2178,6 +2293,7 @@ function saveConfig(){
     lastConnAt:(prev.url===url)?(prev.lastConnAt||""):"",
   };
   localStorage.setItem(CFG_KEY,JSON.stringify(S.cfg));
+  clearDataCache();
   toast("설정 저장 완료 ✓","ok");
   if(S.cfg.lastConnOk) setConnStatus("ok","연결 정상");
   else if(S.cfg.url) setConnStatus("idle","URL 저장됨 · 연결 테스트 필요");
@@ -2196,61 +2312,139 @@ function setConnStatus(s,msg){
 // ══════════════════════════════════════════════════════════
 //  SHEETS API
 // ══════════════════════════════════════════════════════════
+function normalizeKey(k){
+  return String(k??"")
+    .replace(/^\uFEFF/,"")
+    .replace(/\s+/g,"")
+    .replace(/[()［］\[\]{}·ㆍ_\-\/.]/g,"")
+    .toLowerCase();
+}
 function firstVal(row,keys){
+  if(!row)return"";
+  // 1) 정확한 컬럼명 우선
   for(const k of keys){
-    if(row[k]!==undefined&&row[k]!==null&&row[k]!=="")return row[k];
+    const v=row[k];
+    if(v!==undefined&&v!==null&&String(v).trim()!=="")return typeof v==="string"?v.trim():v;
+  }
+  // 2) 공백/BOM/특수문자 차이 보정
+  const want=keys.map(normalizeKey);
+  for(const ak of Object.keys(row)){
+    if(want.includes(normalizeKey(ak))){
+      const v=row[ak];
+      if(v!==undefined&&v!==null&&String(v).trim()!=="")return typeof v==="string"?v.trim():v;
+    }
   }
   return "";
+}
+function normalizeEvalType(v){
+  const s=cleanKey(v).toUpperCase();
+  if(!s)return"";
+  if(s==="VC"||s==="V/C"||s.includes("VIRTUAL")||s.includes("VACCINE"))return"VC";
+  if(s.includes("거점")||s.includes("대조"))return"거점도매";
+  if(s.includes("종합"))return"종합도매";
+  return String(v).trim();
 }
 function normRate(v){
   if(v===null||v===undefined||v==="")return "";
   const n=parseFloat(v); if(isNaN(n))return v;
   return n<=1?n*100:n;
 }
+function canonicalClaimItemName(v){
+  const s=cleanKey(v);
+  if(!s)return "";
+  if(s.includes("배송지연"))return "배송지연 발생율";
+  if(s.includes("오배송"))return "오배송 발생율";
+  if(s.includes("오출하")||s.includes("오출고"))return "오출하 발생율";
+  if(s.includes("불량")&&s.includes("파손"))return "불량및파손 발생율";
+  return "";
+}
+function isClaimItemName(v){return !!canonicalClaimItemName(v)}
+function claimCellScore(v){
+  if(v===null||v===undefined||String(v).trim()==="")return "";
+  const s=String(v).replace(/,/g,"").trim();
+  // "8점", "8점 / 0.15%", "8", "0.15%(3건/2000건)" 등 혼합 표기 대응
+  let m=s.match(/(-?\d+(?:\.\d+)?)\s*점/);
+  if(m)return parseFloat(m[1]);
+  const n=parseFloat(s);
+  return isNaN(n)?"":n;
+}
 function normalizeRow(row){
   const r={...row};
-  r.user_id     = firstVal(r,["user_id","사용자ID","아이디","ID","계정ID"]);
-  r.password    = firstVal(r,["password","비밀번호"]);
-  r.role        = firstVal(r,["role","권한"]);
+
+  r.user_id     = firstVal(r,["user_id","사용자ID","아이디","ID","계정ID","계정 ID"]);
+  r.password    = firstVal(r,["password","비밀번호","PW","패스워드"]);
+  r.role        = firstVal(r,["role","권한","사용자권한"]);
   if(r.role==="관리자")r.role="admin";
-  if(r.role==="도매사"||r.role==="도매상")r.role="company";
+  if(r.role==="도매사"||r.role==="도매상"||r.role==="회사")r.role="company";
   r.user_name   = firstVal(r,["user_name","사용자명","담당자명","이름"]);
-  r.company_id  = firstVal(r,["company_id","회사코드","대상회사코드"]);
-  r.company_name= firstVal(r,["company_name","회사명"]);
-  r.unit_id     = firstVal(r,["unit_id","평가단위코드","도매상코드","wholesaler_id"]);
-  r.unit_name   = firstVal(r,["unit_name","평가단위명","도매상명"]);
-  const _unitMaster = UNITS.find(x=>String(x.id)===String(r.unit_id));
+
+  // 평가단위 코드/명칭 보정
+  const unitRaw = firstVal(r,["unit_id","평가단위코드","평가단위 코드","도매상코드","도매상 코드","wholesaler_id","도매코드","거점코드","평가대상코드"]);
+  const unitNmRaw = firstVal(r,["unit_name","평가단위명","평가단위 명","도매상명","도매상 명","거점명","평가대상명","회사명"]);
+  let _unitMaster = UNITS.find(x=>cleanKey(x.id)===cleanKey(unitRaw));
+  if(!_unitMaster && unitRaw){
+    _unitMaster = UNITS.find(x=>{
+      const a=cleanKey(x.name), b=cleanKey(unitRaw);
+      return a===b || a.includes(b) || b.includes(a);
+    });
+  }
+  if(!_unitMaster && unitNmRaw){
+    _unitMaster = UNITS.find(x=>{
+      const a=cleanKey(x.name), b=cleanKey(unitNmRaw);
+      return a===b || a.includes(b) || b.includes(a);
+    });
+  }
+
+  r.unit_id     = _unitMaster ? _unitMaster.id : unitRaw;
+  r.unit_name   = _unitMaster ? _unitMaster.name : (unitNmRaw || unitRaw);
+
+  r.company_id  = firstVal(r,["company_id","회사코드","회사 코드","대상회사코드","도매사코드","도매상회사코드","업체코드"]);
+  r.company_name= firstVal(r,["company_name","회사명","도매사명","업체명"]);
   if(_unitMaster){
     if(!r.company_id || String(r.company_id).trim()==="ALL") r.company_id = _unitMaster.co;
     if(!r.company_name || String(r.company_name).trim()==="ALL") r.company_name = coName(_unitMaster.co);
-    if(!r.unit_name) r.unit_name = _unitMaster.name;
   }
-  r.eval_month  = firstVal(r,["eval_month","평가월"]);
-  r.eval_type   = firstVal(r,["eval_type","평가구분","채널"]);
+
+  r.eval_month  = monthKey(firstVal(r,["eval_month","평가월","평가 월","평가년월","기준월","대상월","월","년월"]));
+  r.eval_type   = normalizeEvalType(firstVal(r,["eval_type","평가구분","평가 구분","채널","구분","평가유형","유형","채널구분"]));
   if(_unitMaster && !r.eval_type) r.eval_type = _unitMaster.ch;
-  r.item_name   = firstVal(r,["item_name","평가항목","항목명","항목"]);
-  r.score       = firstVal(r,["score","획득점수","점수"]);
-  r.max_score   = firstVal(r,["max_score","만점","배점"]);
-  r.total_score = firstVal(r,["total_score","총점","최종점수"]);
-  r.achievement_rate = normRate(firstVal(r,["achievement_rate","달성률"]));
-  r.grade       = firstVal(r,["grade","평가등급","등급"]);
-  r.reason      = firstVal(r,["reason","감점사유","사유"]);
+
+  r.item_name   = firstVal(r,["item_name","평가항목","평가 항목","항목명","항목","평가지표","지표명","클레임항목","클레임 항목"]);
+  r.score       = firstVal(r,["score","획득점수","획득 점수","점수","실점수","클레임점수","클레임 점수","합계점수","합계 점수","배송지연점수","배송지연 점수","오배송점수","오배송 점수","오출하점수","오출하 점수","오출고점수","오출고 점수","불량파손점수","불량파손 점수","불량및파손점수","불량 및 파손 점수"]);
+  r.max_score   = firstVal(r,["max_score","만점","배점","총만점","만점합계","항목만점","항목 만점","클레임만점","클레임 만점","총배점"]);
+  r.total_score = firstVal(r,["total_score","총점","총 점","최종점수","최종 점수","합계","합산점수","점수합계","합계점수","합계 점수","클레임합계점수","클레임 합계점수"]);
+  r.achievement_rate = normRate(firstVal(r,["achievement_rate","달성률","달성율","달성률(%)","달성율(%)"]));
+  r.grade       = firstVal(r,["grade","평가등급","평가 등급","등급","최종등급","SLA등급"]);
+  r.reason      = firstVal(r,["reason","감점사유","감점 사유","사유","비고"]);
   r.rank        = firstVal(r,["rank","순위"]);
-  r.item        = firstVal(r,["item","평가항목","항목","item_name"]);
+
+  r.item        = firstVal(r,["item","평가항목","평가 항목","항목","item_name","클레임항목","클레임 항목"]);
   if(!r.item && r.item_name)r.item=r.item_name;
   if(!r.item_name && r.item)r.item_name=r.item;
-  r.cause       = firstVal(r,["cause","개선원인","원인"]);
-  r.plan        = firstVal(r,["plan","개선사항및실행계획","개선사항","실행계획","조치계획"]);
-  r.due_date    = firstVal(r,["due_date","완료예정일","예정일"]);
-  r.status      = firstVal(r,["status","처리상태","상태"]);
+
+  const _claimItem = canonicalClaimItemName(r.item_name||r.item);
+  if(_claimItem){
+    r.item_name=_claimItem;
+    r.item=_claimItem;
+    if(!r.max_score)r.max_score=10;
+    // 클레임 현황 셀에 "8점 / 0.15%(3건/2,000건)"처럼 들어온 경우 점수만 추출
+    if(r.score!==""&&isNaN(parseFloat(r.score)))r.score=claimCellScore(r.score);
+  }
+
+  r.cause       = firstVal(r,["cause","개선원인","개선 원인","원인"]);
+  r.plan        = firstVal(r,["plan","개선사항및실행계획","개선사항 및 실행계획","개선사항","실행계획","조치계획"]);
+  r.due_date    = firstVal(r,["due_date","완료예정일","완료 예정일","예정일"]);
+  r.status      = firstVal(r,["status","처리상태","처리 상태","상태"]);
   if(!r.status && r.plan)r.status="제출완료";
-  r.submit_id    = firstVal(r,["submit_id","제출ID"]);
-  r.submitted_at= firstVal(r,["submitted_at","제출일시"]);
+  r.submit_id   = firstVal(r,["submit_id","제출ID","제출 ID"]);
+  r.submitted_at= firstVal(r,["submitted_at","제출일시","제출 일시"]);
   r.submitted_by= firstVal(r,["submitted_by","제출자"]);
-  r.uploaded_at = firstVal(r,["uploaded_at","업로드일시"]);
+
+  r.uploaded_at = firstVal(r,["uploaded_at","업로드일시","업로드 일시"]);
   r.uploaded_by = firstVal(r,["uploaded_by","업로드자"]);
-  r.file_name   = firstVal(r,["file_name","파일명"]);
-  r.row_count   = firstVal(r,["row_count","행수"]);
+  r.file_name   = firstVal(r,["file_name","파일명","파일 명"]);
+  r.row_count   = firstVal(r,["row_count","행수","행 수"]);
+
   r.s_crit      = firstVal(r,["s_crit","S기준","S"]);
   r.a_crit      = firstVal(r,["a_crit","A기준","A"]);
   r.b_crit      = firstVal(r,["b_crit","B기준","B"]);
@@ -2259,28 +2453,542 @@ function normalizeRow(row){
   return r;
 }
 function localFilterRows(rows,params={}){
-  let out=rows;
+  let out=rows||[];
   if(params.eval_month) out=out.filter(r=>sameMonth(r.eval_month,params.eval_month));
-  if(params.company_id) out=out.filter(r=>String(r.company_id).trim()===String(params.company_id).trim());
+  if(params.company_id) out=out.filter(r=>{
+    const cid=String(r.company_id||unitCompanyId(r.unit_id)||"").trim();
+    return cid===String(params.company_id).trim();
+  });
   if(params.unit_id)    out=out.filter(r=>String(r.unit_id).trim()===String(params.unit_id).trim());
-  if(params.eval_type)  out=out.filter(r=>String(r.eval_type).trim()===String(params.eval_type).trim());
+  if(params.eval_type)  out=out.filter(r=>normalizeEvalType(r.eval_type)===normalizeEvalType(params.eval_type));
   if(params.user_id)    out=out.filter(r=>String(r.user_id).trim()===String(params.user_id).trim());
   if(params.limit)      out=out.slice(0,parseInt(params.limit,10));
   return out;
 }
+function rowsFromSheetsResponse(d){
+  let rows=[];
+  if(Array.isArray(d)) rows=d;
+  else if(Array.isArray(d?.data)) rows=d.data;
+  else if(Array.isArray(d?.rows)) rows=d.rows;
+  else if(Array.isArray(d?.values)) rows=d.values;
+  else if(Array.isArray(d?.result?.data)) rows=d.result.data;
+  else if(Array.isArray(d?.result?.rows)) rows=d.result.rows;
+  else if(Array.isArray(d?.result?.values)) rows=d.result.values;
+
+  // Apps Script가 getValues() 2차원 배열을 그대로 주는 경우 → header 기반 object 변환
+  if(rows.length && Array.isArray(rows[0])){
+    const headers=rows[0].map(h=>String(h??"").replace(/^\uFEFF/,"").trim());
+    rows=rows.slice(1).filter(v=>Array.isArray(v)&&v.some(x=>String(x??"").trim()!=="")).map(vals=>{
+      const obj={};
+      headers.forEach((h,i)=>{ if(h)obj[h]=vals[i]??""; });
+      return obj;
+    });
+  }
+  return rows;
+}
 async function sheetsGet(sheet,params={}){
   const url=S.cfg.url;if(!url)return null;
-  // 한글 시트/한글 컬럼 구조에서는 Apps Script 서버 필터가 영문 파라미터를 인식하지 못해 빈 배열이 올 수 있음.
-  // 따라서 서버에는 sheet만 요청하고, 월/회사/평가단위 필터는 HTML에서 한글→표준 필드 매핑 후 처리.
-  const qs=new URLSearchParams({sheet,_ts:Date.now()}).toString();
-  const res=await fetch(`${url}?${qs}`,{cache:"no-store"});
-  if(!res.ok)throw new Error("Sheets GET 오류 "+res.status);
-  const d=await res.json();
-  if(d&&d.success&&Array.isArray(d.data)){
-    d.data=localFilterRows(d.data.map(normalizeRow),params);
+
+  const cKey=`${url}::${sheet}`;
+  if(S._cache?.sheets?.has(cKey)){
+    const cached=S._cache.sheets.get(cKey);
+    const data=localFilterRows((cached.rows||[]).map(normalizeRow),params);
+    return {...(cached.d||{}),success:true,data,_rawRows:cached.rows?.length||0,_sheetParam:cached.pName,_cached:true};
   }
-  return d;
+
+  const known=S._sheetParamName||localStorage.getItem("sla_sheet_param_name")||"sheet";
+  const paramNames=[];
+  // 정상 배포 스크립트 기준인 sheet를 항상 먼저 사용합니다.
+  ["sheet",known,"sheetName","name","tab"].forEach(x=>{if(x&&!paramNames.includes(x))paramNames.push(x)});
+  let lastErr=null,lastText="",lastJson=null,zeroCandidate=null;
+
+  for(const pName of paramNames){
+    try{
+      const qs=new URLSearchParams({[pName]:sheet}).toString();
+      const res=await fetch(`${url}?${qs}`,{cache:"no-store"});
+      lastText=await res.text();
+      if(!res.ok)throw new Error("Sheets GET 오류 "+res.status+" / "+lastText.substring(0,160));
+      let d;
+      try{d=JSON.parse(lastText)}
+      catch(e){throw new Error("Apps Script 응답이 JSON이 아닙니다: "+lastText.substring(0,160))}
+      lastJson=d;
+      if(d&&d.success===false)throw new Error(d.error||d.message||`${sheet} 시트 조회 실패`);
+
+      const rows=rowsFromSheetsResponse(d);
+      const data=localFilterRows(rows.map(normalizeRow),params);
+
+      // raw 행이 0개면 파라미터명이 맞지 않아 빈 응답을 받은 경우일 수 있어 다음 후보도 확인합니다.
+      // raw 행이 있으면 월 필터 결과가 0이어도 해당 시트/파라미터는 정상으로 판단합니다.
+      if(rows.length>0){
+        S._sheetParamName=pName;
+        localStorage.setItem("sla_sheet_param_name",pName);
+        S._cache.sheets.set(cKey,{rows,d,pName,at:Date.now()});
+        return {...d,success:true,data,_rawRows:rows.length,_sheetParam:pName};
+      }
+      if(!zeroCandidate)zeroCandidate={d,rows,data,pName,text:lastText};
+    }catch(e){
+      lastErr=e;
+    }
+  }
+
+  if(zeroCandidate){
+    const {d,rows,data,pName}=zeroCandidate;
+    S._cache.sheets.set(cKey,{rows,d,pName,at:Date.now()});
+    return {...d,success:true,data,_rawRows:0,_sheetParam:pName};
+  }
+  if(lastErr)throw lastErr;
+  const rows=rowsFromSheetsResponse(lastJson);
+  return {...(lastJson||{}),success:lastJson?.success!==false,data:localFilterRows(rows.map(normalizeRow),params),_rawText:lastText.substring(0,160)};
 }
+function expandClaimStatusSummaryRows(rows){
+  const out=[];
+  const defs=[
+    {item:"배송지연 발생율", keys:["배송지연","배송 지연","배송지연점수","배송지연 점수","배송지연 발생율","배송지연 발생률"]},
+    {item:"오배송 발생율",   keys:["오배송","오배송점수","오배송 점수","오배송 발생율","오배송 발생률"]},
+    {item:"오출하 발생율",   keys:["오출하","오출고","오출하점수","오출하 점수","오출고점수","오출고 점수","오출하 발생율","오출하 발생률","오출고 발생율","오출고 발생률"]},
+    {item:"불량및파손 발생율", keys:["불량파손","불량 파손","불량및파손","불량 및 파손","불량파손점수","불량파손 점수","불량및파손점수","불량 및 파손 점수","불량및파손 발생율","불량및파손 발생률","불량파손 발생율","불량파손 발생률"]},
+  ];
+
+  (rows||[]).forEach(raw=>{
+    const base=normalizeRow(raw);
+    // 이미 항목별 행이면 별도 확장하지 않음
+    if(isClaimItemName(base.item_name))return;
+    if(!base.eval_month || !base.unit_id)return;
+
+    const itemScores=[];
+    defs.forEach(def=>{
+      const cell=firstVal(raw,def.keys);
+      const score=claimCellScore(cell);
+      if(score==="")return;
+      itemScores.push({def, cell, score});
+    });
+
+    // 4개 항목별 점수 컬럼이 없고 합계점수만 있는 클레임 현황 행도 월별 총점에 반영
+    if(!itemScores.length){
+      const totalCell=firstVal(raw,["합계점수","합계 점수","클레임합계점수","클레임 합계점수","total_score","총점","총 점","점수합계","점수 합계"]);
+      const totalScore=claimCellScore(totalCell);
+      if(totalScore!==""){
+        out.push(normalizeRow({
+          ...raw,
+          eval_month:base.eval_month,
+          unit_id:base.unit_id,
+          unit_name:base.unit_name,
+          company_id:base.company_id||unitCompanyId(base.unit_id),
+          company_name:base.company_name||coName(base.company_id||unitCompanyId(base.unit_id)),
+          eval_type:base.eval_type||"거점도매",
+          item_name:"고객클레임 합계",
+          item:"고객클레임 합계",
+          score:totalScore,
+          max_score:40,
+          reason:String(totalCell||"").trim(),
+        }));
+      }
+      return;
+    }
+
+    itemScores.forEach(({def, cell, score})=>{
+      out.push(normalizeRow({
+        ...raw,
+        eval_month:base.eval_month,
+        unit_id:base.unit_id,
+        unit_name:base.unit_name,
+        company_id:base.company_id||unitCompanyId(base.unit_id),
+        company_name:base.company_name||coName(base.company_id||unitCompanyId(base.unit_id)),
+        eval_type:base.eval_type||"거점도매",
+        item_name:def.item,
+        item:def.item,
+        score,
+        max_score:10,
+        reason:String(cell||"").trim(),
+      }));
+    });
+  });
+  return out;
+}
+function dedupeDetailRows(rows){
+  const map=new Map();
+  (rows||[]).map(normalizeRow).forEach((r,idx)=>{
+    const key=`${monthKey(r.eval_month)}_${cleanKey(r.unit_id)}_${cleanKey(r.eval_type)}_${cleanKey(r.item_name||r.item)}_${idx}`;
+    // 동일 항목이 여러 번 들어온 경우, 뒤에서 가져온 클레임 보정 행보다 기존 항목별 행을 우선하되
+    // 기존 행의 score가 비어 있으면 score가 있는 행으로 대체
+    const baseKey=`${monthKey(r.eval_month)}_${cleanKey(r.unit_id)}_${cleanKey(r.eval_type)}_${cleanKey(r.item_name||r.item)}`;
+    const cur=map.get(baseKey);
+    if(!cur || ((cur.score===""||isNaN(parseFloat(cur.score))) && r.score!==""&&!isNaN(parseFloat(r.score)))) map.set(baseKey,r);
+  });
+  return Array.from(map.values());
+}
+async function fetchClaimRowsFast(params={}){
+  const preferred=[];
+  const saved=S._claimSheetName||localStorage.getItem("sla_claim_sheet_name")||"";
+  [saved,"클레임현황","클레임 현황","고객클레임점수","클레임점수"].forEach(x=>{if(x&&!preferred.includes(x))preferred.push(x)});
+
+  for(const sheetName of preferred){
+    try{
+      const d=await sheetsGet(sheetName,params);
+      const rows=d?.data||[];
+      // 원본 행이 있으면 해당 시트명을 기억합니다. 월 필터 후 0행이어도 다음부터 빠르게 지나갑니다.
+      if(rows.length || (d?._rawRows||0)>0 || saved===sheetName){
+        S._claimSheetName=sheetName;
+        localStorage.setItem("sla_claim_sheet_name",sheetName);
+        return rows;
+      }
+    }catch(e){/* 후보 시트가 없으면 다음 후보만 확인 */}
+  }
+  return [];
+}
+
+
+function monthDetailFallbackSheetNames(params={}){
+  const mk=monthKey(params.eval_month||"");
+  if(!mk)return[];
+  const [y,m]=mk.split("-");
+  const n=String(parseInt(m,10));
+  // 속도 보호를 위해 표준 시트가 비었을 때만 아래 소수 후보를 확인합니다.
+  return uniqList([
+    "거점데이터","거점 데이터","거점도매실적","거점도매 실적","거점실적","거점 실적",
+    `${mk} 실적`,`${mk}_실적`,`${y}${m}실적`,`${y}${m} 실적`,`${n}월 실적`,`${n}월실적`
+  ]);
+}
+
+function uniqList(arr){
+  return Array.from(new Set((arr||[]).filter(Boolean)));
+}
+function inferUnitFromAnyCell(row){
+  const vals=Object.values(row||{}).map(v=>cleanKey(v)).filter(Boolean);
+  for(const u of UNITS){
+    const uid=cleanKey(u.id), uname=cleanKey(u.name);
+    for(const v of vals){
+      if(v===uid || v===uname || v.includes(uname) || uname.includes(v))return u;
+    }
+  }
+  return null;
+}
+function normalizeDirectSheetBaseRow(raw,src){
+  const baseMonth=firstVal(raw,["eval_month","평가월","평가 월","평가년월","기준월","대상월","월","년월"]);
+  const baseType=firstVal(raw,["eval_type","평가구분","평가 구분","채널","구분","평가유형","유형","채널구분"]);
+  let r=normalizeRow({...raw,eval_month:baseMonth||src.month,eval_type:baseType||src.eval_type});
+  if(!r.unit_id){
+    const u=inferUnitFromAnyCell(raw);
+    if(u){
+      r.unit_id=u.id;
+      r.unit_name=u.name;
+      r.company_id=u.co;
+      r.company_name=coName(u.co);
+      if(!r.eval_type)r.eval_type=u.ch;
+    }
+  }
+  if(!r.eval_month)r.eval_month=src.month;
+  if(!r.eval_type)r.eval_type=src.eval_type;
+  return normalizeRow(r);
+}
+function numericScoreFromAny(v){
+  if(v===null||v===undefined||String(v).trim()==="")return "";
+  const s=String(v).replace(/,/g,"").trim();
+  const m=s.match(/(-?\d+(?:\.\d+)?)\s*점/);
+  if(m)return parseFloat(m[1]);
+  if(/^[-+]?\d+(?:\.\d+)?$/.test(s))return parseFloat(s);
+  return "";
+}
+function headerItemName(header){
+  const h=cleanKey(header);
+  if(!h)return "";
+  if(h.includes("배송관리") || (h.includes("배송") && h.includes("점수")))return "배송관리";
+  if(h.includes("고객클레임") || (h.includes("클레임") && h.includes("점수")))return "고객클레임";
+  if(h.includes("반품관리") || (h.includes("반품") && h.includes("점수")))return "반품관리";
+  if(h.includes("재고관리") || (h.includes("재고") && h.includes("점수")))return "재고관리";
+  if(h.includes("품질관리") || (h.includes("품질") && h.includes("점수")))return "품질관리";
+  return "";
+}
+function gvizCellValue(cell){
+  if(!cell)return "";
+  if(cell.f!==undefined&&cell.f!==null&&String(cell.f).trim()!=="")return cell.f;
+  return cell.v!==undefined&&cell.v!==null?cell.v:"";
+}
+function fetchGvizRows(src){
+  return new Promise((resolve,reject)=>{
+    const cb="__slaGvizCb_"+Date.now()+"_"+Math.random().toString(36).slice(2);
+    let timer=null, script=null;
+    const cleanup=()=>{
+      try{delete window[cb];}catch(e){window[cb]=undefined;}
+      if(timer)clearTimeout(timer);
+      if(script&&script.parentNode)script.parentNode.removeChild(script);
+    };
+    window[cb]=(resp)=>{
+      try{
+        if(!resp || resp.status==="error")throw new Error(resp?.errors?.[0]?.detailed_message||resp?.errors?.[0]?.message||"Google Sheet 응답 오류");
+        const table=resp.table||{};
+        const cols=(table.cols||[]).map((c,i)=>String(c.label||c.id||`col${i+1}`).replace(/^\uFEFF/,"").trim()||`col${i+1}`);
+        const rows=(table.rows||[]).map(row=>{
+          const obj={};
+          (row.c||[]).forEach((cell,i)=>{obj[cols[i]||`col${i+1}`]=gvizCellValue(cell);});
+          return obj;
+        }).filter(obj=>Object.values(obj).some(v=>String(v??"").trim()!==""));
+        cleanup();
+        resolve(rows);
+      }catch(e){cleanup();reject(e);}
+    };
+    script=document.createElement("script");
+    const qs=new URLSearchParams({gid:src.gid,tqx:`responseHandler:${cb}`});
+    script.src=`https://docs.google.com/spreadsheets/d/${src.id}/gviz/tq?${qs.toString()}`;
+    script.onerror=()=>{cleanup();reject(new Error(`${src.label||"Google Sheet"} 직접 조회 실패`));};
+    timer=setTimeout(()=>{cleanup();reject(new Error(`${src.label||"Google Sheet"} 직접 조회 시간 초과`));},8000);
+    document.head.appendChild(script);
+  });
+}
+
+// ── 월별평가결과 가로형 점수 컬럼 보정
+// 6월 거점도매처럼 월별평가결과 시트에 항목별 점수가 가로 컬럼으로 저장된 경우
+// 기존 총점/등급 행으로 변환하고, 상세 화면에서도 항목별 점수가 보이도록 확장합니다.
+const WIDE_MONTHLY_ITEM_DEFS={
+  "거점도매":[
+    {item:"배송관리", keys:["배송관리","배송관리점수","배송 관리 점수","배송점수","배송 점수"], exclude:["배송지연","오배송"]},
+    {item:"고객클레임", keys:["고객클레임","고객클레임점수","고객 클레임 점수","클레임점수","클레임 점수","클레임현황점수","클레임 현황 점수"], exclude:["배송지연","오배송","오출하","오출고","불량","파손","합계"]},
+    {item:"반품관리", keys:["반품관리","반품관리점수","반품 관리 점수","반품점수","반품 점수"], exclude:[]},
+    {item:"재고관리", keys:["재고관리","재고관리점수","재고 관리 점수","재고점수","재고 점수"], exclude:["재고금액"]},
+    {item:"품질관리", keys:["품질관리","품질관리점수","품질 관리 점수","품질점수","품질 점수"], exclude:[]},
+  ],
+};
+const STANDARD_FIELD_KEYS=new Set([
+  "user_id","password","role","user_name","unit_id","unit_name","company_id","company_name",
+  "eval_month","eval_type","item_name","item","score","max_score","total_score","achievement_rate","grade",
+  "reason","rank","cause","plan","due_date","status","submit_id","submitted_at","submitted_by",
+  "uploaded_at","uploaded_by","file_name","row_count","s_crit","a_crit","b_crit","c_crit","d_crit",
+  "사용자ID","아이디","ID","비밀번호","권한","사용자명","평가단위코드","평가단위 코드","도매상코드","도매상 코드",
+  "평가단위명","평가단위 명","도매상명","도매상 명","회사명","회사코드","회사 코드","평가월","평가 월",
+  "평가년월","기준월","대상월","월","년월","평가구분","평가 구분","채널","구분","평가유형","유형",
+  "평가항목","평가 항목","항목명","항목","획득점수","획득 점수","점수","실점수","만점","배점",
+  "총점","총 점","최종점수","최종 점수","합계","합산점수","점수합계","합계점수","합계 점수",
+  "달성률","달성율","평가등급","평가 등급","등급","최종등급","SLA등급","감점사유","사유","비고","순위"
+].map(normalizeKey));
+function wideMonthlyDefsForRow(row){
+  const base=normalizeRow(row||{});
+  const ch=normalizeEvalType(base.eval_type || (UNITS.find(u=>u.id===base.unit_id)||{}).ch || "거점도매");
+  return WIDE_MONTHLY_ITEM_DEFS[ch] || [];
+}
+function headerLooksLikeWideItem(header,def){
+  const h=normalizeKey(header);
+  if(!h || STANDARD_FIELD_KEYS.has(h))return false;
+  const keys=(def.keys||[]).map(normalizeKey);
+  if(keys.includes(h))return true;
+  const ex=(def.exclude||[]).map(normalizeKey);
+  if(ex.some(x=>x && h.includes(x)))return false;
+  return keys.some(k=>k && (h.includes(k) || k.includes(h))) ||
+         (h.includes(normalizeKey(def.item)) && (h.includes("점수") || h.includes("score") || h===normalizeKey(def.item)));
+}
+function maxScoreFromHeader(header){
+  const s=String(header||"");
+  let m=s.match(/(?:만점|배점)?\s*(\d+(?:\.\d+)?)\s*점/);
+  if(m)return parseFloat(m[1]);
+  m=s.match(/[\(\[]\s*(\d+(?:\.\d+)?)\s*[\)\]]/);
+  if(m)return parseFloat(m[1]);
+  return "";
+}
+function extractWideMonthlyItemScores(row){
+  const base=normalizeRow(row||{});
+  if(!base.unit_id)return [];
+  const defs=wideMonthlyDefsForRow(row);
+  const out=[];
+  const usedHeaders=new Set();
+  defs.forEach(def=>{
+    let foundHeader="", foundVal="";
+    for(const [h,v] of Object.entries(row||{})){
+      if(usedHeaders.has(h))continue;
+      if(!headerLooksLikeWideItem(h,def))continue;
+      const score=numericScoreFromAny(v);
+      if(score==="")continue;
+      foundHeader=h; foundVal=v; break;
+    }
+    if(!foundHeader)return;
+    usedHeaders.add(foundHeader);
+    out.push(normalizeRow({
+      eval_month:base.eval_month,
+      unit_id:base.unit_id,
+      unit_name:base.unit_name,
+      company_id:base.company_id||unitCompanyId(base.unit_id),
+      company_name:base.company_name||coName(base.company_id||unitCompanyId(base.unit_id)),
+      eval_type:base.eval_type || (UNITS.find(u=>u.id===base.unit_id)||{}).ch || "거점도매",
+      item_name:def.item,
+      item:def.item,
+      score:numericScoreFromAny(foundVal),
+      max_score:maxScoreFromHeader(foundHeader),
+      reason:String(foundVal??"").trim(),
+      _from_monthly_wide:true
+    }));
+  });
+  return out;
+}
+function enrichMonthlyWideResults(rows,params={}){
+  return (rows||[]).map(raw=>{
+    const r=normalizeRow(raw);
+    const itemRows=extractWideMonthlyItemScores(raw);
+    if(itemRows.length<2)return r;
+    const itemSum=itemRows.reduce((s,x)=>s+(parseFloat(x.score)||0),0);
+    const curTotal=parseFloat(r.total_score);
+    const exp=expectedMaxForEvalType(r.eval_type||params.eval_type||"거점도매")||100;
+    const shouldApply = isNaN(curTotal) || curTotal===0 || itemSum>curTotal;
+    if(!shouldApply)return r;
+    return normalizeRow({
+      ...raw,
+      eval_month:r.eval_month||params.eval_month,
+      unit_id:r.unit_id,
+      unit_name:r.unit_name,
+      company_id:r.company_id||unitCompanyId(r.unit_id),
+      company_name:r.company_name||coName(r.company_id||unitCompanyId(r.unit_id)),
+      eval_type:r.eval_type||params.eval_type||(UNITS.find(u=>u.id===r.unit_id)||{}).ch||"거점도매",
+      total_score:parseFloat(itemSum.toFixed(1)),
+      max_score:r.max_score || exp,
+      achievement_rate:exp?parseFloat((itemSum/exp*100).toFixed(1)):"",
+      grade:r.grade || gradeFor(r.eval_type||params.eval_type||"거점도매",itemSum),
+      _monthly_wide_corrected:true
+    });
+  });
+}
+async function fetchMonthlyWideDetailRows(params={}){
+  try{
+    const d=await sheetsGet("월별평가결과",params);
+    const rows=d?.data||[];
+    const out=[];
+    rows.forEach(r=>out.push(...extractWideMonthlyItemScores(r)));
+    return localFilterRows(out,params);
+  }catch(e){return[];}
+}
+
+function directRowsToEvalRows(rawRows,src,params={}){
+  const out=[];
+  (rawRows||[]).forEach(raw=>{
+    const base=normalizeDirectSheetBaseRow(raw,src);
+    if(!base.unit_id)return;
+
+    // 1) 세로형 평가 데이터: 평가항목/점수/만점 컬럼이 있는 경우
+    if((base.item_name||base.item) && base.score!=="" && !isNaN(parseFloat(base.score))){
+      out.push(normalizeRow({...base,eval_month:base.eval_month||src.month,eval_type:base.eval_type||src.eval_type}));
+      return;
+    }
+
+    // 2) 월별 요약 데이터: 총점 컬럼이 있는 경우
+    const total=numericScoreFromAny(base.total_score);
+    if(total!==""){
+      const exp=expectedMaxForEvalType(base.eval_type||src.eval_type)||100;
+      out.push(normalizeRow({
+        ...base,
+        item_name:"6월 거점 실적 총점",
+        item:"6월 거점 실적 총점",
+        score:total,
+        max_score:base.max_score||exp,
+        total_score:total,
+        grade:base.grade||gradeFor(base.eval_type||src.eval_type,total)
+      }));
+      return;
+    }
+
+    // 3) 가로형 점수 데이터: 배송관리점수/반품관리점수 등 항목별 점수 컬럼이 있는 경우
+    let made=false;
+    Object.keys(raw||{}).forEach(h=>{
+      const item=headerItemName(h);
+      if(!item)return;
+      const score=numericScoreFromAny(raw[h]);
+      if(score==="")return;
+      made=true;
+      out.push(normalizeRow({
+        ...base,
+        item_name:item,
+        item,
+        score,
+        max_score:"",
+        reason:String(raw[h]??"")
+      }));
+    });
+
+    // 4) 인식 가능한 점수 구조가 없으면 원본 행은 화면 계산에 사용하지 않습니다.
+    //    대신 Apps Script 표준 시트 조회 결과를 그대로 유지합니다.
+    if(made)return;
+  });
+  return localFilterRows(out.map(normalizeRow),params);
+}
+async function fetchDirectJuneRows(params={}){
+  const mk=monthKey(params.eval_month||"");
+  if(mk!=="2026-06")return [];
+  const out=[];
+  for(const src of DIRECT_JUNE_SHEETS){
+    try{
+      const raw=await fetchGvizRows(src);
+      const rows=directRowsToEvalRows(raw,src,{...params,eval_month:src.month,eval_type:params.eval_type||src.eval_type});
+      out.push(...rows);
+    }catch(e){
+      console.warn("[SLA] 6월 직접조회 실패:",e.message);
+    }
+  }
+  return out;
+}
+
+async function fetchDetailFallbackRows(params={}){
+  const names=monthDetailFallbackSheetNames(params);
+  const out=[];
+  for(const sheetName of names){
+    try{
+      // 월 필터를 먼저 걸지 않습니다. 월별 탭은 평가월 컬럼이 비어 있는 경우가 있기 때문입니다.
+      const d=await sheetsGet(sheetName,{});
+      let rows=(d?.data||[]).map(normalizeRow);
+      const mk=monthKey(params.eval_month||"");
+      if(mk){
+        rows=rows.map(r=>{
+          if(!r.eval_month)r.eval_month=mk;
+          if(!r.eval_type)r.eval_type="거점도매";
+          return r;
+        });
+      }
+      rows=localFilterRows(rows,params);
+      if(rows.length)return rows;
+    }catch(e){/* 후보 시트가 없으면 다음 후보만 확인 */}
+  }
+  // 표준/후보 Apps Script 시트에서 못 찾았을 때만 6월 공유 Google Sheet를 보조 조회합니다.
+  const directRows=await fetchDirectJuneRows(params);
+  if(directRows.length)return directRows;
+  return out;
+}
+
+async function fetchDetailRowsWithClaim(params={}){
+  const dKey=`${monthKey(params.eval_month||"")}::${params.unit_id||""}::${params.company_id||""}::${normalizeEvalType(params.eval_type||"")}`;
+  if(S._cache?.details?.has(dKey))return S._cache.details.get(dKey).map(r=>({...r}));
+  let rows=[];
+  let detailRows=[];
+  try{
+    const d=await sheetsGet("항목별상세점수",params);
+    detailRows=d?.data||[];
+    // 표준 시트가 비었을 때만 6월 거점 실적 후보 시트를 확인합니다.
+    // 이렇게 해야 기존 5월 조회 속도와 안정성을 유지할 수 있습니다.
+    if(!detailRows.length) detailRows=await fetchDetailFallbackRows(params);
+    rows=rows.concat(detailRows);
+    rows=rows.concat(expandClaimStatusSummaryRows(detailRows));
+  }catch(e){/* 상세점수 시트가 없거나 응답 오류면 클레임 보조 시트만 시도 */}
+
+  // 6월 거점도매 점수가 월별평가결과 시트의 가로형 컬럼에 저장된 경우도 상세/총점에 반영합니다.
+  const monthlyWideRows=await fetchMonthlyWideDetailRows(params);
+  if(monthlyWideRows.length) rows=rows.concat(monthlyWideRows);
+
+  const claimBaseRows=await fetchClaimRowsFast(params);
+  if(claimBaseRows.length){
+    rows=rows.concat(expandClaimStatusSummaryRows(claimBaseRows));
+    rows=rows.concat(claimBaseRows.filter(r=>isClaimItemName(r.item_name||r.item)));
+  }
+
+  // 상세 화면에서 최종 총점도 같이 확인할 수 있도록 월별평가결과 총점 행을 함께 노출합니다.
+  // 특히 2026-06 거점도매는 항목별상세점수보다 월별평가결과 총점(460/460)이 우선입니다.
+  const hasNonClaimDetail=rows.map(normalizeRow).some(r=>{
+    const it=cleanKey(r.item_name||r.item||"");
+    return it && !it.includes("클레임") && !isClaimItemName(it);
+  });
+  const monthlySummaryRows=await fetchMonthlySummaryDetailRows(params);
+  if(monthlySummaryRows.length){
+    const shouldPrependSummary = !hasNonClaimDetail || monthKey(params.eval_month||"")==="2026-06";
+    if(shouldPrependSummary) rows=monthlySummaryRows.concat(rows);
+  }
+
+  const out=dedupeDetailRows(localFilterRows(rows.map(normalizeRow),params));
+  S._cache.details.set(dKey,out.map(r=>({...r})));
+  return out;
+}
+
 async function sheetsPost(action,data){
   const url=S.cfg.url;
   if(!url)throw new Error("Apps Script URL이 설정되지 않았습니다");
@@ -2297,6 +3005,7 @@ async function sheetsPost(action,data){
   try{json=JSON.parse(text)}
   catch(e){throw new Error("Apps Script 응답 오류: "+text.substring(0,200))}
   if(json && json.success===false) throw new Error(json.error||"Apps Script 저장 실패");
+  clearDataCache();
   return json;
 }
 
@@ -2491,6 +3200,269 @@ function navTo(p){
 }
 function goBack(){navTo(S.backPage)}
 
+
+// ══════════════════════════════════════════════════════════
+//  MONTHLY RESULT FALLBACK
+//  월별평가결과가 비어 있어도 항목별상세점수에서 5월 데이터를 자동 집계
+// ══════════════════════════════════════════════════════════
+function isSummaryTotalDetailRow(row){
+  const r=normalizeRow(row||{});
+  const it=cleanKey(r.item_name||r.item||"");
+  // 월별평가결과 총점 / 6월 거점 실적 총점 같은 요약행은
+  // 클레임 상세 40점과 합산하지 않고 해당 평가단위의 최종 점수로 사용합니다.
+  return !!r._from_monthly_summary || it.includes("월별평가결과총점") || it.includes("실적총점") || it.includes("최종총점") || it==="총점";
+}
+function makeMonthlyRowFromSummaryDetail(row){
+  const r=normalizeRow(row||{});
+  const total=numericScoreFromAny(r.score!==""?r.score:r.total_score);
+  const mx=numericScoreFromAny(r.max_score);
+  const cid=r.company_id||unitCompanyId(r.unit_id);
+  const out=normalizeRow({
+    eval_month:r.eval_month,
+    unit_id:r.unit_id,
+    unit_name:r.unit_name||unitName(r.unit_id),
+    company_id:cid,
+    company_name:r.company_name||coName(cid),
+    eval_type:normalizeEvalType(r.eval_type || (UNITS.find(u=>u.id===r.unit_id)||{}).ch),
+    total_score:total,
+    max_score:mx,
+    achievement_rate:(!isNaN(parseFloat(total))&&!isNaN(parseFloat(mx))&&parseFloat(mx)>0)?parseFloat((parseFloat(total)/parseFloat(mx)*100).toFixed(2)):(r.achievement_rate||""),
+    grade:r.grade || gradeFor(r.eval_type,total),
+    _from_detail_summary:true
+  });
+  return out;
+}
+function buildMonthlyResultsFromDetails(rows){
+  const map=new Map();
+  const grouped=new Map();
+  const sourceRows=dedupeDetailRows([...(rows||[]), ...expandClaimStatusSummaryRows(rows||[])]).map(normalizeRow);
+
+  sourceRows.forEach(r=>{
+    if(!r.eval_month || !r.unit_id)return;
+    if(!String(r.item_name||r.item||"").trim())return;
+    const ch=normalizeEvalType(r.eval_type || (UNITS.find(u=>u.id===r.unit_id)||{}).ch);
+    const key=`${monthKey(r.eval_month)}_${r.unit_id}_${ch}`;
+    if(!grouped.has(key))grouped.set(key,[]);
+    grouped.get(key).push({...r,eval_type:ch});
+  });
+
+  // 1순위: 항목별상세점수/월별평가결과에서 넘어온 "총점" 요약행
+  // 같은 평가단위에 클레임 40점 행이 함께 있어도 요약행을 최종 점수로 우선합니다.
+  grouped.forEach((list,key)=>{
+    const summaries=list.filter(isSummaryTotalDetailRow)
+      .map(makeMonthlyRowFromSummaryDetail)
+      .filter(r=>r.total_score!==""&&!isNaN(parseFloat(r.total_score)));
+    if(summaries.length){
+      map.set(key,consolidateMonthlyRows(summaries)[0]);
+    }
+  });
+
+  // 2순위: 일반 항목별상세점수 합산
+  grouped.forEach((list,key)=>{
+    if(map.has(key))return;
+    list.forEach(r=>{
+      if(isSummaryTotalDetailRow(r))return;
+      const ch=normalizeEvalType(r.eval_type || (UNITS.find(u=>u.id===r.unit_id)||{}).ch);
+      const mKey=`${monthKey(r.eval_month)}_${r.unit_id}_${ch}`;
+      if(!map.has(mKey)){
+        const cid=r.company_id||unitCompanyId(r.unit_id);
+        map.set(mKey,{
+          eval_month:monthKey(r.eval_month),
+          unit_id:r.unit_id,
+          unit_name:r.unit_name||unitName(r.unit_id),
+          company_id:cid,
+          company_name:r.company_name||coName(cid),
+          eval_type:ch,
+          total_score:0,
+          max_score:0
+        });
+      }
+      const g=map.get(mKey);
+      const sc=parseFloat(r.score);
+      const mx=parseFloat(r.max_score);
+      if(!isNaN(sc))g.total_score+=sc;
+      if(!isNaN(mx))g.max_score+=mx;
+    });
+  });
+
+  return Array.from(map.values()).map(r=>{
+    const rawTotal=parseFloat((r.total_score||0).toFixed(1));
+    const rawMax=parseFloat((r.max_score||0).toFixed(1));
+    const exp=expectedMaxForEvalType(r.eval_type);
+
+    // 종합도매는 월 중 일부 항목만 먼저 업데이트될 수 있습니다.
+    // 이 경우 총점/등급을 임의 산정하지 않고, 조회 화면에는
+    // "일부 항목 업데이트"로 표시한 뒤 상세에서 업데이트된 항목만 보여줍니다.
+    if(normalizeEvalType(r.eval_type)==="종합도매" && rawMax>0 && exp && rawMax<exp){
+      r.partial_total_score=rawTotal;
+      r.partial_max_score=rawMax;
+      r.total_score="";
+      r.max_score="";
+      r.achievement_rate="";
+      r.grade="산정중";
+      r._pending=true;
+      r._partial=true;
+      return normalizeRow(r);
+    }
+
+    r.total_score=rawTotal;
+    r.max_score=rawMax;
+    r.achievement_rate=r.max_score?parseFloat((r.total_score/r.max_score*100).toFixed(2)):"";
+    r.grade=r.grade || gradeFor(r.eval_type,r.total_score);
+    return normalizeRow(r);
+  });
+}
+function makePendingMonthlyRow(unit,month){
+  return normalizeRow({
+    eval_month:month,
+    unit_id:unit.id,
+    unit_name:unit.name,
+    company_id:unit.co,
+    company_name:coName(unit.co),
+    eval_type:unit.ch,
+    total_score:"",
+    max_score:"",
+    achievement_rate:"",
+    grade:"산정중",
+    _pending:true
+  });
+}
+function addPendingMonthlyRows(rows,params={}){
+  const month=monthKey(params.eval_month || (rows&&rows[0]?.eval_month) || "");
+  if(!month)return rows||[];
+  const companyId=params.company_id||"";
+  const evalType=normalizeEvalType(params.eval_type||"");
+  const out=(rows||[]).map(normalizeRow);
+  const existing=new Set(out.map(r=>`${monthKey(r.eval_month)}_${cleanKey(r.unit_id)}_${cleanKey(r.eval_type)}`));
+  UNITS.filter(u=>(!companyId||u.co===companyId)&&(!evalType||u.ch===evalType)).forEach(u=>{
+    const key=`${month}_${cleanKey(u.id)}_${cleanKey(u.ch)}`;
+    if(!existing.has(key))out.push(makePendingMonthlyRow(u,month));
+  });
+  const chOrder={"거점도매":1,"종합도매":2,"VC":3};
+  return out.sort((a,b)=>(chOrder[a.eval_type]||9)-(chOrder[b.eval_type]||9)||String(a.unit_id).localeCompare(String(b.unit_id),"ko"));
+}
+function expectedMaxForEvalType(ch){
+  ch=normalizeEvalType(ch);
+  if(ch==="VC")return 112;
+  if(ch==="거점도매"||ch==="종합도매")return 100;
+  return 0;
+}
+function monthlyNeedsDetailCorrection(rows){
+  const arr=(rows||[]).map(normalizeRow).filter(r=>!isPendingRow(r));
+  if(!arr.length)return true;
+  return arr.some(r=>{
+    const sc=parseFloat(r.total_score);
+    const mx=parseFloat(r.max_score);
+    if(isNaN(sc)||sc===0)return true;
+    if(isNaN(mx)||mx===0)return true;
+    if(!r.grade)return true;
+    const exp=expectedMaxForEvalType(r.eval_type);
+    if(exp && mx < exp*0.8)return true;
+    return false;
+  });
+}
+
+// 월별평가결과에 같은 평가월/평가단위/평가구분 행이 여러 번 들어올 때
+// 클레임 단독 행(40/40)보다 최종 요약 행(예: 460/460)을 우선 표시합니다.
+// 기존 5월 정상 조회를 해치지 않도록 "같은 키 안에서"만 정리합니다.
+function monthlyRowPriority(r){
+  r=normalizeRow(r||{});
+  const sc=parseFloat(r.total_score);
+  const mx=parseFloat(r.max_score);
+  const rate=parseFloat(r.achievement_rate);
+  let p=0;
+  if(!isNaN(mx))p+=mx*100000;
+  if(!isNaN(sc))p+=sc*100;
+  if(!isNaN(rate))p+=rate;
+  if(r.grade && r.grade!=="산정중")p+=10;
+  if(String(r.reason||"").includes("월별평가결과"))p+=1;
+  return p;
+}
+function consolidateMonthlyRows(rows){
+  const map=new Map();
+  (rows||[]).map(normalizeRow).forEach(r=>{
+    if(!r.eval_month || !r.unit_id || !r.eval_type)return;
+    const key=`${monthKey(r.eval_month)}_${cleanKey(r.unit_id)}_${cleanKey(r.eval_type)}`;
+    const cur=map.get(key);
+    if(!cur || monthlyRowPriority(r)>monthlyRowPriority(cur)) map.set(key,r);
+  });
+  return Array.from(map.values());
+}
+
+async function fetchMonthlySummaryDetailRows(params={}){
+  try{
+    const d=await sheetsGet("월별평가결과",params);
+    const rows=consolidateMonthlyRows(enrichMonthlyWideResults(d?.data||[],params));
+    return localFilterRows(rows,params).map(r=>normalizeRow({
+      eval_month:r.eval_month,
+      unit_id:r.unit_id,
+      unit_name:r.unit_name,
+      company_id:r.company_id||unitCompanyId(r.unit_id),
+      company_name:r.company_name||coName(r.company_id||unitCompanyId(r.unit_id)),
+      eval_type:r.eval_type,
+      item_name:"월별평가결과 총점",
+      item:"월별평가결과 총점",
+      score:r.total_score,
+      max_score:r.max_score,
+      reason:"월별평가결과 시트 기준",
+      _from_monthly_summary:true
+    })).filter(r=>r.score!==""&&!isNaN(parseFloat(r.score)));
+  }catch(e){return [];}
+}
+
+async function fetchMonthlyResults(params={}){
+  const fKey=`${monthKey(params.eval_month||"")}::${params.company_id||""}::${normalizeEvalType(params.eval_type||"")}`;
+  if(S._cache?.monthly?.has(fKey))return S._cache.monthly.get(fKey).map(r=>({...r}));
+
+  let monthly=[];
+  try{
+    const d=await sheetsGet("월별평가결과",params);
+    monthly=consolidateMonthlyRows(enrichMonthlyWideResults(d?.data||[],params).map(normalizeRow));
+  }catch(e){ monthly=[]; }
+
+  let details=[];
+  const mk=monthKey(params.eval_month||"");
+  const ch=normalizeEvalType(params.eval_type||"");
+  // 6월 거점도매는 항목별상세점수/클레임/월별요약이 동시에 존재할 수 있어
+  // 항상 상세를 한 번 더 확인합니다. 5월 정상 조회는 월별평가결과를 우선 유지합니다.
+  const forceDetailCheck = (mk==="2026-06" && (!ch || ch==="거점도매"));
+  if(forceDetailCheck || monthlyNeedsDetailCorrection(monthly)){
+    try{ details=await fetchDetailRowsWithClaim(params); }catch(e){ details=[]; }
+  }
+
+  const rebuilt=buildMonthlyResultsFromDetails(details||[]);
+
+  // 후보를 먼저 모은 뒤 같은 평가단위에서는 만점/총점이 가장 큰 최종 요약행을 우선합니다.
+  // 예: 2026-06 W001에 460/460, 40/40이 함께 있으면 460/460을 표시합니다.
+  let candidates=[];
+  candidates=candidates.concat(monthly||[],rebuilt||[]);
+
+  // 6월 공유 구글시트 직접조회는 표준 결과가 여전히 클레임 40점 수준으로만 잡힐 때만 실행합니다.
+  // 정상적으로 460/460이 잡히면 불필요한 외부 조회를 하지 않아 속도를 보호합니다.
+  let prelim=localFilterRows(consolidateMonthlyRows(candidates),params);
+  const juneHubRows=prelim.filter(r=>normalizeEvalType(r.eval_type)==="거점도매" && !isPendingRow(r));
+  const needsDirectJune = mk==="2026-06" && (!ch || ch==="거점도매") && (
+    !juneHubRows.length || juneHubRows.some(r=>{
+      const mx=parseFloat(r.max_score);
+      return isNaN(mx) || mx < 100;
+    })
+  );
+  if(needsDirectJune){
+    try{
+      const directRows=await fetchDirectJuneRows({...params,eval_month:"2026-06",eval_type:params.eval_type||"거점도매"});
+      const directMonthly=buildMonthlyResultsFromDetails(directRows||[]);
+      candidates=candidates.concat(directMonthly||[]);
+    }catch(e){}
+  }
+
+  let out=localFilterRows(consolidateMonthlyRows(candidates),params);
+
+  if(!out.length && rebuilt.length) out=localFilterRows(rebuilt,params);
+  out=addPendingMonthlyRows(consolidateMonthlyRows(out),params);
+  S._cache.monthly.set(fKey,out.map(r=>({...r})));
+  return out;
+}
+
 // ══════════════════════════════════════════════════════════
 //  DASHBOARD
 // ══════════════════════════════════════════════════════════
@@ -2502,7 +3474,7 @@ async function loadDashboard(){
 
   let results=[];
   if(S.cfg.url){
-    try{loading(true);const d=await sheetsGet("월별평가결과",{eval_month:month});loading(false);results=d?.data||[]}
+    try{loading(true);results=await fetchMonthlyResults({eval_month:month});loading(false)}
     catch(e){loading(false);toast("데이터 로드 오류: "+e.message,"err")}
   }
   S.results=results;
@@ -2510,8 +3482,8 @@ async function loadDashboard(){
 
   const scored=filtered.filter(r=>r.total_score!==""&&!isNaN(parseFloat(r.total_score)));
   const avg=scored.length?(scored.reduce((s,r)=>s+parseFloat(r.total_score||0),0)/scored.length).toFixed(1):"—";
-  const sa=filtered.filter(r=>["S","A"].includes(r.grade)).length;
-  const cd=filtered.filter(r=>["C","D"].includes(r.grade)).length;
+  const sa=filtered.filter(r=>!isPendingRow(r)&&["S","A"].includes(r.grade)).length;
+  const cd=filtered.filter(r=>!isPendingRow(r)&&["C","D"].includes(r.grade)).length;
   document.getElementById("kpi-avg").textContent=avg;
   document.getElementById("kpi-sa").textContent=filtered.length?sa:"—";
   document.getElementById("kpi-cd").textContent=filtered.length?cd:"—";
@@ -2523,7 +3495,12 @@ function renderDashEmpty(){
   document.getElementById("kpi-avg").textContent="—";
   document.getElementById("kpi-sa").textContent="—";
   document.getElementById("kpi-cd").textContent="—";
-  document.getElementById("co-grid").innerHTML='<div class="empty" style="grid-column:1/-1"><div class="ei">📋</div><p>평가월을 선택하세요</p></div>';
+  ["거점","종합","VC"].forEach(k=>{
+    const sec=document.getElementById(`ch-section-${k}`);
+    if(sec)sec.style.display="none";
+    const grid=document.getElementById(`co-grid-${k}`);
+    if(grid)grid.innerHTML="";
+  });
   document.getElementById("res-tbody").innerHTML='<tr><td colspan="8"><div class="empty"><p>데이터 없음</p></div></td></tr>';
 }
 
@@ -2566,12 +3543,14 @@ function renderCoGrid(results){
     // 채널 KPI 요약
     const scored=chResults.filter(r=>r.total_score!==""&&!isNaN(parseFloat(r.total_score)));
     const avg=scored.length?(scored.reduce((s,r)=>s+parseFloat(r.total_score),0)/scored.length).toFixed(1):"—";
-    const sa=chResults.filter(r=>["S","A"].includes(r.grade)).length;
-    const cd=chResults.filter(r=>["C","D"].includes(r.grade)).length;
+    const pendingCnt=chResults.filter(isPendingRow).length;
+    const sa=chResults.filter(r=>!isPendingRow(r)&&["S","A"].includes(r.grade)).length;
+    const cd=chResults.filter(r=>!isPendingRow(r)&&["C","D"].includes(r.grade)).length;
     if(kpiEl)kpiEl.innerHTML=
-      `<span>평균 <strong>${avg}점</strong></span>
+      `<span>평균 <strong>${avg}${scored.length?"점":""}</strong></span>
        <span>우수(S·A) <strong>${sa}개</strong></span>
-       <span>개선필요 <strong style="color:var(--red)">${cd}개</strong></span>`;
+       <span>개선필요 <strong style="color:var(--red)">${cd}개</strong></span>
+       ${pendingCnt?`<span>산정중 <strong>${pendingCnt}개</strong></span>`:""}`;
 
     // 회사별 카드 — 균등 크기
     let html="";
@@ -2582,12 +3561,14 @@ function renderCoGrid(results){
       const coRes=chResults.filter(r=>uids.includes(r.unit_id));
       if(!coRes.length)return;
       const cScored=coRes.filter(r=>r.total_score!==""&&!isNaN(parseFloat(r.total_score)));
-      const cAvg=cScored.length?(cScored.reduce((s,r)=>s+parseFloat(r.total_score),0)/cScored.length).toFixed(1):"—";
+      const cAvg=cScored.length?(cScored.reduce((s,r)=>s+parseFloat(r.total_score),0)/cScored.length).toFixed(1):"";
+      const cPending=coRes.filter(isPendingRow).length;
+      const subText=cScored.length?`${coRes.length}개 단위 · 평균 ${cAvg}점`:`${coRes.length}개 단위 · 평가 산정 중`;
       html+=`<div class="co-c" onclick="filterByCo('${co.id}')">
         <div class="co-name">${co.name}</div>
-        <div class="co-sub">${coRes.length}개 단위 · 평균 ${cAvg}점</div>
+        <div class="co-sub">${subText}${cPending&&cScored.length?` · 산정중 ${cPending}개`:""}</div>
         <div class="co-grades" style="margin-top:auto;padding-top:10px">
-          ${coRes.map(r=>`<span title="${unitName(r.unit_id)}">${gb(r.grade)}</span>`).join("")}
+          ${coRes.map(r=>`<span title="${unitName(r.unit_id)}">${gradeDisplay(r)}</span>`).join("")}
         </div>
       </div>`;
     });
@@ -2613,16 +3594,16 @@ function renderResultTable(){
   tbody.innerHTML=data.map(r=>{
     const co=coName(unitCo(r.unit_id));
     const uname=unitName(r.unit_id);
-    const rate=r.achievement_rate?fp(r.achievement_rate):"—";
-    return`<tr>
+    const month=document.getElementById("dash-month").value;
+    return`<tr class="${isPendingRow(r)?"pending-row":""}">
       <td class="left" style="padding-left:14px">${co}</td>
       <td class="left">${uname}</td>
       <td style="text-align:center">${cb(r.eval_type)}</td>
-      <td style="text-align:center">${fs(r.total_score)}</td>
-      <td style="text-align:center">${fs(r.max_score)}</td>
-      <td style="text-align:center">${rate}</td>
-      <td style="text-align:center">${gb(r.grade)}</td>
-      <td style="text-align:center"><button class="btn btn-s btn-sm" onclick="openDetail('${r.unit_id}','${r.eval_type}','${document.getElementById("dash-month").value}')">상세</button></td>
+      <td style="text-align:center">${scoreDisplay(r)}</td>
+      <td style="text-align:center">${maxDisplay(r)}</td>
+      <td style="text-align:center">${rateDisplay(r)}</td>
+      <td style="text-align:center">${gradeDisplay(r)}</td>
+      <td style="text-align:center">${detailButton(r.unit_id,r.eval_type,month,"dashboard",r)}</td>
     </tr>`;
   }).join("")||'<tr><td colspan="8"><div class="empty"><p>데이터 없음</p></div></td></tr>';
 }
@@ -2647,21 +3628,21 @@ async function loadMyEval(){
   if(S.cfg.url){
     try{
       loading(true);
-      const d=await sheetsGet("월별평가결과",{eval_month:month,company_id:u.co});
+      results=await fetchMonthlyResults({eval_month:month,company_id:u.co});
       loading(false);
-      results=d?.data||[];
     }catch(e){loading(false);toast("오류: "+e.message,"err")}
   }
   S.results=results;
 
   // 전체 KPI
-  const rates=results.map(r=>parseFloat(r.achievement_rate)).filter(n=>!isNaN(n));
+  const activeResults=results.filter(r=>!isPendingRow(r));
+  const rates=activeResults.map(r=>parseFloat(r.achievement_rate)).filter(n=>!isNaN(n));
   const avgR=rates.length?(rates.reduce((a,b)=>a+b,0)/rates.length).toFixed(1)+"%":"—";
   const go={S:0,A:1,B:2,C:3,D:4};
-  const grades=results.map(r=>r.grade).filter(Boolean);
+  const grades=activeResults.map(r=>r.grade).filter(Boolean);
   const best=grades.length?grades.sort((a,b)=>go[a]-go[b])[0]:"—";
   const cd=grades.filter(g=>["C","D"].includes(g)).length;
-  document.getElementById("my-units").textContent=results.length||"0";
+  document.getElementById("my-units").textContent=activeResults.length||"0";
   document.getElementById("my-rate").textContent=avgR;
   document.getElementById("my-best").textContent=best;
   document.getElementById("my-issues").textContent=grades.length?cd:"—";
@@ -2695,22 +3676,24 @@ function renderMyEvalSections(){
     // 채널 KPI 요약
     const scored=chData.filter(r=>!isNaN(parseFloat(r.total_score)));
     const avg=scored.length?(scored.reduce((s,r)=>s+parseFloat(r.total_score),0)/scored.length).toFixed(1):"—";
-    const sa=chData.filter(r=>["S","A"].includes(r.grade)).length;
-    const cd=chData.filter(r=>["C","D"].includes(r.grade)).length;
+    const pendingCnt=chData.filter(isPendingRow).length;
+    const sa=chData.filter(r=>!isPendingRow(r)&&["S","A"].includes(r.grade)).length;
+    const cd=chData.filter(r=>!isPendingRow(r)&&["C","D"].includes(r.grade)).length;
     if(kpiEl)kpiEl.innerHTML=
       `<span>${chData.length}개 단위</span>
-       <span>평균 <strong>${avg}점</strong></span>
+       <span>평균 <strong>${avg}${scored.length?"점":""}</strong></span>
        <span>우수 <strong>${sa}개</strong></span>
-       ${cd>0?`<span>개선필요 <strong style="color:var(--red)">${cd}개</strong></span>`:""}`;
+       ${cd>0?`<span>개선필요 <strong style="color:var(--red)">${cd}개</strong></span>`:""}
+       ${pendingCnt?`<span>산정중 <strong>${pendingCnt}개</strong></span>`:""}`;
 
     // 테이블
-    tbody.innerHTML=chData.map(r=>`<tr>
+    tbody.innerHTML=chData.map(r=>`<tr class="${isPendingRow(r)?"pending-row":""}">
       <td class="left" style="padding-left:20px">${unitName(r.unit_id)}</td>
-      <td style="text-align:center">${fs(r.total_score)}</td>
-      <td style="text-align:center">${fs(r.max_score)}</td>
-      <td style="text-align:center">${r.achievement_rate?fp(r.achievement_rate):"—"}</td>
-      <td style="text-align:center">${gb(r.grade)}</td>
-      <td style="text-align:center"><button class="btn btn-s btn-sm" onclick="openDetail('${r.unit_id}','${r.eval_type}','${month}')">상세</button></td>
+      <td style="text-align:center">${scoreDisplay(r)}</td>
+      <td style="text-align:center">${maxDisplay(r)}</td>
+      <td style="text-align:center">${rateDisplay(r)}</td>
+      <td style="text-align:center">${gradeDisplay(r)}</td>
+      <td style="text-align:center">${detailButton(r.unit_id,r.eval_type,month,"my-eval",r)}</td>
     </tr>`).join("")||`<tr><td colspan="6"><div class="empty"><p>데이터 없음</p></div></td></tr>`;
   });
 }
@@ -2723,27 +3706,39 @@ async function openDetail(uid,evalType,month,fromPage){
   document.getElementById("det-title").textContent=unitName(uid);
   document.getElementById("det-sub").textContent=`${month} · ${evalType}`;
   const r=S.results.find(x=>x.unit_id===uid&&x.eval_type===evalType)||{};
-  document.getElementById("det-score").textContent=fs(r.total_score);
-  document.getElementById("det-max").textContent=fs(r.max_score);
-  document.getElementById("det-grade").textContent=r.grade||"—";
+  document.getElementById("det-score").textContent=isPartialRow(r)?"일부 항목 업데이트":(isPendingRow(r)?"산정중":fs(r.total_score));
+  document.getElementById("det-max").textContent=(isPendingRow(r)||isPartialRow(r))?"—":fs(r.max_score);
+  document.getElementById("det-grade").textContent=(isPendingRow(r)||isPartialRow(r))?"산정중":(r.grade||"—");
   document.getElementById("det-grade").style.color=r.grade==="S"?"var(--gold)":r.grade==="D"?"var(--red)":"var(--navy-dk)";
   document.getElementById("det-ch-badge").innerHTML=cb(evalType);
-  const pct=r.max_score?parseFloat(r.total_score)/parseFloat(r.max_score)*100:0;
+  const pct=(r.max_score&&!isPartialRow(r))?parseFloat(r.total_score)/parseFloat(r.max_score)*100:0;
   document.getElementById("det-bar").style.width=Math.min(pct,100)+"%";
+
+  if(isPendingRow(r)&&!isPartialRow(r)){
+    document.getElementById("det-eval-table").innerHTML=`<div class="empty" style="padding:34px"><div class="ei">⏳</div><p>평가 산정 중입니다.<br>월초에 확인 가능합니다.</p></div>`;
+    document.querySelectorAll(".sb-item").forEach(el=>el.classList.remove("on"));
+    document.querySelectorAll(".pg").forEach(pg=>pg.classList.remove("on"));
+    document.getElementById("pg-detail").classList.add("on");
+    S.page="detail";
+    return;
+  }
 
   let details=[];
   if(S.cfg.url){
-    try{loading(true);const d=await sheetsGet("항목별상세점수",{eval_month:month,unit_id:uid});loading(false);details=d?.data||[]}
+    try{loading(true);details=await fetchDetailRowsWithClaim({eval_month:month,unit_id:uid});loading(false)}
     catch(e){loading(false);toast("오류: "+e.message,"err")}
   }
   // 현재 상세 조회 컨텍스트 저장 (클레임 팝업에서 사용)
   S.detailCtx = { uid, month };
 
-  const CLAIM_ITEMS = ["배송지연 발생율","오배송 발생율","오출하 발생율","불량및파손 발생율"];
+  const CLAIM_ITEMS = CLAIM_ITEM_NAMES;
 
   if(!details.length){
     document.getElementById("det-eval-table").innerHTML=`<div class="empty" style="padding:24px"><p>상세 데이터 없음</p></div>`;
   } else {
+    const partialNotice = isPartialRow(r)
+      ? `<div style="margin-bottom:12px;padding:11px 14px;border:1px solid var(--gold-border);background:var(--gold-bg);border-radius:9px;font-size:12px;color:var(--gray-600);line-height:1.6"><strong style="color:var(--gold)">일부 항목 업데이트 상태입니다.</strong><br>아래 표에는 현재 업로드된 종합도매 항목만 표시되며, 전체 총점과 등급은 모든 항목 입력 후 산정됩니다.</div>`
+      : "";
     const basicRows = details.filter(r=>!CLAIM_ITEMS.includes(r.item_name));
     const claimRows = details.filter(r=>CLAIM_ITEMS.includes(r.item_name));
 
@@ -2780,8 +3775,8 @@ async function openDetail(uid,evalType,month,fromPage){
 
       const detailBtn = showDetail
         ? `<div style="padding:8px 10px;display:flex;justify-content:center">
-            <button onclick="toggleDetPanel(this,'dpanel-${row.item_name.replace(/\s/g,'_')}')" 
-              style="font-size:12px;color:#185FA5;background:none;border:0.5px solid #B5D4F4;border-radius:6px;padding:3px 10px;cursor:pointer;white-space:nowrap">상세 ▾</button>
+            <button onclick="openClaimDetail('${row.item_name}','${uid}','${month}')" 
+              style="font-size:12px;color:#185FA5;background:none;border:0.5px solid #B5D4F4;border-radius:6px;padding:3px 10px;cursor:pointer;white-space:nowrap">상세 🔍</button>
           </div>` : "";
 
       const reasonCell = showReason
@@ -2844,7 +3839,7 @@ async function openDetail(uid,evalType,month,fromPage){
       </div>`;
     claimRows.forEach(row => { html += makeRow(row, true, true); });
 
-    document.getElementById("det-eval-table").innerHTML = html;
+    document.getElementById("det-eval-table").innerHTML = partialNotice + html;
   }
 
   document.querySelectorAll(".sb-item").forEach(el=>el.classList.remove("on"));
@@ -2890,12 +3885,12 @@ async function loadImp(){
       const impParams={};
       if(unitFilter)impParams.unit_id=unitFilter;
 
-      const [dRes,hRes]=await Promise.all([
-        sheetsGet("항목별상세점수",detParams),
+      const [detailRows,hRes]=await Promise.all([
+        fetchDetailRowsWithClaim(detParams),
         sheetsGet("개선사항이력",impParams)
       ]);
       loading(false);
-      details=dRes?.data||[];
+      details=detailRows||[];
 
       // 개선사항이력 — 평가월 필터 후 회사 필터 적용
       let rawImps=(hRes?.data||[]).filter(r=>!month||sameMonth(r.eval_month,month));
@@ -3079,7 +4074,7 @@ async function loadCompanies(filterCoId){
 
   let results=[];
   if(S.cfg.url){
-    try{loading(true);const d=await sheetsGet("월별평가결과",{eval_month:month});loading(false);results=d?.data||[]}
+    try{loading(true);results=await fetchMonthlyResults({eval_month:month});loading(false)}
     catch(e){loading(false);toast("오류: "+e.message,"err")}
   }
 
@@ -3105,14 +4100,14 @@ async function loadCompanies(filterCoId){
           <th>채널</th><th>총점</th><th>만점</th><th>달성률</th><th>등급</th><th>상세</th>
         </tr></thead>
         <tbody>
-        ${coRes.map(r=>`<tr>
+        ${coRes.map(r=>`<tr class="${isPendingRow(r)?"pending-row":""}">
           <td class="left" style="padding-left:14px">${unitName(r.unit_id)}</td>
           <td style="text-align:center">${cb(r.eval_type)}</td>
-          <td style="text-align:center">${fs(r.total_score)}</td>
-          <td style="text-align:center">${fs(r.max_score)}</td>
-          <td style="text-align:center">${r.achievement_rate?fp(r.achievement_rate):"—"}</td>
-          <td style="text-align:center">${gb(r.grade)}</td>
-          <td style="text-align:center"><button class="btn btn-s btn-sm" onclick="openDetail('${r.unit_id}','${r.eval_type}','${month}','companies')">상세</button></td>
+          <td style="text-align:center">${scoreDisplay(r)}</td>
+          <td style="text-align:center">${maxDisplay(r)}</td>
+          <td style="text-align:center">${rateDisplay(r)}</td>
+          <td style="text-align:center">${gradeDisplay(r)}</td>
+          <td style="text-align:center">${detailButton(r.unit_id,r.eval_type,month,"companies",r)}</td>
         </tr>`).join("")||'<tr><td colspan="7"><div class="empty"><p>데이터 없음</p></div></td></tr>'}
         </tbody>
       </table></div>
@@ -3143,6 +4138,24 @@ async function loadCriteria(){
 // ══════════════════════════════════════════════════════════
 //  UPLOAD
 // ══════════════════════════════════════════════════════════
+function parseCsvPreview(text){
+  const lines=String(text||"").split(/\r?\n/).filter(l=>l.trim());
+  if(!lines.length)return {headers:[],rows:[],months:[],types:[]};
+  const headers=lines[0].replace(/^\uFEFF/,"").split(",").map(h=>h.trim());
+  const rows=lines.slice(1).filter(l=>l.trim()).map(l=>{
+    const v=l.split(",");const obj={};headers.forEach((h,i)=>obj[h]=v[i]?.trim()||"");return normalizeRow(obj);
+  });
+  const months=[...new Set(rows.map(r=>r.eval_month).filter(Boolean))];
+  const types=[...new Set(rows.map(r=>r.eval_type).filter(Boolean))];
+  return {headers,rows,months,types};
+}
+function uploadScopeSummary(meta){
+  const monthText=meta.months.length?meta.months.join(", "):"평가월 확인 필요";
+  const typeText=meta.types.length?meta.types.join(", "):"평가구분 확인 필요";
+  const warn=meta.months.length>1?`<br><strong style="color:var(--red)">주의: 평가월이 여러 개 포함되어 있습니다. 월별 조회가 섞이지 않도록 파일을 분리하는 것을 권장합니다.</strong>`:"";
+  const onlyBase=meta.types.length===1&&meta.types[0]==="거점도매"?`<br><strong style="color:var(--mint)">거점도매 데이터만 반영됩니다. 종합도매/VC는 산정중으로 표시됩니다.</strong>`:"";
+  return `반영 범위: <strong>${monthText}</strong> · <strong>${typeText}</strong> · ${meta.rows.length}행${onlyBase}${warn}`;
+}
 function onFile(e){
   const file=e.target.files[0];if(!file)return;
   S.uploadFile=file.name;
@@ -3151,15 +4164,18 @@ function onFile(e){
   reader.onload=ev=>{
     const text=ev.target.result;
     S.uploadData=text;
+    const meta=parseCsvPreview(text);
+    S.uploadMeta=meta;
     const lines=text.split("\n").filter(l=>l.trim());
     if(!lines.length)return;
-    const hdrs=lines[0].split(",").map(h=>h.trim());
+    const hdrs=lines[0].replace(/^\uFEFF/,"").split(",").map(h=>h.trim());
     const rows=lines.slice(1,6).map(l=>{
       const v=l.split(",");const obj={};hdrs.forEach((h,i)=>obj[h]=v[i]?.trim()||"");return obj;
     });
     let tbl=`<table><thead><tr>${hdrs.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>`;
     rows.forEach(r=>tbl+=`<tr>${hdrs.map(h=>`<td>${r[h]||""}</td>`).join("")}</tr>`);
     tbl+="</tbody></table>";
+    document.getElementById("preview-summary").innerHTML=uploadScopeSummary(meta);
     document.getElementById("preview-tbl").innerHTML=tbl;
     document.getElementById("preview-area").style.display="block";
   };
@@ -3373,11 +4389,11 @@ async function loadClaimStatus() {
     const params = { eval_month: month };
     if (!isAdmin && cu) params.company_id = cu.co;
 
-    const d = await sheetsGet("항목별상세점수", params);
+    const allClaimRows = await fetchDetailRowsWithClaim(params);
     loading(false);
-    let rows = (d?.data || []).filter(r =>
-      ["배송지연 발생율","오배송 발생율","오출하 발생율","불량및파손 발생율"].includes(r.item_name)
-    );
+    let rows = (allClaimRows || []).filter(r =>
+      CLAIM_ITEM_NAMES.includes(canonicalClaimItemName(r.item_name||r.item))
+    ).map(r=>normalizeRow({...r,item_name:canonicalClaimItemName(r.item_name||r.item)||r.item_name}));
 
     // 도매상: 클라이언트 측 이중 필터링 (서버 필터가 안 될 경우 대비)
     if (!isAdmin && myUnitIdSet) {
@@ -3411,7 +4427,8 @@ async function loadClaimStatus() {
     rows.forEach(r => {
       if (!grouped[r.unit_id]) grouped[r.unit_id] = { unit_id:r.unit_id, items:{} };
       const p = parseReason(r.reason);
-      grouped[r.unit_id].items[r.item_name] = {
+      const itemKey = canonicalClaimItemName(r.item_name||r.item)||r.item_name;
+      grouped[r.unit_id].items[itemKey] = {
         score: parseFloat(r.score)||0,
         reason: r.reason||"",
         rate: p.rate, cnt: p.cnt, total: p.total,
@@ -3604,7 +4621,7 @@ function closeGradeModal() {
 }
 
 function cancelUpload(){
-  S.uploadData=null;S.uploadFile="";
+  S.uploadData=null;S.uploadFile="";S.uploadMeta=null;
   document.getElementById("file-in").value="";
   document.getElementById("drop-name").textContent="파일이 선택되지 않았습니다";
   document.getElementById("preview-area").style.display="none";
@@ -3615,7 +4632,16 @@ async function uploadToSheets(){
   if(!S.cfg.url){toast("Apps Script URL을 먼저 설정하세요","err");return}
   try{
     loading(true);
-    const d=await sheetsPost("upload_eval_data",{file_name:S.uploadFile,content:S.uploadData,uploaded_by:S.user.id});
+    const meta=S.uploadMeta||parseCsvPreview(S.uploadData);
+    const d=await sheetsPost("upload_eval_data",{
+      file_name:S.uploadFile,
+      content:S.uploadData,
+      uploaded_by:S.user.id,
+      upload_mode:"monthly_append_keep_existing",
+      scope_months:meta.months,
+      scope_eval_types:meta.types,
+      replace_scope_only:false
+    });
     loading(false);
     const rows = d?.result?.rows || d?.rows || 0;
     if(d.success || d.rows !== undefined){
@@ -3703,9 +4729,9 @@ async function loadTrend(){
       const params={eval_month:m};
       // 도매사 로그인 시 본인 회사 데이터만
       if(S.user?.role!=="admin") params.company_id=S.user.co;
-      const d=await sheetsGet("월별평가결과",params);
-      if(d?.data?.length){
-        allResults.push(...d.data.map(r=>({...r,_month:m})));
+      const rows=await fetchMonthlyResults(params);
+      if(rows?.length){
+        allResults.push(...rows.map(r=>({...r,_month:m})));
       }
       // 300ms 간격 — Apps Script 과부하 방지
       await new Promise(res=>setTimeout(res,300));
