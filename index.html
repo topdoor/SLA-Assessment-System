@@ -750,173 +750,6 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
 
 
 
-/* ══ PREMIUM SPLASH OVERRIDE: clean CSS hero + exact real button ══ */
-#splash{
-  position:relative;
-  min-height:100vh;
-  background:
-    radial-gradient(circle at 50% 42%, rgba(255,255,255,.98) 0 23%, rgba(255,248,238,.90) 43%, rgba(247,241,232,.96) 72%, #F4EFE8 100%) !important;
-  align-items:center;
-  justify-content:center;
-  overflow:hidden;
-  gap:0 !important;
-  isolation:isolate;
-}
-#splash::before{
-  content:"";
-  position:absolute;
-  inset:-8%;
-  background:
-    radial-gradient(circle at 18% 68%, rgba(242,140,0,.12) 0 2px, transparent 3px),
-    radial-gradient(circle at 78% 28%, rgba(242,140,0,.10) 0 2px, transparent 3px),
-    linear-gradient(115deg, transparent 0 24%, rgba(242,140,0,.10) 24.3%, transparent 25.3% 68%, rgba(242,140,0,.10) 68.4%, transparent 69.3%),
-    radial-gradient(ellipse at 50% 52%, transparent 0 32%, rgba(242,140,0,.20) 32.2%, transparent 32.8%, transparent 48%, rgba(242,140,0,.14) 48.2%, transparent 48.8%);
-  opacity:.9;
-  z-index:-2;
-  pointer-events:none;
-}
-#splash::after{
-  content:"";
-  position:absolute;
-  left:50%;
-  top:49%;
-  width:min(980px,74vw);
-  height:min(520px,62vh);
-  transform:translate(-50%,-50%);
-  border-radius:999px;
-  border:1px solid rgba(242,140,0,.20);
-  box-shadow:
-    0 0 0 22px rgba(255,255,255,.28),
-    inset 0 0 80px rgba(255,255,255,.74),
-    0 30px 100px rgba(192,120,0,.10);
-  background:linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,.14));
-  z-index:-1;
-  pointer-events:none;
-}
-.splash-inner{
-  position:relative;
-  z-index:2;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  width:min(820px,92vw);
-  margin-top:-1.5vh;
-}
-.splash-inner::before,
-.splash-inner::after{
-  content:"";
-  position:absolute;
-  z-index:-1;
-  pointer-events:none;
-}
-.splash-inner::before{
-  width:220px;
-  height:220px;
-  border-radius:50%;
-  background:radial-gradient(circle, rgba(242,140,0,.10), transparent 68%);
-  top:-54px;
-  left:50%;
-  transform:translateX(-50%);
-}
-.splash-inner::after{
-  width:640px;
-  height:1px;
-  bottom:-54px;
-  background:linear-gradient(90deg, transparent, rgba(242,140,0,.34), transparent);
-}
-#splash .sp-logo{
-  width:76px;
-  height:76px;
-  display:flex !important;
-  align-items:center;
-  justify-content:center;
-  background:none !important;
-  box-shadow:none !important;
-  border-radius:0;
-  padding:0;
-  margin-bottom:18px;
-}
-#splash .sp-logo img{
-  width:76px;
-  height:76px;
-  object-fit:contain;
-  display:block;
-  filter:drop-shadow(0 12px 22px rgba(242,140,0,.20));
-}
-#splash .sp-ui{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:12px;
-}
-#splash .sp-title{
-  display:block !important;
-  color:#111827;
-  font-size:25px; /* 기존 대비 70% */
-  line-height:1.08;
-  font-weight:900;
-  letter-spacing:-.75px;
-  text-shadow:0 4px 12px rgba(255,255,255,.86);
-}
-#splash .sp-sub{
-  display:block !important;
-  color:#7B8493;
-  font-size:11px; /* 기존 대비 70% */
-  font-weight:700;
-  margin-top:-1px;
-  text-shadow:0 3px 9px rgba(255,255,255,.86);
-}
-#splash .sp-btn{
-  position:relative !important;
-  display:inline-flex !important;
-  align-items:center;
-  justify-content:center;
-  left:auto !important;
-  top:auto !important;
-  transform:none !important;
-  width:auto !important;
-  min-width:0 !important;
-  height:auto !important;
-  margin-top:12px !important;
-  padding:12px 43px !important; /* 기존 대비 70% */
-  border-radius:999px !important;
-  background:linear-gradient(180deg,#FF9B00 0%,#F28C00 100%) !important;
-  color:#fff !important;
-  border:1px solid rgba(255,255,255,.42) !important;
-  box-shadow:0 10px 24px rgba(242,140,0,.26), inset 0 1px 0 rgba(255,255,255,.38) !important;
-  opacity:1 !important;
-  cursor:pointer;
-  font-size:12.5px !important; /* 기존 대비 70% */
-  line-height:1 !important;
-  font-weight:900 !important;
-  letter-spacing:-.2px;
-  z-index:3;
-  transition:transform .15s, box-shadow .15s, opacity .15s;
-}
-#splash .sp-btn:hover{
-  transform:translateY(-2px) !important;
-  background:linear-gradient(180deg,#FFA51A 0%,#F28C00 100%) !important;
-  box-shadow:0 13px 28px rgba(242,140,0,.30), inset 0 1px 0 rgba(255,255,255,.40) !important;
-}
-#splash .sp-btn:focus-visible{
-  outline:3px solid rgba(242,140,0,.45);
-  outline-offset:5px;
-}
-@media(max-width:900px){
-  #splash::after{width:82vw;height:52vh;}
-  #splash .sp-title{font-size:23px;}
-}
-@media(max-width:560px){
-  #splash::after{width:96vw;height:44vh;}
-  #splash .sp-logo{margin-bottom:16px;}
-  #splash .sp-title{font-size:22px;}
-  #splash .sp-sub{font-size:10px;}
-  #splash .sp-btn{padding:11px 36px !important;font-size:12px !important;}
-}
-
-
-
 /* ══ FINAL SPLASH BACKGROUND OVERRIDE: Osong factory + logistics truck ══ */
 #splash{
   position:relative;
@@ -967,35 +800,25 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  width:min(820px,92vw);
-  margin-top:-2.2vh;
+  gap:18px;
+  width:min(520px,92vw);
+  margin-top:0;
+  text-align:center;
 }
-#splash .splash-inner::before{
-  width:250px;
-  height:250px;
-  border-radius:50%;
-  background:radial-gradient(circle, rgba(255,255,255,.54), rgba(255,255,255,.18) 50%, transparent 72%);
-  top:-72px;
-  left:50%;
-  transform:translateX(-50%);
-}
-#splash .splash-inner::after{
-  width:560px;
-  height:1px;
-  bottom:-48px;
-  background:linear-gradient(90deg, transparent, rgba(242,140,0,.30), transparent);
-}
+#splash .splash-inner::before{content:none;}
+#splash .splash-inner::after{content:none;}
 #splash .sp-logo{
-  width:76px;
-  height:76px;
-  margin-bottom:18px;
+  width:100px;
+  height:100px;
+  margin-bottom:0;
+  margin-top:0;
 }
 #splash .sp-logo img{
-  width:76px;
-  height:76px;
+  width:100px;
+  height:100px;
   object-fit:contain;
   display:block;
-  filter:drop-shadow(0 12px 22px rgba(242,140,0,.24));
+  filter:drop-shadow(0 8px 18px rgba(242,140,0,.22)) brightness(1.08) contrast(1.06);
 }
 #splash .sp-title{
   color:#111827;
@@ -1012,7 +835,7 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
   margin-top:-1px;
   text-shadow:0 3px 10px rgba(255,255,255,.94);
 }
-#splash .sp-btn{
+#splash .sp-btn{display:inline-block;align-self:center;margin:0 auto;
   position:relative !important;
   display:inline-flex !important;
   align-items:center;
@@ -1046,7 +869,7 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
   #splash .sp-logo{margin-bottom:16px;}
   #splash .sp-title{font-size:22px;}
   #splash .sp-sub{font-size:10px;}
-  #splash .sp-btn{padding:11px 36px !important;font-size:12px !important;}
+  #splash .sp-btn{display:inline-block;align-self:center;margin:0 auto;padding:11px 36px !important;font-size:12px !important;}
 }
 
 
@@ -1077,19 +900,8 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
 <div id="toast"></div>
 
 <!-- ══ SPLASH ══ -->
-<div class="screen on" id="splash">
-  <div class="splash-inner">
-    <div class="sp-logo"><img src="data:image/png;base64,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" alt="대웅제약"></div>
-    <div class="sp-ui">
-      <div class="sp-title">블록형 거점도매 평가시스템</div>
-      <div class="sp-sub">대웅제약 유통지원팀 · Distribution Support Team</div>
-      <button class="sp-btn" onclick="toLogin()" aria-label="평가시스템 입장">평가시스템 입장 →</button>
-    </div>
-  </div>
-</div>
-
 <!-- ══ LOGIN ══ -->
-<div class="screen" id="login">
+<div class="screen on" id="login">
   <div class="login-page">
   <div class="login-shell">
     <div class="login-left">
@@ -1734,6 +1546,10 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
               <label>기본 평가월 (YYYY-MM)</label>
               <input type="text" id="cfg-month" placeholder="2026-05">
             </div>
+            <div class="cfg-field">
+              <label>구글시트 ID 또는 공유링크 (선택, 조회 속도 개선용)</label>
+              <input type="text" id="cfg-sheet-id" placeholder="https://docs.google.com/spreadsheets/d/.../edit">
+            </div>
           </div>
           <div>
             <div class="cfg-field">
@@ -1781,50 +1597,6 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
 
 5. 위 "연동 URL 설정"에 URL 붙여넣기 → 저장</div>
         <button class="btn btn-s btn-sm" style="margin-top:12px" onclick="downloadScript()">📥 Apps Script 파일 다운로드</button>
-      </div>
-    </div>
-
-    <!-- ══ 등급 추이 차트 ══ -->
-    <div class="pg" id="pg-trend">
-      <div class="ph">
-        <div class="ph-left">
-          <div class="pt">📈 등급 추이 차트</div>
-          <div class="ps">월별 평가등급 변화 추이</div>
-        </div>
-        <button class="btn btn-pdf btn-sm" onclick="window.print()">🖨️ PDF 출력</button>
-      </div>
-      <div class="frow">
-        <select id="trend-ch" onchange="loadTrend()">
-          <option value="">전체 채널</option>
-          <option value="거점도매">거점도매</option>
-          <option value="종합도매">종합도매</option>
-          <option value="VC">VC</option>
-        </select>
-        <select id="trend-co" onchange="loadTrend()">
-          <option value="">전체 회사</option>
-        </select>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-t">
-          <span>월별 평균 점수 추이</span>
-          <span id="trend-period" style="font-size:11px;color:var(--gray-400);font-weight:500"></span>
-        </div>
-        <div class="chart-wrap"><canvas id="chart-score" class="chart-canvas"></canvas></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-        <div class="chart-card">
-          <div class="chart-card-t" style="display:flex;align-items:center;justify-content:space-between">
-            <span>등급 분포</span>
-            <select id="grade-dist-month" onchange="updateGradeDist()" style="font-size:11px;padding:3px 8px;border:1px solid var(--gray-200);border-radius:6px;color:var(--navy)">
-              <option value="">최근월</option>
-            </select>
-          </div>
-          <div class="chart-wrap" style="height:200px"><canvas id="chart-grade" class="chart-canvas"></canvas></div>
-        </div>
-        <div class="chart-card">
-          <div class="chart-card-t">채널별 평균 점수</div>
-          <div class="chart-wrap" style="height:200px"><canvas id="chart-channel" class="chart-canvas"></canvas></div>
-        </div>
       </div>
     </div>
 
@@ -2281,6 +2053,7 @@ function loadConfig(){
   document.getElementById("cfg-url").value   =S.cfg.url   ||"";
   document.getElementById("cfg-month").value =S.cfg.month ||"2026-05";
   document.getElementById("cfg-title").value =S.cfg.title ||"블록형 거점도매 평가시스템";
+  document.getElementById("cfg-sheet-id").value = S.cfg.sheetId || "";
 }
 function saveConfig(){
   const prev=S.cfg||{};
@@ -2289,6 +2062,7 @@ function saveConfig(){
     url,
     month:document.getElementById("cfg-month").value.trim(),
     title:document.getElementById("cfg-title").value.trim(),
+    sheetId:document.getElementById("cfg-sheet-id").value.trim(),
     lastConnOk:(prev.url===url)?!!prev.lastConnOk:false,
     lastConnAt:(prev.url===url)?(prev.lastConnAt||""):"",
   };
@@ -2486,6 +2260,49 @@ function rowsFromSheetsResponse(d){
   }
   return rows;
 }
+
+// ── gviz 직접조회 (읽기 전용, Apps Script 우회로 속도 개선) ──
+function googleSheetIdFromUrl_(url){
+  const s=String(url||"").trim();
+  let m=s.match(/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+  if(m)return m[1];
+  m=s.match(/script\.google\.com\/macros\/s\/[a-zA-Z0-9_-]+\/exec/);
+  if(m)return ""; // Apps Script URL은 gviz로 직접 조회 불가 → 폴백 대상
+  return "";
+}
+function fetchGvizRows_(sheetId, sheetName){
+  return new Promise((resolve,reject)=>{
+    const cb="__slaGvizCb_"+Date.now()+"_"+Math.random().toString(36).slice(2);
+    let timer=null, script=null;
+    const cleanup=()=>{ try{delete window[cb];}catch(e){} if(timer)clearTimeout(timer); if(script&&script.parentNode)script.parentNode.removeChild(script); };
+    window[cb]=(resp)=>{
+      try{
+        if(!resp||resp.status==="error") throw new Error(resp?.errors?.[0]?.message||"gviz 조회 오류");
+        const table=resp.table||{};
+        const cols=(table.cols||[]).map((c,i)=>String(c.label||c.id||`col${i+1}`).replace(/^\uFEFF/,"").trim()||`col${i+1}`);
+        const rows=(table.rows||[]).map(row=>{
+          const obj={};
+          (row.c||[]).forEach((cell,i)=>{
+            if(!cell){ obj[cols[i]]=""; return; }
+            // 날짜 셀: cell.f (formatted "2026-06-01") 우선, 없으면 cell.v ("Date(2026,5,1)")
+            const fv = (cell.f!==undefined&&cell.f!==null&&String(cell.f).trim()!=="") ? String(cell.f) :
+                       (cell.v!==undefined&&cell.v!==null) ? String(cell.v) : "";
+            obj[cols[i]] = fv;
+          });
+          return obj;
+        }).filter(o=>Object.values(o).some(v=>String(v??"").trim()!==""));
+        cleanup(); resolve(rows);
+      }catch(e){ cleanup(); reject(e); }
+    };
+    script=document.createElement("script");
+    const qs=new URLSearchParams({tqx:`responseHandler:${cb}`, sheet:sheetName});
+    script.src=`https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?${qs.toString()}`;
+    script.onerror=()=>{cleanup();reject(new Error("gviz 직접 조회 실패"));};
+    timer=setTimeout(()=>{cleanup();reject(new Error("gviz 조회 시간 초과"));},6000);
+    document.head.appendChild(script);
+  });
+}
+
 async function sheetsGet(sheet,params={}){
   const url=S.cfg.url;if(!url)return null;
 
@@ -2494,6 +2311,19 @@ async function sheetsGet(sheet,params={}){
     const cached=S._cache.sheets.get(cKey);
     const data=localFilterRows((cached.rows||[]).map(normalizeRow),params);
     return {...(cached.d||{}),success:true,data,_rawRows:cached.rows?.length||0,_sheetParam:cached.pName,_cached:true};
+  }
+
+  // 1) gviz 직접조회 우선 시도 (Apps Script 실행 단계를 건너뛰어 훨씬 빠름)
+  const _gid = googleSheetIdFromUrl_(S.cfg.sheetId||"");
+  if(_gid){
+    try{
+      const gRows = await fetchGvizRows_(_gid, sheet);
+      const data = localFilterRows(gRows.map(normalizeRow), params);
+      S._cache.sheets.set(cKey, {rows:gRows, d:{success:true}, pName:"gviz", at:Date.now()});
+      return {success:true, data, _rawRows:gRows.length, _sheetParam:"gviz"};
+    }catch(e){
+      // gviz 실패 시 아래 Apps Script 방식으로 자동 폴백 (기능은 그대로 유지됨)
+    }
   }
 
   const known=S._sheetParamName||localStorage.getItem("sla_sheet_param_name")||"sheet";
@@ -2959,7 +2789,8 @@ async function fetchDetailRowsWithClaim(params={}){
     // 이렇게 해야 기존 5월 조회 속도와 안정성을 유지할 수 있습니다.
     if(!detailRows.length) detailRows=await fetchDetailFallbackRows(params);
     rows=rows.concat(detailRows);
-    rows=rows.concat(expandClaimStatusSummaryRows(detailRows));
+    // 항목별상세점수에서 온 행은 이미 item_name이 명확하므로 클레임 재확장 제외
+    rows=rows.concat(expandClaimStatusSummaryRows(detailRows.filter(r=>{const b=normalizeRow(r);return !b.item_name || isClaimItemName(b.item_name);})));
   }catch(e){/* 상세점수 시트가 없거나 응답 오류면 클레임 보조 시트만 시도 */}
 
   // 6월 거점도매 점수가 월별평가결과 시트의 가로형 컬럼에 저장된 경우도 상세/총점에 반영합니다.
@@ -3152,7 +2983,6 @@ function buildSidebar(){
     <div class="sb-sec">현황</div>
     <div class="sb-item on" data-p="dashboard" onclick="navTo('dashboard')"><span class="ico">📊</span> 종합 대시보드</div>
     <div class="sb-item" data-p="companies" onclick="navTo('companies')"><span class="ico">🏢</span> 회사별 현황</div>
-    <div class="sb-item" data-p="trend" onclick="navTo('trend')"><span class="ico">📈</span> 등급 추이 차트</div>
     <div class="sb-item" data-p="claim-status" onclick="navTo('claim-status')"><span class="ico">🚨</span> 클레임 현황</div>
     <div class="sb-sec">관리</div>
     <div class="sb-item" data-p="imp" onclick="navTo('imp')"><span class="ico">📝</span> 개선사항 현황</div>
@@ -3167,7 +2997,6 @@ function buildSidebar(){
     <div class="sb-sec">내 평가</div>
     <div class="sb-item on" data-p="my-eval" onclick="navTo('my-eval')"><span class="ico">📋</span> 평가 현황</div>
     <div class="sb-item" data-p="imp" onclick="navTo('imp')"><span class="ico">📝</span> 개선사항 제출</div>
-    <div class="sb-item" data-p="trend" onclick="navTo('trend')"><span class="ico">📈</span> 등급 추이</div>
     <div class="sb-item" data-p="claim-status" onclick="navTo('claim-status')"><span class="ico">🚨</span> 클레임 현황</div>
     <div class="sb-sec">안내</div>
     <div class="sb-item" data-p="notice" onclick="navTo('notice')"><span class="ico">📢</span> 공지사항</div>
@@ -3188,7 +3017,6 @@ function navTo(p){
   if(p==="crit")       loadCriteria();
   if(p==="upload")     loadUploadHist();
   if(p==="companies")  loadCompanies();
-  if(p==="trend")      loadTrend();
   if(p==="notice")     loadNotice();
   if(p==="pw")         initPwPage();
   if(p==="sheets")     {
@@ -3739,8 +3567,14 @@ async function openDetail(uid,evalType,month,fromPage){
     const partialNotice = isPartialRow(r)
       ? `<div style="margin-bottom:12px;padding:11px 14px;border:1px solid var(--gold-border);background:var(--gold-bg);border-radius:9px;font-size:12px;color:var(--gray-600);line-height:1.6"><strong style="color:var(--gold)">일부 항목 업데이트 상태입니다.</strong><br>아래 표에는 현재 업로드된 종합도매 항목만 표시되며, 전체 총점과 등급은 모든 항목 입력 후 산정됩니다.</div>`
       : "";
-    const basicRows = details.filter(r=>!CLAIM_ITEMS.includes(r.item_name));
-    const claimRows = details.filter(r=>CLAIM_ITEMS.includes(r.item_name));
+    // 기본 운영: 기본 5개 카테고리 + 이외 항목
+    const BASIC_ITEM_NAMES = ["배송관리","반품관리","재고관리","품질관리",
+      "정보제공·데이터 연계(DCM)","권역 외 유통","권역 커버리지",
+      "구색","재고금액","반품","품절","데이터 공유","월별평가결과 총점","6월 거점 실적 총점"];
+    const isClaimRow = r => CLAIM_ITEMS.includes(r.item_name) || !!canonicalClaimItemName(r.item_name||"");
+    const isBasicRow = r => !isClaimRow(r) && !!r.item_name && r.score !== "" && !isNaN(parseFloat(r.score));
+    const basicRows = details.filter(r=>isBasicRow(r));
+    const claimRows = details.filter(r=>isClaimRow(r));
 
     function makeProgressBar(score, max){
       const pct = max ? Math.min((parseFloat(score)/parseFloat(max))*100,100) : 0;
@@ -4527,353 +4361,6 @@ async function loadClaimStatus() {
 // ══════════════════════════════════════════════════════════
 //  등급 분포 차트 함수
 // ══════════════════════════════════════════════════════════
-function renderGradeDist(filtered, targetMonth) {
-  const data = filtered.filter(r => r._month === targetMonth);
-  const gradeCounts = {S:0,A:0,B:0,C:0,D:0};
-  const gradeUnits  = {S:[],A:[],B:[],C:[],D:[]};
-  data.forEach(r => {
-    const g = r.grade?.trim();
-    if (g && gradeCounts[g] !== undefined) {
-      gradeCounts[g]++;
-      gradeUnits[g].push({ unit_id: r.unit_id, unit_name: r.unit_name||r.unit_id, company_name: r.company_name||"", eval_type: r.eval_type||"", total_score: r.total_score||"" });
-    }
-  });
-
-  // 전역 저장 (클릭 시 사용)
-  S._gradeUnits = gradeUnits;
-  S._gradeMonth = targetMonth;
-
-  if(chartGrade) chartGrade.destroy();
-  const ctx2 = document.getElementById("chart-grade")?.getContext("2d");
-  const gradeMax = Math.max(...Object.values(gradeCounts));
-  if(!ctx2) return;
-
-  chartGrade = new Chart(ctx2, {
-    type: "bar",
-    data: {
-      labels: ["S등급","A등급","B등급","C등급","D등급"],
-      datasets: [{
-        label: "단위 수",
-        data: [gradeCounts.S,gradeCounts.A,gradeCounts.B,gradeCounts.C,gradeCounts.D],
-        backgroundColor: ["#0EA5E9","#2563EB","#4B5563","#D97706","#B91C1C"],
-        borderRadius: 6, borderSkipped: false,
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: {display:false},
-        tooltip: {callbacks:{label:ctx=>`${ctx.parsed.y}개 단위 (클릭하여 목록 보기)`}},
-        datalabels: {
-          display: true, anchor:"end", align:"top",
-          color:"#374151", font:{size:12,weight:"bold"},
-          formatter: v => v>0 ? `${v}개` : "",
-        }
-      },
-      scales: {
-        y: { beginAtZero:true, max:gradeMax+2, ticks:{stepSize:1,precision:0}, grid:{color:"rgba(0,0,0,.05)"} },
-        x: { grid:{display:false} }
-      },
-      onClick: (evt, elements) => {
-        if (!elements.length) return;
-        const grades = ["S","A","B","C","D"];
-        const grade = grades[elements[0].index];
-        openGradeModal(grade);
-      }
-    }
-  });
-}
-
-function updateGradeDist() {
-  const sel = document.getElementById("grade-dist-month");
-  const month = sel?.value || S._trendLastMonth;
-  if (S._trendFiltered) renderGradeDist(S._trendFiltered, month);
-}
-
-function openGradeModal(grade) {
-  const units = S._gradeUnits?.[grade] || [];
-  const month = S._gradeMonth || "";
-  const GRADE_COLOR = {S:"#0EA5E9",A:"#2563EB",B:"#4B5563",C:"#D97706",D:"#B91C1C"};
-  const color = GRADE_COLOR[grade] || "#374151";
-
-  const modal = document.getElementById("grade-modal");
-  document.getElementById("grade-modal-title").textContent = `${grade}등급 도매상 목록`;
-  document.getElementById("grade-modal-sub").textContent = `${month} 기준 · ${units.length}개 단위`;
-  document.getElementById("grade-modal-title").style.color = color;
-
-  const tbody = document.getElementById("grade-modal-tbody");
-  tbody.innerHTML = units.length
-    ? units.map((u,i) => `<tr>
-        <td style="text-align:center;font-size:11px;color:var(--gray-400)">${i+1}</td>
-        <td style="font-size:11px;color:var(--gray-400)">${u.unit_id}</td>
-        <td style="font-size:13px;font-weight:500">${u.unit_name}</td>
-        <td style="font-size:12px;color:var(--gray-500)">${u.company_name}</td>
-        <td style="font-size:11px;color:var(--gray-400)">${u.eval_type}</td>
-        <td style="text-align:center;font-weight:700;color:${color}">${u.total_score ? parseFloat(u.total_score).toFixed(1)+"점" : "—"}</td>
-      </tr>`).join("")
-    : `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--gray-400)">${grade}등급 단위 없음</td></tr>`;
-
-  modal.style.display = "flex";
-}
-
-function closeGradeModal() {
-  document.getElementById("grade-modal").style.display = "none";
-}
-
-function cancelUpload(){
-  S.uploadData=null;S.uploadFile="";S.uploadMeta=null;
-  document.getElementById("file-in").value="";
-  document.getElementById("drop-name").textContent="파일이 선택되지 않았습니다";
-  document.getElementById("preview-area").style.display="none";
-}
-
-async function uploadToSheets(){
-  if(!S.uploadData){return}
-  if(!S.cfg.url){toast("Apps Script URL을 먼저 설정하세요","err");return}
-  try{
-    loading(true);
-    const meta=S.uploadMeta||parseCsvPreview(S.uploadData);
-    const d=await sheetsPost("upload_eval_data",{
-      file_name:S.uploadFile,
-      content:S.uploadData,
-      uploaded_by:S.user.id,
-      upload_mode:"monthly_append_keep_existing",
-      scope_months:meta.months,
-      scope_eval_types:meta.types,
-      replace_scope_only:false
-    });
-    loading(false);
-    const rows = d?.result?.rows || d?.rows || 0;
-    if(d.success || d.rows !== undefined){
-      toast(`업로드 완료 ✓ (${rows}행 반영)`,"ok");
-      cancelUpload();
-      loadUploadHist();
-    } else toast("오류: "+(d.error||d.message||JSON.stringify(d)),"err");
-  }catch(e){loading(false);toast("업로드 오류: "+e.message,"err")}
-}
-
-async function loadUploadHist(){
-  if(!S.cfg.url)return;
-  try{
-    const d=await sheetsGet("업로드이력",{limit:20});
-    const hist=d?.data||[];
-    document.getElementById("upload-hist").innerHTML=hist.map(h=>`<tr>
-      <td>${h.uploaded_at||"—"}</td><td>${h.uploaded_by||"—"}</td>
-      <td class="left">${h.file_name||"—"}</td><td>${h.row_count||"—"}</td>
-      <td><span class="tag-ok">${h.status||"완료"}</span></td></tr>`
-    ).join("")||'<tr><td colspan="5"><div class="empty"><p>이력 없음</p></div></td></tr>';
-  }catch(e){}
-}
-
-function downloadTemplate(){
-  const csv="\uFEFFeval_month,wholesaler_id,eval_type,item_name,score,max_score,reason\n"+
-    "2026-05,W003,거점도매,DCM 연동률,18,20,목표 미달\n"+
-    "2026-05,W003,거점도매,권역외유통률,25,25,\n"+
-    "2026-05,W003,거점도매,배송완료율,24,25,배송 지연 1건\n"+
-    "2026-05,W003,거점도매,구색확보율,15,15,\n"+
-    "2026-05,W003,거점도매,반품률,10,15,기준치 초과\n";
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
-  a.download="SLA_평가상세_업로드양식.csv";a.click();
-}
-
-function downloadScript(){
-  const url="https://raw.githubusercontent.com/your-repo/SLA_AppsScript.gs"; // 실제 배포 시 변경
-  // 파일 내용을 직접 다운로드
-  const content=document.getElementById("script-content")?.textContent;
-  toast("SLA_AppsScript.gs 파일을 별도로 제공받으세요","");
-}
-
-// ══════════════════════════════════════════════════════════
-//  PDF 출력
-// ══════════════════════════════════════════════════════════
-function printDashboard(){ window.print(); }
-
-// ══════════════════════════════════════════════════════════
-//  등급 추이 차트
-// ══════════════════════════════════════════════════════════
-let chartScore=null, chartGrade=null, chartChannel=null;
-
-async function loadTrend(){
-  const ch=document.getElementById("trend-ch")?.value||"";
-  const coFilter=document.getElementById("trend-co")?.value||"";
-
-  // 회사 셀렉트 초기화 (관리자만)
-  const coSel=document.getElementById("trend-co");
-  if(coSel){
-    if(S.user?.role==="admin"){
-      coSel.style.display="";
-      if(coSel.options.length<=1)
-        COS.forEach(c=>coSel.innerHTML+=`<option value="${c.id}">${c.name}</option>`);
-    } else {
-      coSel.style.display="none";
-    }
-  }
-
-  if(!S.cfg.url){ renderTrendEmpty(); return; }
-
-  // 최근 6개월
-  const now=new Date();
-  const months=Array.from({length:6},(_,i)=>{
-    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
-    return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
-  }).reverse();
-
-  document.getElementById("trend-period").textContent=`${months[0]} ~ ${months[months.length-1]}`;
-
-  // ── 순차 조회 (Promise.all 대신) — Apps Script 제한 방지 ──
-  let allResults=[];
-  loading(true);
-  try{
-    for(const m of months){
-      const params={eval_month:m};
-      // 도매사 로그인 시 본인 회사 데이터만
-      if(S.user?.role!=="admin") params.company_id=S.user.co;
-      const rows=await fetchMonthlyResults(params);
-      if(rows?.length){
-        allResults.push(...rows.map(r=>({...r,_month:m})));
-      }
-      // 300ms 간격 — Apps Script 과부하 방지
-      await new Promise(res=>setTimeout(res,300));
-    }
-  }catch(e){
-    loading(false);
-    toast("차트 데이터 오류: "+e.message,"err");
-    return;
-  }
-  loading(false);
-
-  if(!allResults.length){
-    toast("차트 데이터가 없습니다. 평가 데이터 업로드 후 다시 시도하세요.","");
-    renderTrendEmpty();
-    return;
-  }
-
-  // 필터
-  let filtered=[...allResults];
-  if(ch) filtered=filtered.filter(r=>r.eval_type===ch);
-  if(coFilter&&S.user?.role==="admin"){
-    const uids=new Set(UNITS.filter(u=>u.co===coFilter).map(u=>u.id));
-    filtered=filtered.filter(r=>uids.has(r.unit_id));
-  }
-
-  // ── 차트1: 월별 평균 점수 ──
-  const monthAvgs=months.map(m=>{
-    const rows=filtered.filter(r=>r._month===m&&!isNaN(parseFloat(r.total_score)));
-    return rows.length
-      ? parseFloat((rows.reduce((s,r)=>s+parseFloat(r.total_score),0)/rows.length).toFixed(1))
-      : null;
-  });
-
-  // Y축 범위 동적 계산
-  const validAvgs=monthAvgs.filter(v=>v!==null);
-  const yMin=validAvgs.length ? Math.max(0, Math.floor(Math.min(...validAvgs)/10)*10-10) : 0;
-  const yMax=validAvgs.length ? Math.min(120, Math.ceil(Math.max(...validAvgs)/10)*10+10) : 100;
-
-  if(chartScore)chartScore.destroy();
-  const ctx1=document.getElementById("chart-score")?.getContext("2d");
-  if(ctx1)chartScore=new Chart(ctx1,{
-    type:"line",
-    data:{
-      labels:months,
-      datasets:[{
-        label:"평균 점수",
-        data:monthAvgs,
-        borderColor:"#C07800",backgroundColor:"rgba(192,120,0,.08)",
-        tension:.35,pointRadius:5,pointBackgroundColor:"#C07800",
-        fill:true,borderWidth:2.5,
-        spanGaps:true,  // null 구간 연결
-      }]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{
-        legend:{display:false},
-        tooltip:{callbacks:{label:ctx=>`평균 ${ctx.parsed.y}점`}}
-      },
-      scales:{
-        y:{min:yMin,max:yMax,ticks:{stepSize:5},grid:{color:"rgba(0,0,0,.05)"}},
-        x:{grid:{display:false}}
-      }
-    }
-  });
-
-  // ── 차트2: 등급 분포 — 세로 막대 ──
-  const lastMonth=months.filter(m=>filtered.some(r=>r._month===m)).pop()||months[months.length-1];
-
-  // grade-dist-month 셀렉트 초기화 (가용 월 목록)
-  const gdSel=document.getElementById("grade-dist-month");
-  if(gdSel){
-    const availMonths=[...new Set(filtered.map(r=>r._month))].filter(Boolean).sort().reverse();
-    const curGdVal=gdSel.value;
-    gdSel.innerHTML='<option value="">최근월</option>';
-    availMonths.forEach(m=>gdSel.innerHTML+=`<option value="${m}">${m}</option>`);
-    if(curGdVal) gdSel.value=curGdVal;
-  }
-
-  // 전역 filtered 저장 (updateGradeDist에서 사용)
-  S._trendFiltered=filtered;
-  S._trendLastMonth=lastMonth;
-
-  renderGradeDist(filtered, gdSel?.value||lastMonth);
-
-  // ── 차트3: 채널별 평균 점수 + 점수 표기 ──
-  const chLabels=["거점도매","종합도매","VC"];
-  const chAvgs=chLabels.map(c=>{
-    const rows=filtered.filter(r=>r.eval_type===c&&r._month===lastMonth&&!isNaN(parseFloat(r.total_score)));
-    return rows.length
-      ? parseFloat((rows.reduce((s,r)=>s+parseFloat(r.total_score),0)/rows.length).toFixed(1))
-      : null;
-  });
-
-  const chValidAvgs=chAvgs.filter(v=>v!==null);
-  const chYMax=chValidAvgs.length ? Math.min(130, Math.ceil(Math.max(...chValidAvgs)/10)*10+15) : 120;
-
-  if(chartChannel)chartChannel.destroy();
-  const ctx3=document.getElementById("chart-channel")?.getContext("2d");
-  if(ctx3)chartChannel=new Chart(ctx3,{
-    type:"bar",
-    data:{
-      labels:chLabels,
-      datasets:[{
-        label:"평균 점수",
-        data:chAvgs,
-        backgroundColor:["rgba(63,76,108,.85)","rgba(14,144,112,.85)","rgba(192,120,0,.85)"],
-        borderRadius:6,borderSkipped:false,
-      }]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{
-        legend:{display:false},
-        tooltip:{callbacks:{label:ctx=>ctx.parsed.y!==null?`${ctx.parsed.y}점`:"데이터 없음"}},
-        datalabels:{
-          display:true,
-          anchor:"end",align:"top",
-          color:"#374151",font:{size:13,weight:"bold"},
-          formatter:v=>v!==null?`${v}점`:"",
-        }
-      },
-      scales:{
-        y:{
-          min:0,
-          max:chYMax,   // 동적 최대값 → 라벨 짤림 방지
-          ticks:{stepSize:20},
-          grid:{color:"rgba(0,0,0,.05)"}
-        },
-        x:{grid:{display:false}}
-      }
-    }
-  });
-}
-
-function renderTrendEmpty(){
-  ["chart-score","chart-grade","chart-channel"].forEach(id=>{
-    const c=document.getElementById(id);
-    if(c){const ctx=c.getContext("2d");ctx.clearRect(0,0,c.width,c.height);}
-  });
-  toast("Google Sheets 연결 후 차트가 표시됩니다","");
-}
 
 // ══════════════════════════════════════════════════════════
 //  공지사항 팝업
