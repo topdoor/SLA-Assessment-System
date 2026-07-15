@@ -6,8 +6,12 @@
 <meta name="translate" content="no">
 <title>블록형 거점도매 평가시스템 · 대웅제약 유통지원팀</title>
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<!-- [경량화] defer 추가: 차트 스크립트는 실제 렌더링(대시보드 추이 차트) 시점에만
+     쓰이는데, defer가 없으면 브라우저가 이 두 외부 스크립트를 전부 내려받고
+     실행할 때까지 나머지 페이지 파싱/렌더링이 멈춥니다. defer로 바꾸면
+     HTML 파싱과 병렬로 내려받고 문서 로드 직후 실행되어 초기 화면이 더 빨리 뜹니다. -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js" defer></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -413,6 +417,8 @@ html,body{height:100%;font-family:'Pretendard','Noto Sans KR','Apple SD Gothic N
 .kpi.k-mint{border-top-color:var(--mint)}.kpi.k-red{border-top-color:var(--red)}
 .kpi-l{font-size:10px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.7px}
 .kpi-v{font-size:26px;font-weight:900;color:var(--navy-dk);margin:5px 0 2px}
+.kpi-v-sm{font-size:14px;font-weight:800;line-height:1.7;margin:8px 0 2px}
+.kpi-v-sm b{color:var(--navy-dk)}
 .kpi-d{font-size:11px;color:var(--gray-400)}
 /* ── CARD ── */
 .card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);
@@ -445,6 +451,82 @@ tr.pending-row:hover{background:#F3F4F6}
 .ch-거점{background:#EEF2FF;color:#3730A3}
 .ch-종합{background:#F0FDF4;color:#14532D}
 .ch-VC{background:#FFF7ED;color:#9A3412}
+
+/* ── 보고서 출력: 표지+요약(1p) → 지점별 1페이지 → 마지막 VC 페이지 ── */
+#report-root{background:var(--gray-100);padding:20px;border-radius:var(--radius);
+  display:flex;flex-direction:column;align-items:center;gap:20px}
+.rp-page{background:var(--white);width:210mm;max-width:100%;padding:14mm 12mm;
+  box-shadow:0 2px 10px rgba(20,20,30,.14);border-radius:6px;position:relative}
+.rp-pill{font-size:9.5px;font-weight:800;padding:2.5px 10px;border-radius:20px}
+.rp-pill-gj{background:#EEF2FF;color:#4338CA}
+.rp-pill-jh{background:#F0FDF4;color:#15803D}
+.rp-pill-vc{background:#FFF7ED;color:#C2410C}
+.rp-grade-chip{display:inline-block;font-size:9.5px;font-weight:800;padding:2px 9px;border-radius:20px;color:#fff;margin-left:6px}
+.rp-g-S{background:#0EA5E9}.rp-g-A{background:#2563EB}.rp-g-B{background:#64748B}.rp-g-C{background:#D97706}.rp-g-D{background:#DC2626}
+.rp-prev{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--gray-100);color:var(--gray-600)}
+.rp-prev.up{background:#EAFBF1;color:#15803D}
+.rp-prev.down{background:#FEF2F2;color:#B91C1C}
+table.rp-grid{width:100%;border-collapse:collapse;font-size:12px}
+table.rp-grid-fixed{table-layout:fixed}
+table.rp-grid-fixed td.nm,table.rp-grid-fixed td.rs{word-break:break-word}
+table.rp-grid th{background:var(--navy);color:#fff;font-weight:700;padding:8px 6px;text-align:center;font-size:11px}
+table.rp-grid th:first-child{border-radius:8px 0 0 0}
+table.rp-grid th:last-child{border-radius:0 8px 0 0}
+table.rp-grid td{padding:6px 8px;border-bottom:1px solid var(--gray-100);text-align:center}
+table.rp-grid td.nm{text-align:left;font-weight:700;color:var(--navy-dk)}
+table.rp-grid td.rs{text-align:left;color:var(--gray-600);font-weight:400}
+table.rp-grid tr:nth-child(even) td{background:#FAFBFC}
+table.rp-grid td.dock{color:var(--red);font-weight:800}
+table.rp-grid tr.claim td{background:#FFFBEB}
+table.rp-grid tr.claim td.nm{color:#92400E}
+
+/* ── 1페이지: 표지(상단 절반) + 전체 평가 요약(하단) ── */
+.rp-cover{min-height:120mm;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;border-bottom:3px solid var(--gray-200);margin-bottom:10mm}
+.rp-cover-mark{width:52px;height:52px;border-radius:50%;background:var(--navy-dk);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;margin-bottom:12px}
+.rp-cover-brand{font-size:11px;color:var(--gray-400);font-weight:700;letter-spacing:1px}
+.rp-cover-title{font-size:23px;font-weight:900;color:var(--navy-dk);margin:9px 0 6px}
+.rp-cover-scope{font-size:13px;font-weight:800;color:var(--navy-dk);margin-top:5px}
+.rp-cover-period{font-size:11.5px;color:var(--gray-600);margin-top:12px;background:var(--gray-100);padding:6px 15px;border-radius:20px}
+.rp-sumhd{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.rp-sumhd .t{font-size:13px;font-weight:900;color:var(--navy-dk)}
+.rp-sumhd .n{margin-left:auto;font-size:10px;color:var(--gray-400)}
+table.rp-sum-grid{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
+table.rp-sum-grid th{background:var(--navy);color:#fff;font-weight:700;padding:6px 4px;text-align:center;font-size:10.5px}
+table.rp-sum-grid td{padding:5px 6px;border-bottom:1px solid var(--gray-100);text-align:center}
+table.rp-sum-grid td.nm{text-align:left;font-weight:700}
+table.rp-sum-grid td.co{text-align:left;font-weight:800;color:var(--navy-dk);background:var(--gray-50);
+  vertical-align:middle;border-right:2px solid var(--gray-200)}
+table.rp-sum-grid tr.co-first td{border-top:2.5px solid var(--gray-400)}
+/* 지점 세트(예: 원주 백제약품+백제원주(강원))가 바뀌는 경계는 선 대신 배경색을 번갈아
+   칠해서 구분합니다. 회사명 칸(rowspan)은 그대로 두고 나머지 칸만 색을 입힙니다. */
+table.rp-sum-grid tr.band-a td:not(.co){background:var(--white)}
+table.rp-sum-grid tr.band-b td:not(.co){background:#EEF2F8}
+
+/* ── 지점 페이지(거점도매+종합도매 한 세트) / VC 페이지 ── */
+.rp-loc-title{font-size:16px;font-weight:900;color:var(--navy-dk);margin-bottom:3px}
+.rp-loc-sub{font-size:10.5px;color:var(--gray-400);margin-bottom:10mm;padding-bottom:6mm;border-bottom:2px solid var(--gray-100)}
+.rp-ch-block{margin-bottom:9mm}
+.rp-ch-block:last-child{margin-bottom:0}
+.rp-ch-hd2{display:flex;align-items:center;gap:9px;margin-bottom:7px;flex-wrap:wrap}
+.rp-ch-hd2 .score{margin-left:auto;font-size:16px;font-weight:900;color:var(--navy-dk)}
+.rp-ch-hd2 .score span{font-size:10px;font-weight:600;color:var(--gray-400)}
+.rp-ch-unit-nm{font-size:11px;font-weight:700;color:var(--gray-600)}
+.rp-vc-co-block{margin-bottom:9mm}
+.rp-vc-co-block:last-child{margin-bottom:0}
+.rp-vc-co-name{font-size:12.5px;font-weight:900;color:var(--navy-dk);margin-bottom:6px}
+
+/* ── 보고서: 항목별 전달대비(CSS 도넛 — 인쇄 창에서도 JS 없이 동일하게 렌더링) ── */
+.rp-cmp-hd{font-size:10.5px;font-weight:800;color:var(--gray-400);margin:4px 0 6px}
+.rp-cmp-grid{display:grid;gap:8px;margin-bottom:10px}
+.rp-cmp-item{background:var(--white);border-radius:10px;padding:8px 4px;text-align:center}
+.rp-cmp-donut{width:52px;height:52px;border-radius:50%;margin:0 auto;position:relative;display:flex;align-items:center;justify-content:center}
+.rp-cmp-donut::before{content:"";position:absolute;inset:6px;background:var(--white);border-radius:50%}
+.rp-cmp-center{position:relative;z-index:1;font-size:10px;font-weight:900;color:var(--navy-dk)}
+.rp-cmp-name{font-size:9.5px;color:var(--gray-600);font-weight:700;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rp-cmp-delta{font-size:9px;font-weight:700;margin-top:2px}
+.rp-grp-tag{font-size:9px;font-weight:800;color:var(--gray-400);margin:8px 0 3px}
 /* ── FILTER ── */
 .frow{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
 .frow select,.frow input[type=text]{padding:8px 12px;border:1.5px solid var(--gray-200);
@@ -454,6 +536,21 @@ tr.pending-row:hover{background:#F3F4F6}
 /* ── SCORE BAR ── */
 .sbar{height:5px;background:var(--gray-200);border-radius:3px;margin-top:4px}
 .sbar-f{height:100%;border-radius:3px;background:var(--gold);transition:width .4s}
+
+/* ── 항목별 평가상세: 전달 대비 도넛 미니차트 ── */
+.det-cmp-group+.det-cmp-group{margin-top:18px}
+.det-cmp-group-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.det-cmp-group-hd .t{font-size:12px;font-weight:700;color:var(--navy-dk)}
+.det-cmp-group-hd .cnt{font-size:10.5px;font-weight:600;color:var(--gray-400);background:var(--gray-100);padding:2px 8px;border-radius:8px}
+.det-cmp-grid{display:grid;gap:12px}
+.det-cmp-item{background:var(--gray-50);border-radius:12px;padding:12px 8px;text-align:center}
+.det-cmp-name{font-size:12px;font-weight:700;color:var(--navy-dk);margin-bottom:8px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.det-cmp-donut-wrap{position:relative;width:92px;height:92px;margin:0 auto}
+.det-cmp-donut-wrap canvas{width:100%!important;height:100%!important}
+.det-cmp-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:900;color:var(--navy-dk)}
+.det-cmp-delta{margin-top:8px;font-size:11.5px;font-weight:700}
 /* ── COMPANY GRID ── */
 .co-g{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:16px}
 .co-c{background:var(--white);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);
@@ -524,6 +621,7 @@ tr.pending-row:hover{background:#F3F4F6}
 .btn-s:hover{background:var(--gray-200)}
 .btn-sm{padding:6px 13px;font-size:12px}
 .btn-navy{background:var(--navy);color:#fff}.btn-navy:hover{background:var(--navy-dk)}
+.btn-red{background:var(--red);color:#fff}.btn-red:hover{background:#961515}
 /* ── SHEETS CONFIG ── */
 .cfg-g{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .cfg-field{margin-bottom:13px}
@@ -720,9 +818,6 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
 .pw-strength.mid{background:var(--gold);width:66%}
 .pw-strength.strong{background:var(--mint);width:100%}
 
-/* ══ PDF 버튼 ══ */
-.btn-pdf{background:#DC2626;color:#fff;display:inline-flex;align-items:center;gap:6px}
-.btn-pdf:hover{background:#B91C1C}
 @media print{
   .sb,.ph .btn,.frow,.sb-footer{display:none!important}
   .main{overflow:visible!important}
@@ -1102,7 +1197,6 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
         <div class="pt">📊 종합 대시보드</div>
         <div class="ps" id="dash-sub">평가월을 선택하세요</div>
       </div>
-      <button class="btn btn-pdf btn-sm" onclick="printDashboard()">🖨️ PDF 출력</button>
       </div>
       <div class="kpi-g">
         <div class="kpi k-gold"><div class="kpi-l">총 평가단위</div><div class="kpi-v">23</div><div class="kpi-d">거점 11 · 종합 9 · VC 3</div></div>
@@ -1177,6 +1271,18 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
           <tbody id="res-tbody"><tr><td colspan="8"><div class="empty"><p>데이터 없음</p></div></td></tr></tbody>
         </table></div>
       </div>
+      <div class="card">
+        <div class="card-t">📈 거점도매 월별 실적 추이 (최근 6개월 · 평균 달성률)</div>
+        <div style="position:relative;height:260px">
+          <canvas id="dash-trend-canvas-거점도매" class="chart-canvas"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-t">📈 종합도매 월별 실적 추이 (최근 6개월 · 평균 달성률)</div>
+        <div style="position:relative;height:260px">
+          <canvas id="dash-trend-canvas-종합도매" class="chart-canvas"></canvas>
+        </div>
+      </div>
     </div>
 
     <!-- 내 평가 (도매사) -->
@@ -1185,7 +1291,6 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
         <div class="pt" id="my-title">내 평가 현황</div>
         <div class="ps" id="my-sub">평가월을 선택하세요</div>
       </div>
-      <button class="btn btn-pdf btn-sm" onclick="window.print()">🖨️ PDF 출력</button>
       </div>
       <div class="frow">
         <select id="my-month" onchange="loadMyEval()"><option value="">평가월 선택</option></select>
@@ -1196,9 +1301,16 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
           <option value="VC">VC</option>
         </select>
       </div>
+      <div id="my-imp-banner" style="display:none;align-items:center;gap:14px;background:var(--red-bg,#FEF2F2);border:1px solid #F5C2C2;border-radius:var(--radius,12px);padding:12px 18px;margin-bottom:16px">
+        <div style="font-size:20px">⏰</div>
+        <div style="flex:1;font-size:13px;color:var(--gray-800,#1F2937)">
+          미제출 개선사항 <b id="my-imp-banner-cnt" style="color:var(--red)">0</b>건이 있습니다.
+        </div>
+        <button onclick="navTo('imp')" style="background:var(--red);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">확인하기</button>
+      </div>
       <div class="kpi-g">
-        <div class="kpi k-gold"><div class="kpi-l">평가단위 수</div><div class="kpi-v" id="my-units">—</div></div>
-        <div class="kpi k-navy"><div class="kpi-l">평균 달성률</div><div class="kpi-v" id="my-rate">—</div></div>
+        <div class="kpi k-gold"><div class="kpi-l">평가단위 수</div><div class="kpi-v kpi-v-sm" id="my-units">—</div></div>
+        <div class="kpi k-navy"><div class="kpi-l">평균 달성률</div><div class="kpi-v kpi-v-sm" id="my-rate">—</div></div>
         <div class="kpi k-mint"><div class="kpi-l">최고 등급</div><div class="kpi-v" id="my-best">—</div></div>
         <div class="kpi k-red"><div class="kpi-l">개선 필요 항목</div><div class="kpi-v" id="my-issues">—</div></div>
       </div>
@@ -1207,6 +1319,12 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
         <div class="ch-section-head">
           <span class="ch ch-거점" style="font-size:12px;padding:4px 12px">거점도매</span>
           <div class="ch-section-kpi" id="my-kpi-거점도매"></div>
+        </div>
+        <div class="card" id="my-trend-card-거점도매" style="display:none;margin-top:10px">
+          <div class="card-t">📈 내 거점도매 실적 추이 (최근 6개월 · 달성률)</div>
+          <div style="position:relative;height:230px">
+            <canvas id="my-trend-canvas-거점도매" class="chart-canvas"></canvas>
+          </div>
         </div>
         <div style="background:var(--white);border:0.5px solid var(--gray-200);border-top:none;border-radius:0 0 var(--radius) var(--radius);overflow:hidden">
           <div class="tw"><table style="table-layout:fixed;width:100%">
@@ -1228,6 +1346,12 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
         <div class="ch-section-head">
           <span class="ch ch-종합" style="font-size:12px;padding:4px 12px">종합도매</span>
           <div class="ch-section-kpi" id="my-kpi-종합도매"></div>
+        </div>
+        <div class="card" id="my-trend-card-종합도매" style="display:none;margin-top:10px">
+          <div class="card-t">📈 내 종합도매 실적 추이 (최근 6개월 · 달성률)</div>
+          <div style="position:relative;height:230px">
+            <canvas id="my-trend-canvas-종합도매" class="chart-canvas"></canvas>
+          </div>
         </div>
         <div style="background:var(--white);border:0.5px solid var(--gray-200);border-top:none;border-radius:0 0 var(--radius) var(--radius);overflow:hidden">
           <div class="tw"><table style="table-layout:fixed;width:100%">
@@ -1283,15 +1407,24 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
             <span id="det-score">—</span><span style="font-size:16px;color:var(--gray-400)"> / <span id="det-max">—</span></span>
           </div>
           <div class="sbar"><div class="sbar-f" id="det-bar" style="width:0%"></div></div>
+          <div id="det-score-prev" style="font-size:11.5px;color:var(--gray-400);margin-top:7px"></div>
         </div>
         <div class="card" style="margin:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:5px">
           <div style="font-size:12px;color:var(--gray-400);font-weight:600">최종 등급</div>
           <div id="det-grade" style="font-size:44px;font-weight:900;color:var(--gold)">—</div>
           <div id="det-ch-badge">—</div>
+          <div id="det-grade-prev" style="font-size:11.5px;color:var(--gray-400)"></div>
         </div>
       </div>
+      <div class="card" id="det-compare-card" style="display:none">
+        <div class="card-t">📈 항목별 전달 대비</div>
+        <div id="det-compare-grid"></div>
+      </div>
       <div class="card" style="padding:0;overflow:hidden">
-        <div class="card-t" style="padding:14px 18px 10px">📊 항목별 평가 상세</div>
+        <div class="card-t" style="padding:14px 18px 10px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <span>📊 항목별 평가 상세</span>
+          <button id="dcm-top-btn" style="display:none;font-size:12px;font-weight:700;color:#fff;background:var(--red);border:none;border-radius:6px;padding:5px 12px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 8px rgba(185,28,28,.4)">DCM미연동 상세 🔍</button>
+        </div>
         <div id="det-eval-table"></div>
       </div>
     </div>
@@ -1359,6 +1492,40 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
       </div>
     </div>
 
+    <!-- DCM 미연동 상세 팝업 모달 -->
+    <div id="dcm-detail-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center">
+      <div style="background:var(--white);border-radius:16px;width:90%;max-width:860px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+        <div style="padding:18px 22px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div id="dcm-modal-title" style="font-size:15px;font-weight:700;color:var(--navy)">DCM 미연동 상세</div>
+            <div id="dcm-modal-sub" style="font-size:12px;color:var(--gray-400);margin-top:2px"></div>
+          </div>
+          <button onclick="closeDcmModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray-400);padding:4px 8px">✕</button>
+        </div>
+        <div style="overflow-y:auto;padding:16px 22px;flex:1">
+          <div id="dcm-modal-loading" style="text-align:center;padding:30px;color:var(--gray-400);display:none">불러오는 중...</div>
+          <div id="dcm-modal-body" style="display:none">
+            <div id="dcm-modal-summary" style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap"></div>
+            <div class="tw">
+              <table>
+                <thead><tr>
+                  <th style="width:90px">관계사</th>
+                  <th>거래처명</th>
+                  <th>주소</th>
+                </tr></thead>
+                <tbody id="dcm-modal-tbody">
+                  <tr><td colspan="3"><div class="empty"><p>데이터 없음</p></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div style="padding:12px 22px;border-top:1px solid var(--gray-100);text-align:right">
+          <button onclick="closeDcmModal()" class="btn btn-s">닫기</button>
+        </div>
+      </div>
+    </div>
+
     <!-- 개선사항 -->
     <div class="pg" id="pg-imp">
       <div class="ph"><div class="ph-left">
@@ -1368,6 +1535,13 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
       <div class="frow">
         <select id="imp-month" onchange="loadImp()"><option value="">평가월 선택</option></select>
         <select id="imp-unit" onchange="loadImp()"><option value="">전체 평가단위</option></select>
+      </div>
+      <div id="imp-wait-banner" style="display:none;align-items:center;gap:14px;background:var(--red-bg,#FEF2F2);border:1px solid #F5C2C2;border-radius:var(--radius,12px);padding:14px 18px;margin-bottom:16px">
+        <div style="font-size:22px">⏰</div>
+        <div style="flex:1;font-size:13px;color:var(--gray-800,#1F2937)">
+          이번 달 감점 항목 중 <b id="imp-wait-banner-cnt" style="color:var(--red)">0</b>건이 아직 개선사항 미제출입니다.
+          <small style="display:block;font-size:11px;color:var(--gray-600,#4B5563);margin-top:2px">지금 작성하지 않으면 다음 달에도 계속 표시됩니다</small>
+        </div>
       </div>
       <div class="kpi-g" style="grid-template-columns:repeat(3,1fr)">
         <div class="kpi k-gold"><div class="kpi-l">감점 항목</div><div class="kpi-v" id="imp-total">—</div><div class="kpi-d">만점 미달 항목</div></div>
@@ -1390,6 +1564,20 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
       </div>
     </div>
 
+
+    <!-- 보고서 출력 -->
+    <div class="pg" id="pg-report">
+      <div class="ph"><div class="ph-left">
+        <div class="pt">🖨️ 보고서 출력</div>
+        <div class="ps" id="report-sub">평가월을 선택하세요</div>
+      </div>
+      <button class="btn btn-red btn-sm" id="report-print-btn" style="display:none" onclick="printReportWindow()">🖨️ 인쇄하기(PDF저장)</button>
+      </div>
+      <div class="frow">
+        <select id="report-month" onchange="loadReport()"><option value="">평가월 선택</option></select>
+      </div>
+      <div id="report-root"></div>
+    </div>
 
     <!-- 회사별 현황 (관리자) -->
     <div class="pg" id="pg-companies">
@@ -1619,7 +1807,7 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
         <div class="tw"><table>
           <thead><tr>
             <th>코드</th><th style="text-align:left">평가단위</th><th>주문건수</th>
-            <th>배송지연</th><th>오배송</th><th>오출하</th><th>불량파손</th><th>합계점수</th>
+            <th>배송지연</th><th>오배송</th><th>오출하</th><th>불량파손</th><th>클레임 합계건수</th>
           </tr></thead>
           <tbody id="cs-tbody"></tbody>
         </table></div>
@@ -1745,28 +1933,66 @@ const GRADE_GUIDE={
 const CLAIM_ITEM_NAMES=["배송지연 발생율","오배송 발생율","오출하 발생율","불량및파손 발생율"];
 const CLAIM_STATUS_SHEET_NAMES=["클레임현황","클레임 현황","고객클레임","고객 클레임","고객클레임점수","클레임점수"];
 
+// ── DCM(데이터 연계) 미연동 상세 ──
+// "DCM미연동 리스트.csv"를 구글시트에 "DCM미연동" 탭으로 추가하면 그 데이터를 그대로 씁니다.
+// (컬럼: 관계사, 도매상사업자번호, 도매상명, 실사업번호, 거래처명, 주소, 연동유무)
+// 시트의 "도매상명"이 회사/지점 단위라 평가단위코드보다 한 단계 큰 경우가 있어,
+// 평가단위코드 → 시트상 도매상명을 명시적으로 매핑합니다.
+// ※ W016(복산부산)·W017(복산나이스 수도권4)은 원본 데이터에 "(주)복산나이스"로만
+//    구분돼 있어 두 평가단위가 같은 미연동 목록을 공유합니다(데이터 자체의 한계).
+const DCM_UNIT_NAME_MAP={
+  W012:"유진약품(주)",
+  W013:"대전백제약품",
+  W014:"백제약품(주)원주지점",
+  W015:"백제약품(주)영남본부",
+  W016:"(주)복산나이스",
+  W017:"(주)복산나이스",
+  W018:"백제약품영등포지점",
+  W019:"(주)인천약품",
+  W020:"아이팜코리아(주)",
+};
+const DCM_AFFILIATES=["대웅제약","대웅바이오","한올바이오"];
+function isDcmRow(itemName){
+  const s=String(itemName||"");
+  return s.includes("DCM")||s.includes("데이터 연계")||s.includes("정보제공");
+}
+
 // ── 항목별 배점 기준 (score→% 역산용) ──
 // 각 항목의 만점과 "기준 달성률(%)"을 정의
 // 달성률 = score / max_score * 100
 // 미연동건수 등 건수 추정: 만점 대비 감점 1점당 약 1건으로 역산 (추후 로우데이터 연동 시 대체)
+//
+// target 값은 구글시트 "평가기준" 탭의 S등급 기준(=만점 받는 최상위 구간)을 그대로 반영했습니다.
+// (2026-07-09 시트 확인: S등급 기준이 "1"로 표기된 항목은 100%를 의미)
+//  - 배송관리(TMS 배송완료 처리율)      S=100%
+//  - 재고관리(재고일치율/KGSP 준수도)   S=100% — 시트에 두 세부항목이 같은 "재고관리"명으로 있어 하나로 통합
+//  - 정보제공·데이터 연계(DCM)          S=99%
+//  - 권역 외 유통                       S=10% 이하(낮을수록 좋음)
+//  - 권역 커버리지                      S=100%
+//  - 구색/재고금액/반품/데이터 공유(VC) S=110% 이상(초과달성 가능 지표)
+//  - 품절(VC)                          목표 0건(품절 발생 자체가 없어야 함) — 시트상 %구간과 다르게
+//                                       코드에서는 건수형으로 관리 중이라 별도 변경 없음
+// ※ 반품관리(거점도매, 반품리드타임)는 시트 기준이 "1~4일" 같은 일수 구간이라
+//   %기반 target으로 표현할 수 없는 항목입니다. 우선 기존 값을 유지했으니,
+//   일수 기반 문구로 바꾸고 싶으시면 알려주세요.
 const ITEM_META = {
   // ── 거점도매 ──
-  "배송관리":        { unit:"%", target:95, countPer:1, countUnit:"건", label:"배송완료율" },
+  "배송관리":        { unit:"%", target:100, countPer:1, countUnit:"건", label:"배송완료율" },
   "고객클레임":      { unit:"건", target:0,  countPer:1, countUnit:"건", label:"클레임 발생" },
-  "반품관리":        { unit:"%", target:95, countPer:1, countUnit:"건", label:"반품처리율" },
-  "재고관리":        { unit:"%", target:95, countPer:1, countUnit:"품목", label:"재고보유율" },
+  "반품관리":        { unit:"%", target:95, countPer:1, countUnit:"건", label:"반품처리율" }, // 시트는 일수(1~4일) 기준 — 임시 유지
+  "재고관리":        { unit:"%", target:100, countPer:1, countUnit:"품목", label:"재고보유율" },
   "품질관리":        { unit:"건", target:0,  countPer:1, countUnit:"건", label:"품질이슈" },
   // ── 종합도매 ──
-  "정보제공·데이터 연계 DCM": { unit:"%", target:98, countPer:1, countUnit:"개처", label:"DCM 연동률" },
-  "DCM":             { unit:"%", target:98, countPer:1, countUnit:"개처", label:"DCM 연동률" },
-  "권역 외 유통":    { unit:"%", target:0,  countPer:1, countUnit:"건", label:"권역외유통률" },
-  "권역 커버리지":   { unit:"%", target:95, countPer:1, countUnit:"개처", label:"커버리지" },
+  "정보제공·데이터 연계 DCM": { unit:"%", target:99, countPer:1, countUnit:"개처", label:"DCM 연동률" },
+  "DCM":             { unit:"%", target:99, countPer:1, countUnit:"개처", label:"DCM 연동률" },
+  "권역 외 유통":    { unit:"%", target:10, countPer:1, countUnit:"건", label:"권역외유통률" },
+  "권역 커버리지":   { unit:"%", target:100, countPer:1, countUnit:"개처", label:"커버리지" },
   // ── VC ──
-  "구색":            { unit:"%", target:95, countPer:1, countUnit:"품목", label:"구색확보율" },
-  "재고금액":        { unit:"%", target:90, countPer:1, countUnit:"품목", label:"재고금액 달성률" },
-  "반품":            { unit:"%", target:95, countPer:1, countUnit:"건", label:"반품처리율" },
+  "구색":            { unit:"%", target:110, countPer:1, countUnit:"품목", label:"구색확보율" },
+  "재고금액":        { unit:"%", target:110, countPer:1, countUnit:"품목", label:"재고금액 달성률" },
+  "반품":            { unit:"%", target:110, countPer:1, countUnit:"건", label:"반품처리율" },
   "품절":            { unit:"건", target:0,  countPer:1, countUnit:"품목", label:"품절 발생" },
-  "데이터 공유":     { unit:"%", target:95, countPer:1, countUnit:"건", label:"데이터 공유율" },
+  "데이터 공유":     { unit:"%", target:110, countPer:1, countUnit:"건", label:"데이터 공유율" },
 };
 
 /**
@@ -1820,6 +2046,16 @@ function buildReasonText(itemName, score, maxScore, evalType, rawReason) {
     const countStr = estCount > 0 ? `약 ${estCount}${countUnit}` : `${deduct.toFixed(1)}점 감점`;
     return `${item} — ${countStr} 발생`;
   }
+}
+
+// 고객 클레임 항목의 원본 사유에는 시트에 "0.12% (9건/7,537건)"처럼
+// 발생률과 실제 건수가 함께 저장돼 있습니다(클레임현황 화면과 동일 데이터 소스).
+// 감점사유 칸에는 추정치 대신 이 실제 건수를 "9건/7,537건 발생" 형태로 보여줍니다.
+// 시트에 이 형식이 없으면 null을 반환하고, 호출부에서 기존 추정 문구로 대체합니다.
+function claimCountText(rawReason){
+  const m=String(rawReason||"").match(/([\d.]+)%\s*\((\d+)건\/([\d,]+)건\)/);
+  if(!m)return null;
+  return `${m[2]}건/${m[3]}건 발생`;
 }
 
 function gradeFor(ch,total){
@@ -1948,9 +2184,20 @@ function belongsToCurrentUserImp(r,u){
 function impCacheKey(row){
   return `${monthKey(row.eval_month)}_${rowImpKey(row)}_${String(row.submitted_by||"")}`;
 }
+// 로컬 캐시(sla_imp_cache_kor)는 "방금 제출한 내용을 서버 재조회 전에 화면에 바로
+// 보여주기 위한 임시 저장소"입니다. 그런데 만료 기준이 없어서, 시트에서 나중에 행을
+// 지워도(예: 테스트로 잘못 제출된 행 삭제) 이 캐시 때문에 화면에는 계속 남아있는
+// 문제가 있었습니다. 캐시에 저장 시각(_cachedAt)을 남기고, 24시간이 지났거나
+// (이 필드가 생기기 전에 저장된) 오래된 항목은 읽을 때 자동으로 정리합니다.
+const IMP_CACHE_TTL_MS = 24*60*60*1000;
 function getImpCache(){
-  try{return JSON.parse(localStorage.getItem("sla_imp_cache_kor")||"[]").map(normalizeRow)}
-  catch(e){return[]}
+  try{
+    const raw=JSON.parse(localStorage.getItem("sla_imp_cache_kor")||"[]");
+    const now=Date.now();
+    const fresh=raw.filter(r=>r&&r._cachedAt&&(now-r._cachedAt)<IMP_CACHE_TTL_MS);
+    if(fresh.length!==raw.length)setImpCache(fresh);
+    return fresh.map(normalizeRow);
+  }catch(e){return[]}
 }
 function setImpCache(rows){
   try{localStorage.setItem("sla_imp_cache_kor",JSON.stringify(rows.slice(-300)))}
@@ -1960,18 +2207,26 @@ function addImpCache(row){
   const rows=getImpCache();
   const nr=normalizeRow(row);
   nr.submit_id = nr.submit_id || nr["제출ID"] || `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  nr._cachedAt = Date.now();
   rows.push(nr);
   setImpCache(rows);
 }
 function mergeImpRows(remoteRows){
-  const rows=[...(remoteRows||[]),...getImpCache()].map(normalizeRow);
+  // 서버(원격)를 나중에 합쳐서 같은 키가 있으면 서버 값이 최종적으로 남도록 합니다.
+  // (로컬 캐시는 "방금 제출한 걸 화면에 바로 보여주기 위한 임시 반영"이 목적이라
+  //  서버가 이미 같은 제출을 갖고 있으면 캐시 쪽은 지워지는 게 맞습니다.)
+  const rows=[...getImpCache(),...(remoteRows||[])].map(normalizeRow);
   const map=new Map();
 
-  rows.forEach((r,idx)=>{
+  // 예전 코드는 폴백 키에 배열 인덱스(idx)까지 넣었는데, idx는 행마다 항상 다르므로
+  // 사실상 중복 제거가 전혀 안 되는 버그였습니다(제출ID가 없는 모든 행이 매번 새 키가 됨).
+  // submit_id가 없을 때는 "같은 달·같은 평가단위·같은 채널·같은 항목·같은 제출자"면
+  // 같은 제출 건으로 보고 하나로 합칩니다(수정 제출 시 최신 내용만 남음).
+  rows.forEach(r=>{
     const sid=String(r.submit_id||r["제출ID"]||"").trim();
     const key=sid
       ? `sid_${sid}`
-      : `row_${monthKey(r.eval_month)}_${cleanKey(r.unit_id)}_${cleanKey(r.eval_type)}_${cleanKey(r.item||r.item_name)}_${cleanKey(r.submitted_by)}_${cleanKey(r.submitted_at)}_${idx}`;
+      : `row_${monthKey(r.eval_month)}_${cleanKey(r.unit_id)}_${cleanKey(r.eval_type)}_${cleanKey(r.item||r.item_name)}_${cleanKey(r.submitted_by)}`;
     map.set(key,r);
   });
 
@@ -2780,42 +3035,19 @@ async function fetchDetailFallbackRows(params={}){
 async function fetchDetailRowsWithClaim(params={}){
   const dKey=`${monthKey(params.eval_month||"")}::${params.unit_id||""}::${params.company_id||""}::${normalizeEvalType(params.eval_type||"")}`;
   if(S._cache?.details?.has(dKey))return S._cache.details.get(dKey).map(r=>({...r}));
+
+  // [경량화] 새 백엔드(Code.gs)는 "항목별상세점수" 한 시트에 정량 항목과
+  // 4대 클레임 항목이 이미 각각 행으로 정리되어 들어옵니다. 과거 백엔드가
+  // 불안정하던 시절 추가됐던 후보 시트 탐색(존재하지 않는 시트 이름을
+  // 여러 개 순서대로 찔러보는 방식 — 매 요청마다 수십 번의 왕복이 발생해
+  // 로딩이 느려지는 주된 원인이었습니다)은 더 이상 필요하지 않아 제거했습니다.
   let rows=[];
-  let detailRows=[];
   try{
     const d=await sheetsGet("항목별상세점수",params);
-    detailRows=d?.data||[];
-    // 표준 시트가 비었을 때만 6월 거점 실적 후보 시트를 확인합니다.
-    // 이렇게 해야 기존 5월 조회 속도와 안정성을 유지할 수 있습니다.
-    if(!detailRows.length) detailRows=await fetchDetailFallbackRows(params);
-    rows=rows.concat(detailRows);
-    // 항목별상세점수에서 온 행은 이미 item_name이 명확하므로 클레임 재확장 제외
-    rows=rows.concat(expandClaimStatusSummaryRows(detailRows.filter(r=>{const b=normalizeRow(r);return !b.item_name || isClaimItemName(b.item_name);})));
-  }catch(e){/* 상세점수 시트가 없거나 응답 오류면 클레임 보조 시트만 시도 */}
+    rows=(d?.data||[]).map(normalizeRow);
+  }catch(e){/* 시트 조회 실패 시 빈 배열 유지 */}
 
-  // 6월 거점도매 점수가 월별평가결과 시트의 가로형 컬럼에 저장된 경우도 상세/총점에 반영합니다.
-  const monthlyWideRows=await fetchMonthlyWideDetailRows(params);
-  if(monthlyWideRows.length) rows=rows.concat(monthlyWideRows);
-
-  const claimBaseRows=await fetchClaimRowsFast(params);
-  if(claimBaseRows.length){
-    rows=rows.concat(expandClaimStatusSummaryRows(claimBaseRows));
-    rows=rows.concat(claimBaseRows.filter(r=>isClaimItemName(r.item_name||r.item)));
-  }
-
-  // 상세 화면에서 최종 총점도 같이 확인할 수 있도록 월별평가결과 총점 행을 함께 노출합니다.
-  // 특히 2026-06 거점도매는 항목별상세점수보다 월별평가결과 총점(460/460)이 우선입니다.
-  const hasNonClaimDetail=rows.map(normalizeRow).some(r=>{
-    const it=cleanKey(r.item_name||r.item||"");
-    return it && !it.includes("클레임") && !isClaimItemName(it);
-  });
-  const monthlySummaryRows=await fetchMonthlySummaryDetailRows(params);
-  if(monthlySummaryRows.length){
-    const shouldPrependSummary = !hasNonClaimDetail || monthKey(params.eval_month||"")==="2026-06";
-    if(shouldPrependSummary) rows=monthlySummaryRows.concat(rows);
-  }
-
-  const out=dedupeDetailRows(localFilterRows(rows.map(normalizeRow),params));
+  const out=dedupeDetailRows(localFilterRows(rows,params));
   S._cache.details.set(dKey,out.map(r=>({...r})));
   return out;
 }
@@ -2951,7 +3183,15 @@ function initApp(){
   if(S.cfg.url&&S.cfg.lastConnOk) setConnStatus("ok","연결 정상");
   else if(S.cfg.url) setConnStatus("idle","URL 저장됨 · 연결 테스트 필요");
   else setConnStatus("idle");
-  navTo(u.role==="admin"?"dashboard":"my-eval");
+  // "이번 달"이 아니라 실제로 데이터가 있는 가장 최근 평가월을 기본 선택으로 맞춘 뒤
+  // 첫 페이지를 불러옵니다(예: 7월 실적이 아직 없으면 6월이 기본, 7월 실적이 들어오면
+  // 자동으로 7월이 기본이 됩니다). 조회에 실패해도 fillMonths()의 기본값(이번 달)으로
+  // 그대로 진행합니다.
+  loading(true);
+  applyLatestDataMonth().finally(()=>{
+    loading(false);
+    navTo(u.role==="admin"?"dashboard":"my-eval");
+  });
   // 로그인 후 공지사항 팝업 (1초 딜레이)
   setTimeout(showNoticePopupIfNeeded, 1000);
 }
@@ -2963,7 +3203,7 @@ function fillMonths(){
     const d=new Date(now.getFullYear(),now.getMonth()-i,1);
     months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`);
   }
-  ["dash-month","my-month","imp-month","co-month","claim-month","cs-month","grade-dist-month"].forEach(sid=>{
+  ["dash-month","my-month","imp-month","co-month","claim-month","cs-month","grade-dist-month","report-month"].forEach(sid=>{
     const el=document.getElementById(sid);
     if(!el)return;
     const cur=el.value;
@@ -2972,6 +3212,58 @@ function fillMonths(){
     if(cur)el.value=cur;
     else if(S.cfg.month)el.value=S.cfg.month;
     else el.value=months[0];
+  });
+}
+
+// "이번 달"이 아니라 실제로 데이터가 있는 가장 최근 평가월을 평가월 선택의 기본값으로
+// 맞춥니다. 월별평가결과/항목별상세점수 두 시트를 (평가월 필터 없이) 통째로 조회해
+// 존재하는 eval_month 값 중 가장 최근 값을 찾아 모든 평가월 select에 반영합니다.
+// (예: 오늘이 7월이어도 아직 7월 실적이 없으면 6월이 기본으로 뜨고, 7월 실적이
+//  들어오는 순간부터는 자동으로 7월이 기본이 됩니다.)
+async function applyLatestDataMonth(){
+  if(!S.cfg.url)return;
+  // Promise.all은 두 조회 중 하나만 실패해도 전체가 실패해서 아무것도 반영되지
+  // 않는 문제가 있었습니다(예: 항목별상세점수 조회만 느리거나 실패해도 월별평가결과
+  // 쪽 정상 결과까지 통째로 버려짐). allSettled로 바꿔 하나가 실패해도 나머지로
+  // 최대한 최근 월을 판단하도록 합니다.
+  const [mres,dres]=await Promise.allSettled([
+    sheetsGet("월별평가결과",{}),
+    sheetsGet("항목별상세점수",{})
+  ]);
+  if(mres.status==="rejected")console.warn("[SLA] 최근월 판단: 월별평가결과 조회 실패",mres.reason?.message);
+  if(dres.status==="rejected")console.warn("[SLA] 최근월 판단: 항목별상세점수 조회 실패",dres.reason?.message);
+
+  const months=new Set();
+  const mdata=mres.status==="fulfilled"?(mres.value?.data||[]):[];
+  const ddata=dres.status==="fulfilled"?(dres.value?.data||[]):[];
+  // monthKey()는 시트에 지저분한/잘못된 값(예: 다른 열이 밀려 들어온 텍스트)이 있으면
+  // "2026-16"처럼 실제로는 존재하지 않는 월을 만들어낼 수 있습니다. 이런 값이
+  // 그대로 "가장 최근 월"로 뽑혀서 화면에 잘못 표시되는 사고를 막기 위해,
+  // 연도 4자리·월 01~12 범위를 만족하는 값만 후보로 인정합니다.
+  const isValidMonthKey=mk=>{
+    const m=String(mk||"").match(/^(\d{4})-(\d{2})$/);
+    if(!m)return false;
+    const mo=parseInt(m[2],10);
+    return mo>=1 && mo<=12;
+  };
+  mdata.forEach(r=>{const mk=monthKey(r.eval_month);if(isValidMonthKey(mk))months.add(mk)});
+  ddata.forEach(r=>{const mk=monthKey(r.eval_month);if(isValidMonthKey(mk))months.add(mk)});
+  if(!months.size){
+    console.warn("[SLA] 최근월 판단: 두 시트 모두에서 유효한 평가월을 찾지 못했습니다. 기본값(이번 달) 유지");
+    return;
+  }
+  const latest=[...months].sort().pop(); // "YYYY-MM" 문자열 정렬 = 시간순 정렬
+  console.log("[SLA] 평가월 기본값 자동 설정:",latest);
+  S.cfg.month=latest;
+  ["dash-month","my-month","imp-month","co-month","claim-month","cs-month","grade-dist-month","report-month"].forEach(sid=>{
+    const el=document.getElementById(sid);
+    if(!el)return;
+    // fillMonths()가 채운 목록(최근 12개월 롤링)에 latest가 없을 수도 있으므로
+    // (예: 테스트 데이터가 그 범위 밖인 경우) 옵션 자체가 없으면 추가해줍니다.
+    if(![...el.options].some(o=>o.value===latest)){
+      el.insertAdjacentHTML("beforeend",`<option value="${latest}">${latest}</option>`);
+    }
+    el.value=latest;
   });
 }
 
@@ -2984,6 +3276,7 @@ function buildSidebar(){
     <div class="sb-item on" data-p="dashboard" onclick="navTo('dashboard')"><span class="ico">📊</span> 종합 대시보드</div>
     <div class="sb-item" data-p="companies" onclick="navTo('companies')"><span class="ico">🏢</span> 회사별 현황</div>
     <div class="sb-item" data-p="claim-status" onclick="navTo('claim-status')"><span class="ico">🚨</span> 클레임 현황</div>
+    <div class="sb-item" data-p="report" onclick="navTo('report')"><span class="ico">🖨️</span> 보고서 출력</div>
     <div class="sb-sec">관리</div>
     <div class="sb-item" data-p="imp" onclick="navTo('imp')"><span class="ico">📝</span> 개선사항 현황</div>
     <div class="sb-item" data-p="upload" onclick="navTo('upload')"><span class="ico">📤</span> 데이터 업로드</div>
@@ -2998,6 +3291,7 @@ function buildSidebar(){
     <div class="sb-item on" data-p="my-eval" onclick="navTo('my-eval')"><span class="ico">📋</span> 평가 현황</div>
     <div class="sb-item" data-p="imp" onclick="navTo('imp')"><span class="ico">📝</span> 개선사항 제출</div>
     <div class="sb-item" data-p="claim-status" onclick="navTo('claim-status')"><span class="ico">🚨</span> 클레임 현황</div>
+    <div class="sb-item" data-p="report" onclick="navTo('report')"><span class="ico">🖨️</span> 보고서 출력</div>
     <div class="sb-sec">안내</div>
     <div class="sb-item" data-p="notice" onclick="navTo('notice')"><span class="ico">📢</span> 공지사항</div>
     <div class="sb-item" data-p="crit" onclick="navTo('crit')"><span class="ico">📏</span> 평가기준</div>
@@ -3017,6 +3311,7 @@ function navTo(p){
   if(p==="crit")       loadCriteria();
   if(p==="upload")     loadUploadHist();
   if(p==="companies")  loadCompanies();
+  if(p==="report")     loadReport();
   if(p==="notice")     loadNotice();
   if(p==="pw")         initPwPage();
   if(p==="sheets")     {
@@ -3118,10 +3413,11 @@ function buildMonthlyResultsFromDetails(rows){
     const rawMax=parseFloat((r.max_score||0).toFixed(1));
     const exp=expectedMaxForEvalType(r.eval_type);
 
-    // 종합도매는 월 중 일부 항목만 먼저 업데이트될 수 있습니다.
-    // 이 경우 총점/등급을 임의 산정하지 않고, 조회 화면에는
-    // "일부 항목 업데이트"로 표시한 뒤 상세에서 업데이트된 항목만 보여줍니다.
-    if(normalizeEvalType(r.eval_type)==="종합도매" && rawMax>0 && exp && rawMax<exp){
+    // 종합도매/VC는 월 중 일부 항목만 먼저 업데이트될 수 있습니다(예: 6월 VC에
+    // 데이터공유 항목이 아직 반영되지 않은 경우). 이 경우 112점/100점 기준을
+    // 임의로 재조정하지 않고, 총점/등급을 산정하지 않은 채 "일부 항목 업데이트"로
+    // 표시한 뒤 상세에서 업데이트된 항목만 보여줍니다.
+    if((normalizeEvalType(r.eval_type)==="종합도매"||normalizeEvalType(r.eval_type)==="VC") && rawMax>0 && exp && rawMax<exp){
       r.partial_total_score=rawTotal;
       r.partial_max_score=rawMax;
       r.total_score="";
@@ -3171,14 +3467,18 @@ function addPendingMonthlyRows(rows,params={}){
 }
 function expectedMaxForEvalType(ch){
   ch=normalizeEvalType(ch);
-  if(ch==="VC")return 112;
+  // VC는 2026-06부터 구색·재고금액·반품·품절 4개 항목(만점 합계 100점)으로 최종
+  // 확정되어 운영됩니다. 등급 컷은 기존처럼 원점수 기준 112(S)·100(A)·80(B)·72(C)를
+  // 그대로 유지하기로 했으므로(사용자 확정), S등급은 사실상 나오기 어렵지만
+  // 만점(100) 자체는 이 값으로 판단해야 "일부 항목 업데이트" 상태로 계속 걸리지 않습니다.
+  if(ch==="VC")return 100;
   if(ch==="거점도매"||ch==="종합도매")return 100;
   return 0;
 }
-function monthlyNeedsDetailCorrection(rows){
+function monthlyNeedsDetailCorrection(rows, params={}){
   const arr=(rows||[]).map(normalizeRow).filter(r=>!isPendingRow(r));
   if(!arr.length)return true;
-  return arr.some(r=>{
+  const invalid = arr.some(r=>{
     const sc=parseFloat(r.total_score);
     const mx=parseFloat(r.max_score);
     if(isNaN(sc)||sc===0)return true;
@@ -3188,6 +3488,19 @@ function monthlyNeedsDetailCorrection(rows){
     if(exp && mx < exp*0.8)return true;
     return false;
   });
+  if(invalid)return true;
+
+  // ["월별평가결과" 요약 시트에 통째로 빠진 평가단위 감지]
+  // 예: VC처럼 새로 데이터가 들어온 평가구분은 항목별상세점수에는 입력됐지만
+  // 월별평가결과 요약행이 아직 만들어지지 않은 경우가 있습니다. 기존 로직은
+  // "있는 행"만 검사해서 이런 통째 누락은 못 잡았기 때문에, 조회 범위(회사/평가구분)에
+  // 해당하는 평가단위 중 요약 시트에 행 자체가 없는 단위가 하나라도 있으면
+  // 상세 재계산(항목별상세점수 합산)을 시도하도록 합니다.
+  const companyId=params.company_id||"";
+  const evalType=normalizeEvalType(params.eval_type||"");
+  const present=new Set(arr.map(r=>`${cleanKey(r.unit_id)}_${cleanKey(r.eval_type)}`));
+  const relevantUnits=UNITS.filter(u=>(!companyId||u.co===companyId)&&(!evalType||u.ch===evalType));
+  return relevantUnits.some(u=>!present.has(`${cleanKey(u.id)}_${cleanKey(u.ch)}`));
 }
 
 // 월별평가결과에 같은 평가월/평가단위/평가구분 행이 여러 번 들어올 때
@@ -3242,53 +3555,48 @@ async function fetchMonthlyResults(params={}){
   const fKey=`${monthKey(params.eval_month||"")}::${params.company_id||""}::${normalizeEvalType(params.eval_type||"")}`;
   if(S._cache?.monthly?.has(fKey))return S._cache.monthly.get(fKey).map(r=>({...r}));
 
+  // [경량화] 백엔드(Code.gs)가 "월별평가결과"를 신뢰성 있게 반환하므로,
+  // 과거 백엔드 불안정 시절에 추가됐던 6월 전용 보정 조회(항목별상세점수 강제 재확인,
+  // 외부 공유시트 직접조회)는 더 이상 무조건 실행하지 않습니다. 데이터가 실제로
+  // 비어있거나 이상할 때(monthlyNeedsDetailCorrection)만 상세를 보정 조회합니다.
   let monthly=[];
   try{
     const d=await sheetsGet("월별평가결과",params);
-    monthly=consolidateMonthlyRows(enrichMonthlyWideResults(d?.data||[],params).map(normalizeRow));
+    monthly=consolidateMonthlyRows((d?.data||[]).map(normalizeRow));
   }catch(e){ monthly=[]; }
 
   let details=[];
-  const mk=monthKey(params.eval_month||"");
-  const ch=normalizeEvalType(params.eval_type||"");
-  // 6월 거점도매는 항목별상세점수/클레임/월별요약이 동시에 존재할 수 있어
-  // 항상 상세를 한 번 더 확인합니다. 5월 정상 조회는 월별평가결과를 우선 유지합니다.
-  const forceDetailCheck = (mk==="2026-06" && (!ch || ch==="거점도매"));
-  if(forceDetailCheck || monthlyNeedsDetailCorrection(monthly)){
+  if(monthlyNeedsDetailCorrection(monthly, params)){
     try{ details=await fetchDetailRowsWithClaim(params); }catch(e){ details=[]; }
   }
 
   const rebuilt=buildMonthlyResultsFromDetails(details||[]);
-
-  // 후보를 먼저 모은 뒤 같은 평가단위에서는 만점/총점이 가장 큰 최종 요약행을 우선합니다.
-  // 예: 2026-06 W001에 460/460, 40/40이 함께 있으면 460/460을 표시합니다.
-  let candidates=[];
-  candidates=candidates.concat(monthly||[],rebuilt||[]);
-
-  // 6월 공유 구글시트 직접조회는 표준 결과가 여전히 클레임 40점 수준으로만 잡힐 때만 실행합니다.
-  // 정상적으로 460/460이 잡히면 불필요한 외부 조회를 하지 않아 속도를 보호합니다.
-  let prelim=localFilterRows(consolidateMonthlyRows(candidates),params);
-  const juneHubRows=prelim.filter(r=>normalizeEvalType(r.eval_type)==="거점도매" && !isPendingRow(r));
-  const needsDirectJune = mk==="2026-06" && (!ch || ch==="거점도매") && (
-    !juneHubRows.length || juneHubRows.some(r=>{
-      const mx=parseFloat(r.max_score);
-      return isNaN(mx) || mx < 100;
-    })
-  );
-  if(needsDirectJune){
-    try{
-      const directRows=await fetchDirectJuneRows({...params,eval_month:"2026-06",eval_type:params.eval_type||"거점도매"});
-      const directMonthly=buildMonthlyResultsFromDetails(directRows||[]);
-      candidates=candidates.concat(directMonthly||[]);
-    }catch(e){}
-  }
+  const candidates=[...(monthly||[]),...(rebuilt||[])];
 
   let out=localFilterRows(consolidateMonthlyRows(candidates),params);
 
   if(!out.length && rebuilt.length) out=localFilterRows(rebuilt,params);
   out=addPendingMonthlyRows(consolidateMonthlyRows(out),params);
+  out=reconcileGradeAndRate_(out);
   S._cache.monthly.set(fKey,out.map(r=>({...r})));
   return out;
+}
+
+// [정합성 보정] "월별평가결과" 시트에 저장된 달성률/평가등급 컬럼이 총점 수정 후
+// 함께 갱신되지 않아 서로 안 맞는 경우가 있습니다(예: 종합도매 6월 — 총점만
+// 새로 반영되고 달성률·등급은 5월 값이 그대로 남아있던 사례). 총점/만점이 둘 다
+// 정상 숫자면 달성률·등급을 항상 총점 기준으로 다시 계산해서, 시트에 남아있는
+// 값이 오래됐거나 틀려도 화면에는 항상 총점과 일치하는 값이 보이도록 합니다.
+function reconcileGradeAndRate_(rows){
+  return (rows||[]).map(r=>{
+    if(isPendingRow(r)||isPartialRow(r))return r;
+    const sc=parseFloat(r.total_score), mx=parseFloat(r.max_score);
+    if(isNaN(sc)||isNaN(mx)||mx<=0)return r;
+    return {...r,
+      achievement_rate:parseFloat((sc/mx*100).toFixed(1)),
+      grade:gradeFor(r.eval_type,sc)
+    };
+  });
 }
 
 // ══════════════════════════════════════════════════════════
@@ -3317,6 +3625,7 @@ async function loadDashboard(){
   document.getElementById("kpi-cd").textContent=filtered.length?cd:"—";
   renderCoGrid(filtered);
   renderResultTable();
+  renderDashTrend();
 }
 
 function renderDashEmpty(){
@@ -3452,30 +3761,63 @@ async function loadMyEval(){
   document.getElementById("my-sub").textContent=month||"평가월을 선택하세요";
   if(!month)return;
 
-  let results=[];
+  let results=[],allResults=[];
   if(S.cfg.url){
     try{
       loading(true);
-      results=await fetchMonthlyResults({eval_month:month,company_id:u.co});
+      // allResults: 순위 계산 전용 — 다른 도매상 이름/상세는 화면에 노출하지 않고
+      // 이 평가단위가 전체 중 몇 위인지 계산하는 데만 사용합니다.
+      [results,allResults]=await Promise.all([
+        fetchMonthlyResults({eval_month:month,company_id:u.co}),
+        fetchMonthlyResults({eval_month:month})
+      ]);
       loading(false);
     }catch(e){loading(false);toast("오류: "+e.message,"err")}
   }
   S.results=results;
+  S.allResultsForRank=allResults;
 
-  // 전체 KPI
+  // 개선사항 미제출 배너
+  computeImpWaitStatus(month).then(st=>{
+    const banner=document.getElementById("my-imp-banner");
+    if(!banner)return;
+    if(st.wait>0){
+      banner.style.display="flex";
+      document.getElementById("my-imp-banner-cnt").textContent=st.wait;
+    }else{
+      banner.style.display="none";
+    }
+  });
+
+  // KPI — 거점도매/종합도매/VC는 배점 기준 자체가 달라 하나로 합산하면
+  // 의미가 왜곡되므로, 평가단위 수·평균 달성률은 유형별로 나눠서 표시합니다.
   const activeResults=results.filter(r=>!isPendingRow(r));
-  const rates=activeResults.map(r=>parseFloat(r.achievement_rate)).filter(n=>!isNaN(n));
-  const avgR=rates.length?(rates.reduce((a,b)=>a+b,0)/rates.length).toFixed(1)+"%":"—";
+  const CHS_ORDER=["거점도매","종합도매","VC"];
+  const byType=CHS_ORDER.map(ch=>{
+    const rows=activeResults.filter(r=>r.eval_type===ch);
+    const rates=rows.map(r=>parseFloat(r.achievement_rate)).filter(n=>!isNaN(n));
+    const avg=rates.length?(rates.reduce((a,b)=>a+b,0)/rates.length).toFixed(1)+"%":null;
+    return {ch,count:rows.length,avg};
+  }).filter(x=>x.count>0);
+
+  document.getElementById("my-units").innerHTML=byType.length
+    ? byType.map(x=>`${x.ch} <b>${x.count}</b>`).join(" · ")
+    : "0";
+  document.getElementById("my-rate").innerHTML=byType.length
+    ? byType.map(x=>`${x.ch} <b>${x.avg||"—"}</b>`).join(" · ")
+    : "—";
+
+  // 최고 등급 / 개선 필요 항목은 단순 최댓값·개수라 유형을 섞어도 의미가
+  // 왜곡되지 않아 그대로 전체 기준으로 둡니다.
   const go={S:0,A:1,B:2,C:3,D:4};
   const grades=activeResults.map(r=>r.grade).filter(Boolean);
   const best=grades.length?grades.sort((a,b)=>go[a]-go[b])[0]:"—";
   const cd=grades.filter(g=>["C","D"].includes(g)).length;
-  document.getElementById("my-units").textContent=activeResults.length||"0";
-  document.getElementById("my-rate").textContent=avgR;
   document.getElementById("my-best").textContent=best;
   document.getElementById("my-issues").textContent=grades.length?cd:"—";
 
   renderMyEvalSections();
+  renderMyTrend();
 }
 
 function renderMyEvalSections(){
@@ -3514,16 +3856,69 @@ function renderMyEvalSections(){
        ${cd>0?`<span>개선필요 <strong style="color:var(--red)">${cd}개</strong></span>`:""}
        ${pendingCnt?`<span>산정중 <strong>${pendingCnt}개</strong></span>`:""}`;
 
+    // 순위: 이 채널의 전체(타사 포함) 평가단위를 총점 기준으로 정렬해
+    // 이 평가단위가 몇 위인지만 계산합니다. 다른 도매상 이름/점수는 화면에 표시하지 않습니다.
+    // 동점인 경우 같은 순위를 부여하고, 다음 점수는 동점 인원 수만큼 순위를 건너뜁니다
+    // (예: 100점 8곳 공동 1위 → 다음 점수는 9위). 예전 코드는 동점 처리 없이 시트에
+    // 나온 순서대로 1,2,3...을 매겨서, 만점인데도 순서상 뒤에 있으면 낮은 순위로
+    // 보이는 문제가 있었습니다.
+    const rankMap=new Map();
+    const peers=(S.allResultsForRank||[]).filter(x=>x.eval_type===ch&&!isPendingRow(x)&&!isNaN(parseFloat(x.total_score)));
+    const sortedPeers=[...peers].sort((a,b)=>parseFloat(b.total_score)-parseFloat(a.total_score));
+    let curRank=0, prevScore=null;
+    sortedPeers.forEach((x,i)=>{
+      const sc=parseFloat(x.total_score);
+      if(prevScore===null||sc!==prevScore){ curRank=i+1; prevScore=sc; }
+      if(!rankMap.has(x.unit_id))rankMap.set(x.unit_id,{rank:curRank,total:peers.length});
+    });
+
     // 테이블
-    tbody.innerHTML=chData.map(r=>`<tr class="${isPendingRow(r)?"pending-row":""}">
+    tbody.innerHTML=chData.map(r=>{
+      const rk=rankMap.get(r.unit_id);
+      const rankHtml=rk?`<div style="font-size:10px;color:var(--gray-400);margin-top:2px">${rk.rank}/${rk.total}위</div>`:"";
+      return `<tr class="${isPendingRow(r)?"pending-row":""}">
       <td class="left" style="padding-left:20px">${unitName(r.unit_id)}</td>
       <td style="text-align:center">${scoreDisplay(r)}</td>
       <td style="text-align:center">${maxDisplay(r)}</td>
       <td style="text-align:center">${rateDisplay(r)}</td>
-      <td style="text-align:center">${gradeDisplay(r)}</td>
+      <td style="text-align:center">${gradeDisplay(r)}${rankHtml}</td>
       <td style="text-align:center">${detailButton(r.unit_id,r.eval_type,month,"my-eval",r)}</td>
-    </tr>`).join("")||`<tr><td colspan="6"><div class="empty"><p>데이터 없음</p></div></td></tr>`;
+    </tr>`;
+    }).join("")||`<tr><td colspan="6"><div class="empty"><p>데이터 없음</p></div></td></tr>`;
   });
+}
+
+function gradeRank(g){ return {S:5,A:4,B:3,C:2,D:1}[g]||0; }
+
+// 상단 총점/등급 카드에 전달 대비 정보를 채웁니다. (총점/만점 카드 아래,
+// 최종 등급 카드 아래에 작은 회색 텍스트로 "전달 대비" 문구를 추가)
+async function renderTopCompareKpi(uid, evalType, month, r){
+  const scoreEl=document.getElementById("det-score-prev");
+  const gradeEl=document.getElementById("det-grade-prev");
+  if(scoreEl)scoreEl.textContent="";
+  if(gradeEl)gradeEl.textContent="";
+  if(!S.cfg.url || isPendingRow(r) || isPartialRow(r))return;
+
+  const prevMonth=shiftMonthKey(month,-1);
+  let prevRow=null;
+  try{
+    const prevResults=await fetchMonthlyResults({eval_month:prevMonth,unit_id:uid,eval_type:evalType});
+    prevRow=(prevResults||[]).find(x=>!isPendingRow(x))||null;
+  }catch(e){ prevRow=null; }
+  if(!prevRow || isPendingRow(prevRow) || isPartialRow(prevRow))return;
+
+  const curScore=parseFloat(r.total_score), prevScore=parseFloat(prevRow.total_score);
+  if(!isNaN(curScore) && !isNaN(prevScore) && scoreEl){
+    const delta=parseFloat((curScore-prevScore).toFixed(1));
+    const deltaText=delta>0?`▲ +${delta}점`:delta<0?`▼ ${delta}점`:"동일";
+    const deltaColor=delta>0?"#0F6E56":delta<0?"#A32D2D":"#9CA3AF";
+    scoreEl.innerHTML=`전달(${prevMonth}) ${fs(prevRow.total_score)}/${fs(prevRow.max_score)} · <span style="color:${deltaColor};font-weight:700">${deltaText}</span>`;
+  }
+  if(prevRow.grade && gradeEl){
+    const rankDelta=gradeRank(r.grade)-gradeRank(prevRow.grade);
+    const arrowHtml=rankDelta===0?"":`<span style="color:${rankDelta>0?"#0F6E56":"#A32D2D"};font-weight:700">${rankDelta>0?"▲":"▼"}</span>`;
+    gradeEl.innerHTML=`전달 <b>${prevRow.grade}</b>등급 → 이번달 <b>${r.grade||"—"}</b>등급 ${arrowHtml}`;
+  }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -3541,9 +3936,13 @@ async function openDetail(uid,evalType,month,fromPage){
   document.getElementById("det-ch-badge").innerHTML=cb(evalType);
   const pct=(r.max_score&&!isPartialRow(r))?parseFloat(r.total_score)/parseFloat(r.max_score)*100:0;
   document.getElementById("det-bar").style.width=Math.min(pct,100)+"%";
+  renderTopCompareKpi(uid, evalType, month, r);
 
   if(isPendingRow(r)&&!isPartialRow(r)){
     document.getElementById("det-eval-table").innerHTML=`<div class="empty" style="padding:34px"><div class="ei">⏳</div><p>평가 산정 중입니다.<br>월초에 확인 가능합니다.</p></div>`;
+    const dcmTopBtnPending = document.getElementById("dcm-top-btn");
+    if(dcmTopBtnPending){ dcmTopBtnPending.style.display="none"; dcmTopBtnPending.onclick=null; }
+    renderDetCompareChart(uid,month,[],[]);
     document.querySelectorAll(".sb-item").forEach(el=>el.classList.remove("on"));
     document.querySelectorAll(".pg").forEach(pg=>pg.classList.remove("on"));
     document.getElementById("pg-detail").classList.add("on");
@@ -3559,13 +3958,38 @@ async function openDetail(uid,evalType,month,fromPage){
   // 현재 상세 조회 컨텍스트 저장 (클레임 팝업에서 사용)
   S.detailCtx = { uid, month };
 
+  // DCM 미연동 상세 버튼: 항목별 상세 카드 제목 옆(상단)에 한 번만 노출.
+  // 매핑된 평가단위이면서 이번 상세 데이터에 DCM 항목이 실제로 있을 때만 보여줍니다.
+  const dcmTopBtn = document.getElementById("dcm-top-btn");
+  if(dcmTopBtn){
+    const dcmAvailable = !!DCM_UNIT_NAME_MAP[uid] && details.some(d=>isDcmRow(d.item_name));
+    dcmTopBtn.style.display = dcmAvailable ? "inline-block" : "none";
+    dcmTopBtn.onclick = dcmAvailable ? ()=>openDcmDetail(uid, month) : null;
+  }
+
   const CLAIM_ITEMS = CLAIM_ITEM_NAMES;
+
+  // 전달(직전 월) 항목별 점수를 한 번만 조회해서, 아래 표의 항목별 전달 대비
+  // 표시와 "항목별 전달 대비" 도넛차트가 같은 데이터를 재사용하도록 합니다.
+  const prevMonth=shiftMonthKey(month,-1);
+  let prevByItem={};
+  if(S.cfg.url){
+    try{
+      const prevDetails=await fetchDetailRowsWithClaim({eval_month:prevMonth,unit_id:uid});
+      prevDetails.forEach(pr=>{
+        const sc=parseFloat(pr.score),mx=parseFloat(pr.max_score);
+        if(isNaN(sc)||isNaN(mx)||mx===0)return;
+        prevByItem[pr.item_name]={score:sc,max:mx,rate:parseFloat((sc/mx*100).toFixed(1))};
+      });
+    }catch(e){ prevByItem={}; }
+  }
 
   if(!details.length){
     document.getElementById("det-eval-table").innerHTML=`<div class="empty" style="padding:24px"><p>상세 데이터 없음</p></div>`;
+    renderDetCompareChart(uid,month,[],[],prevByItem,prevMonth);
   } else {
     const partialNotice = isPartialRow(r)
-      ? `<div style="margin-bottom:12px;padding:11px 14px;border:1px solid var(--gold-border);background:var(--gold-bg);border-radius:9px;font-size:12px;color:var(--gray-600);line-height:1.6"><strong style="color:var(--gold)">일부 항목 업데이트 상태입니다.</strong><br>아래 표에는 현재 업로드된 종합도매 항목만 표시되며, 전체 총점과 등급은 모든 항목 입력 후 산정됩니다.</div>`
+      ? `<div style="margin-bottom:12px;padding:11px 14px;border:1px solid var(--gold-border);background:var(--gold-bg);border-radius:9px;font-size:12px;color:var(--gray-600);line-height:1.6"><strong style="color:var(--gold)">일부 항목 업데이트 상태입니다.</strong><br>아래 표에는 현재 업로드된 ${evalType} 항목만 표시되며, 전체 총점과 등급은 모든 항목 입력 후 산정됩니다.</div>`
       : "";
     // 기본 운영: 기본 5개 카테고리 + 이외 항목
     const BASIC_ITEM_NAMES = ["배송관리","반품관리","재고관리","품질관리",
@@ -3589,11 +4013,16 @@ async function openDetail(uid,evalType,month,fromPage){
       </div>`;
     }
 
-    function makeRow(row, showReason, showDetail){
+    // showDetail: 고객 클레임 항목처럼 원본 클레임 DB 조회(상세 🔍 버튼)가 가능한 행인지 여부.
+    // 감점사유 칸 자체는 이제 기본 운영/고객 클레임 모든 항목에 공통으로 표시합니다.
+    function makeRow(row, showDetail){
       const ded = parseFloat(row.score)<parseFloat(row.max_score);
-      const reasonText = ded
-        ? buildReasonText(row.item_name,row.score,row.max_score,evalType,row.reason)
-        : (row.reason||"—");
+      // 원본 시트 reason에 실제 건수("0.12% (9건/7,537건)")가 있으면 그 값을 그대로 쓰고,
+      // 없으면(기본 운영 항목 등 건수 데이터가 없는 경우) 감점 점수 기반 추정 문구로 대체합니다.
+      const realCount = claimCountText(row.reason);
+      const reasonText = realCount
+        ? realCount
+        : (ded ? buildReasonText(row.item_name,row.score,row.max_score,evalType,row.reason) : (row.reason||"—"));
       const state = ded ? (parseFloat(row.score)/parseFloat(row.max_score)<0.6?"fail":"warn") : "pass";
       const rowBg = state==="fail"?"#FFF8F7":state==="warn"?"#FFFBF2":"#fff";
       const nameColor = state==="fail"?"#A32D2D":state==="warn"?"#854F0B":"#1F2937";
@@ -3603,18 +4032,30 @@ async function openDetail(uid,evalType,month,fromPage){
       const badgeLabel = state==="fail"?"미달":state==="warn"?"초과":"달성";
       const reasonColor = state==="fail"?"#A32D2D":state==="warn"?"#854F0B":"#9CA3AF";
 
-      const gridCols = showReason
-        ? "160px 140px 60px 60px 58px 1fr 70px"
-        : "160px 1fr 60px 60px 58px";
+      // 획득점수/만점을 별도 두 칸이 아니라 "38/40" 처럼 한 칸에 표시합니다.
+      // 감점사유 칸은 항상 표시하고, 클레임 DB 조회가 가능한 행에만 "상세 🔍" 버튼 칸을 추가합니다.
+      const gridCols = showDetail
+        ? "160px 140px 90px 58px 1fr 70px"
+        : "160px 140px 90px 58px 1fr";
 
       const detailBtn = showDetail
         ? `<div style="padding:8px 10px;display:flex;justify-content:center">
-            <button onclick="openClaimDetail('${row.item_name}','${uid}','${month}')" 
+            <button onclick="openClaimDetail('${row.item_name}','${uid}','${month}')"
               style="font-size:12px;color:#185FA5;background:none;border:0.5px solid #B5D4F4;border-radius:6px;padding:3px 10px;cursor:pointer;white-space:nowrap">상세 🔍</button>
           </div>` : "";
 
-      const reasonCell = showReason
-        ? `<div style="padding:10px 14px;font-size:12px;color:${reasonColor}">${reasonText}</div>` : "";
+      const reasonCell = `<div style="padding:10px 14px;font-size:12px;color:${reasonColor}">${reasonText}</div>`;
+
+      // 전달(직전월) 대비 표시: 같은 항목명이 전달에도 있었으면 달성률 증감을 작게 표시합니다.
+      const prevItem=prevByItem[row.item_name];
+      let prevDeltaHtml="";
+      if(prevItem){
+        const curRate=parseFloat((parseFloat(row.score)/parseFloat(row.max_score)*100).toFixed(1));
+        const deltaRate=parseFloat((curRate-prevItem.rate).toFixed(1));
+        const dColor=deltaRate>0?"#0F6E56":deltaRate<0?"#A32D2D":"#9CA3AF";
+        const dText=deltaRate>0?`▲+${deltaRate}%p`:deltaRate<0?`▼${deltaRate}%p`:"전달과 동일";
+        prevDeltaHtml=`<div style="font-size:9.5px;font-weight:700;color:${dColor};margin-top:2px;white-space:nowrap">${dText}</div>`;
+      }
 
       const panelId = `dpanel-${row.item_name.replace(/\s/g,'_')}`;
       const detailPanel = showDetail ? `
@@ -3627,8 +4068,7 @@ async function openDetail(uid,evalType,month,fromPage){
           <div style="display:grid;grid-template-columns:${gridCols};align-items:center;background:${rowBg}">
             <div style="padding:10px 14px;font-size:13px;font-weight:500;color:${nameColor}">${row.item_name}</div>
             ${makeProgressBar(row.score, row.max_score)}
-            <div style="padding:10px 8px;text-align:center;font-size:14px;font-weight:500;color:#1F2937">${fs(row.score)}</div>
-            <div style="padding:10px 8px;text-align:center;font-size:11px;color:#9CA3AF">/ ${fs(row.max_score)}</div>
+            <div style="padding:10px 8px;text-align:center;font-size:14px;font-weight:600;color:#1F2937">${fs(row.score)}<span style="font-size:11px;font-weight:400;color:#9CA3AF">/${fs(row.max_score)}</span>${prevDeltaHtml}</div>
             <div style="padding:10px 8px;display:flex;justify-content:center">
               <span style="font-size:11px;font-weight:500;padding:3px 8px;border-radius:10px;background:${badgeBg};color:${badgeColor};border:0.5px solid ${badgeBorder}">${badgeLabel}</span>
             </div>
@@ -3643,37 +4083,40 @@ async function openDetail(uid,evalType,month,fromPage){
 
     // 기본 운영 헤더
     html += `
-      <div style="display:grid;grid-template-columns:160px 1fr 60px 60px 58px;background:#2F3B52">
+      <div style="display:grid;grid-template-columns:160px 140px 90px 58px 1fr;background:#2F3B52">
         <div style="padding:9px 14px;font-size:12px;font-weight:500;color:#C8D4E8">평가항목</div>
         <div style="padding:9px 14px;font-size:12px;font-weight:500;color:#C8D4E8">달성률</div>
-        <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">획득</div>
-        <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">만점</div>
+        <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">점수</div>
         <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">상태</div>
+        <div style="padding:9px 14px;font-size:12px;font-weight:500;color:#C8D4E8">감점사유</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;padding:7px 16px;background:#F5F7FA;border-top:0.5px solid #e5e7eb">
         <span style="font-size:12px;font-weight:500;color:#3B4F6B">기본 운영</span>
         <span style="font-size:11px;padding:2px 8px;border-radius:8px;background:#E6EBF2;color:#3B4F6B;border:0.5px solid #C8D4E8">${basicRows.length}개 항목</span>
       </div>`;
-    basicRows.forEach(row => { html += makeRow(row, false, false); });
+    basicRows.forEach(row => { html += makeRow(row, false); });
 
-    // 고객 클레임 헤더
-    html += `
-      <div style="display:grid;grid-template-columns:160px 140px 60px 60px 58px 1fr 70px;background:#2F3B52;border-top:1.5px solid #4a5a72">
-        <div style="padding:9px 14px;font-size:12px;font-weight:500;color:#C8D4E8">평가항목</div>
-        <div style="padding:9px 14px;font-size:12px;font-weight:500;color:#C8D4E8">달성률</div>
-        <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">획득</div>
-        <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">만점</div>
-        <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">상태</div>
-        <div style="padding:9px 14px;font-size:12px;font-weight:500;color:#C8D4E8">감점사유</div>
-        <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">상세</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;padding:7px 16px;background:#F5F7FA;border-top:0.5px solid #e5e7eb">
-        <span style="font-size:12px;font-weight:500;color:#3B4F6B">고객 클레임</span>
-        <span style="font-size:11px;padding:2px 8px;border-radius:8px;background:#E6EBF2;color:#3B4F6B;border:0.5px solid #C8D4E8">${claimRows.length}개 항목</span>
-      </div>`;
-    claimRows.forEach(row => { html += makeRow(row, true, true); });
+    // 고객 클레임 헤더 — 해당 평가구분에 클레임 항목이 실제로 없으면(예: 종합도매)
+    // 빈 "0개 항목" 섹션 자체를 표시하지 않습니다.
+    if(claimRows.length){
+      html += `
+        <div style="display:grid;grid-template-columns:160px 140px 90px 58px 1fr 70px;background:#2F3B52;border-top:1.5px solid #4a5a72">
+          <div style="padding:9px 14px;font-size:12px;font-weight:500;color:#C8D4E8">평가항목</div>
+          <div style="padding:9px 14px;font-size:12px;font-weight:500;color:#C8D4E8">달성률</div>
+          <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">점수</div>
+          <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">상태</div>
+          <div style="padding:9px 14px;font-size:12px;font-weight:500;color:#C8D4E8">감점사유</div>
+          <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">상세</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:7px 16px;background:#F5F7FA;border-top:0.5px solid #e5e7eb">
+          <span style="font-size:12px;font-weight:500;color:#3B4F6B">고객 클레임</span>
+          <span style="font-size:11px;padding:2px 8px;border-radius:8px;background:#E6EBF2;color:#3B4F6B;border:0.5px solid #C8D4E8">${claimRows.length}개 항목</span>
+        </div>`;
+      claimRows.forEach(row => { html += makeRow(row, true); });
+    }
 
     document.getElementById("det-eval-table").innerHTML = partialNotice + html;
+    renderDetCompareChart(uid, month, basicRows, claimRows, prevByItem, prevMonth);
   }
 
   document.querySelectorAll(".sb-item").forEach(el=>el.classList.remove("on"));
@@ -3689,6 +4132,52 @@ function isImpSubmitted(h){
   const st=String(h.status||"").trim();
   const plan=String(h.plan||"").trim();
   return st.includes("제출완료") || st==="완료" || st==="완료처리" || !!plan;
+}
+
+// 개선사항 미제출 건수만 가볍게 계산합니다 (평가 현황 화면의 미제출 배너용).
+// loadImp()의 상세 표 렌더링 로직과 별개로, 배너에 필요한 숫자만 뽑아옵니다.
+async function computeImpWaitStatus(month){
+  const u=S.user;
+  if(!month||!S.cfg.url)return{ded:0,submitted:0,wait:0};
+  try{
+    const [detailRows,hRes]=await Promise.all([
+      fetchDetailRowsWithClaim({eval_month:month}),
+      sheetsGet("개선사항이력",{})
+    ]);
+    let details=detailRows||[];
+    let rawImps=(hRes?.data||[]).filter(r=>!month||sameMonth(r.eval_month,month));
+    if(u.role!=="admin"){
+      const myUids=new Set(UNITS.filter(x=>x.co===u.co).map(x=>x.id));
+      details=details.filter(r=>{
+        const cid=String(r.company_id||unitCompanyId(r.unit_id)||"").trim();
+        return cid===String(u.co)||myUids.has(String(r.unit_id));
+      });
+    }
+    const ded=details.filter(d=>
+      !isNaN(parseFloat(d.score))&&!isNaN(parseFloat(d.max_score))&&parseFloat(d.score)<parseFloat(d.max_score)
+    );
+    let allImps=mergeImpRows(rawImps);
+    if(u.role!=="admin"){
+      const myUids=new Set(UNITS.filter(x=>x.co===u.co).map(x=>x.id));
+      allImps=allImps.filter(r=>{
+        const cid=String(r.company_id||r["회사코드"]||"").trim();
+        if(cid&&cid!=="ALL")return cid===String(u.co);
+        const uid=String(r.unit_id||"").trim();
+        if(uid&&myUids.has(uid))return true;
+        if(String(r.submitted_by||"").trim()===String(u.id))return true;
+        return false;
+      });
+    }
+    const submittedImps=allImps.filter(h=>{
+      const st=String(h.status||h["처리상태"]||"").trim();
+      const plan=String(h.plan||h["개선사항및실행계획"]||"").trim();
+      const sid=String(h.submit_id||h["제출ID"]||"").trim();
+      return st.includes("제출완료")||st==="완료"||!!plan||!!sid;
+    });
+    return{ded:ded.length,submitted:submittedImps.length,wait:Math.max(0,ded.length-submittedImps.length)};
+  }catch(e){
+    return{ded:0,submitted:0,wait:0};
+  }
 }
 
 async function loadImp(){
@@ -3726,33 +4215,19 @@ async function loadImp(){
       loading(false);
       details=detailRows||[];
 
-      // 개선사항이력 — 평가월 필터 후 회사 필터 적용
+      // 개선사항이력: 평가월 필터만 우선 적용합니다. 회사(도매사) 필터는 아래에서
+      // 로컬 캐시(mergeImpRows)와 합친 뒤 한 번에 적용합니다 — 예전에는 원격 조회
+      // 결과만 회사로 걸러내고 로컬 캐시는 그대로 합쳐서, 같은 브라우저에서 다른
+      // 회사 계정으로 제출했던 개선사항이 로컬 캐시를 통해 그대로 노출되는 문제가
+      // 있었습니다(다른 도매상 개선사항이 같이 보이는 버그의 원인).
       let rawImps=(hRes?.data||[]).filter(r=>!month||sameMonth(r.eval_month,month));
 
       if(u.role!=="admin"){
         const myUids=new Set(UNITS.filter(x=>x.co===u.co).map(x=>x.id));
-
         // details 필터
         details=details.filter(r=>{
           const cid=String(r.company_id||unitCompanyId(r.unit_id)||"").trim();
           return cid===String(u.co)||myUids.has(String(r.unit_id));
-        });
-
-        // imps 필터 — 3단계 폴백
-        // 1순위: company_id 컬럼값
-        // 2순위: unit_id → UNITS 마스터에서 company 조회
-        // 3순위: submitted_by가 본인인 경우
-        rawImps=rawImps.filter(r=>{
-          // 1. company_id 직접 비교
-          const cid=String(r.company_id||r["회사코드"]||"").trim();
-          if(cid&&cid!=="ALL"&&cid!=="") return cid===String(u.co);
-          // 2. unit_id로 마스터 조회
-          const uid=String(r.unit_id||"").trim();
-          if(uid&&myUids.has(uid)) return true;
-          // 3. submitted_by가 본인
-          if(String(r.submitted_by||"").trim()===String(u.id)) return true;
-          // 모두 해당 없으면 제외
-          return false;
         });
       }
       imps=rawImps;
@@ -3767,7 +4242,25 @@ async function loadImp(){
   );
 
   // ── 제출완료 판정: status, plan, submit_id 중 하나라도 있으면 제출완료 ──
-  const allImps=mergeImpRows(imps); // 로컬 캐시와 병합
+  // 원격(imps) + 로컬 캐시(localStorage)를 먼저 합친 뒤, 회사 필터를 여기서 한 번에
+  // 적용합니다. 로컬 캐시는 브라우저 단위로 저장되어 다른 회사 계정 제출 이력도
+  // 섞여 있을 수 있으므로, 병합 이후에도 반드시 다시 걸러줘야 새는 것을 막습니다.
+  let allImps=mergeImpRows(imps);
+  if(u.role!=="admin"){
+    const myUids=new Set(UNITS.filter(x=>x.co===u.co).map(x=>x.id));
+    allImps=allImps.filter(r=>{
+      // 1. company_id 직접 비교
+      const cid=String(r.company_id||r["회사코드"]||"").trim();
+      if(cid&&cid!=="ALL") return cid===String(u.co);
+      // 2. unit_id로 마스터 조회
+      const uid=String(r.unit_id||"").trim();
+      if(uid&&myUids.has(uid)) return true;
+      // 3. submitted_by가 본인
+      if(String(r.submitted_by||"").trim()===String(u.id)) return true;
+      // 모두 해당 없으면 제외
+      return false;
+    });
+  }
   const submittedImps=allImps.filter(h=>{
     const st=String(h.status||h["처리상태"]||"").trim();
     const plan=String(h.plan||h["개선사항및실행계획"]||"").trim();
@@ -3785,7 +4278,19 @@ async function loadImp(){
 
   document.getElementById("imp-total").textContent=ded.length;
   document.getElementById("imp-done").textContent=submittedImps.length;
-  document.getElementById("imp-wait").textContent=Math.max(0,ded.length-submittedImps.length);
+  const impWaitCnt=Math.max(0,ded.length-submittedImps.length);
+  document.getElementById("imp-wait").textContent=impWaitCnt;
+
+  // 미제출 배너: 감점 항목 중 개선사항이 아직 없는 게 있을 때만 노출
+  const waitBanner=document.getElementById("imp-wait-banner");
+  if(waitBanner){
+    if(impWaitCnt>0){
+      waitBanner.style.display="flex";
+      document.getElementById("imp-wait-banner-cnt").textContent=impWaitCnt;
+    } else {
+      waitBanner.style.display="none";
+    }
+  }
 
   document.getElementById("imp-tbody").innerHTML=ded.map((d)=>{
     const item=String(d.item_name||d.item||"").trim();
@@ -4188,9 +4693,150 @@ async function openClaimDetail(itemName, uid, month) {
 function closeClaimModal() {
   document.getElementById("claim-detail-modal").style.display = "none";
 }
+
+// ══════════════════════════════════════════════════════════
+//  DCM 미연동 상세 팝업
+// ══════════════════════════════════════════════════════════
+// "DCM미연동" 시트 전체를 한 번 받아서 세션 동안 재사용합니다(도매상 수가 8곳
+// 뿐이라 매번 다시 조회할 필요가 없고, sheetsGet 자체도 캐시를 씁니다).
+async function fetchDcmSheetRows(){
+  if(S._cache?.dcmRows)return S._cache.dcmRows;
+  if(!S.cfg.url)return [];
+  try{
+    const d=await sheetsGet("DCM미연동",{});
+    const rows=d?.data||[];
+    if(S._cache)S._cache.dcmRows=rows;
+    return rows;
+  }catch(e){
+    console.warn("[SLA] DCM미연동 시트 조회 실패:",e.message);
+    return [];
+  }
+}
+function dcmField(row,keys){
+  // 정확한 컬럼명 우선
+  for(const k of keys){ if(row[k]!==undefined && row[k]!=="") return row[k]; }
+  // CSV를 그대로 가져왔을 때 첫 헤더에 BOM(﻿)이 붙어 "관계사"가 아니라
+  // "﻿관계사"로 들어오는 경우가 있어, 공백/BOM 제거 후에도 한 번 더 비교합니다.
+  const want=keys.map(k=>String(k).replace(/^﻿/,"").trim());
+  for(const rk of Object.keys(row||{})){
+    const rkClean=String(rk).replace(/^﻿/,"").trim();
+    if(want.includes(rkClean) && row[rk]!==undefined && row[rk]!=="") return row[rk];
+  }
+  return "";
+}
+async function openDcmDetail(uid, month){
+  const modal = document.getElementById("dcm-detail-modal");
+  const title = document.getElementById("dcm-modal-title");
+  const sub   = document.getElementById("dcm-modal-sub");
+  const body  = document.getElementById("dcm-modal-body");
+  const summary = document.getElementById("dcm-modal-summary");
+  const tbody = document.getElementById("dcm-modal-tbody");
+  const loading = document.getElementById("dcm-modal-loading");
+
+  title.textContent = "DCM 미연동 상세";
+  sub.textContent = `${unitName(uid)} · ${month}`;
+  body.style.display = "none";
+  loading.style.display = "block";
+  modal.style.display = "flex";
+
+  try{
+    const dcmName = DCM_UNIT_NAME_MAP[uid];
+    if(!dcmName){
+      loading.style.display="none";
+      body.style.display="block";
+      summary.innerHTML=`<span style="font-size:12px;color:var(--gray-400)">이 평가단위는 DCM미연동 매핑 대상이 아닙니다.</span>`;
+      tbody.innerHTML='<tr><td colspan="3"><div class="empty"><p>데이터 없음</p></div></td></tr>';
+      return;
+    }
+    const allRows = await fetchDcmSheetRows();
+    const targetKey = cleanKey(dcmName);
+    const unlinked = allRows.filter(r=>{
+      const shop = cleanKey(dcmField(r,["도매상명"]));
+      const status = String(dcmField(r,["연동유무"])).trim();
+      return shop===targetKey && (status==="X"||status.toUpperCase()==="X");
+    });
+
+    // 관계사별 집계
+    const counts = {};
+    DCM_AFFILIATES.forEach(a=>counts[a]=0);
+    unlinked.forEach(r=>{
+      const aff = String(dcmField(r,["관계사"])).trim();
+      if(counts[aff]===undefined)counts[aff]=0;
+      counts[aff]++;
+    });
+
+    loading.style.display="none";
+    body.style.display="block";
+
+    // 필터 탭에서 재사용할 수 있도록 전체 목록을 저장해둡니다.
+    S._dcmModal = { rows: unlinked, filter: "ALL" };
+    renderDcmModalSummary(counts, unlinked.length);
+    renderDcmModalTable();
+  }catch(e){
+    loading.style.display="none";
+    body.style.display="block";
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--red);padding:20px">오류: ${e.message}</td></tr>`;
+  }
+}
+
+// 관계사별 필터 탭(전체/대웅제약/대웅바이오/한올바이오)을 그립니다.
+// 클릭하면 아래 표가 해당 관계사 거래처만 보이도록 필터링됩니다.
+function renderDcmModalSummary(counts, totalCnt){
+  const summary = document.getElementById("dcm-modal-summary");
+  const curFilter = S._dcmModal?.filter || "ALL";
+
+  const tabBtn = (key, label, n)=>{
+    const active = curFilter===key;
+    const hasIssue = key!=="ALL" && n>0;
+    const color  = active ? "#fff" : (hasIssue ? "var(--red)" : "var(--mint)");
+    const bg     = active ? (hasIssue?"var(--red)":"var(--navy)") : (hasIssue?"#FCEBEB":"#EAF3DE");
+    const border = active ? "transparent" : (hasIssue?"#F09595":"#C0DD97");
+    return `<span onclick="filterDcmModal('${key}')"
+      style="cursor:pointer;font-size:12px;font-weight:700;padding:5px 12px;border-radius:14px;background:${bg};color:${color};border:0.5px solid ${border}">
+      ${label}${key!=="ALL"?` ${n}건`:""}
+    </span>`;
+  };
+
+  summary.innerHTML = tabBtn("ALL","전체")
+    + Object.keys(counts).map(a=>tabBtn(a,a,counts[a])).join("")
+    + `<span style="font-size:12px;color:var(--gray-400);padding:5px 4px">총 ${totalCnt}건</span>`;
+}
+
+// 필터 탭 클릭 핸들러 — 저장해둔 전체 목록에서 다시 필터링만 하므로 재조회 없이 즉시 반영됩니다.
+function filterDcmModal(key){
+  if(!S._dcmModal)return;
+  S._dcmModal.filter = key;
+  renderDcmModalTable();
+  // 탭 활성 표시 갱신을 위해 요약 배지도 다시 그립니다.
+  const counts = {};
+  DCM_AFFILIATES.forEach(a=>counts[a]=0);
+  S._dcmModal.rows.forEach(r=>{
+    const aff = String(dcmField(r,["관계사"])).trim();
+    if(counts[aff]===undefined)counts[aff]=0;
+    counts[aff]++;
+  });
+  renderDcmModalSummary(counts, S._dcmModal.rows.length);
+}
+
+function renderDcmModalTable(){
+  const tbody = document.getElementById("dcm-modal-tbody");
+  const { rows, filter } = S._dcmModal || { rows:[], filter:"ALL" };
+  const filtered = filter==="ALL" ? rows : rows.filter(r=>String(dcmField(r,["관계사"])).trim()===filter);
+
+  tbody.innerHTML = filtered.length
+    ? filtered.map(r=>`<tr>
+        <td style="font-size:12px;white-space:nowrap">${dcmField(r,["관계사"])||"—"}</td>
+        <td style="font-size:12px">${dcmField(r,["거래처명"])||"—"}</td>
+        <td style="font-size:11px;color:var(--gray-500)">${dcmField(r,["주소"])||"—"}</td>
+      </tr>`).join("")
+    : `<tr><td colspan="3"><div class="empty"><p>${filter==="ALL"?"미연동 거래처가 없습니다 🎉":"이 관계사는 미연동 거래처가 없습니다 🎉"}</p></div></td></tr>`;
+}
+function closeDcmModal(){
+  document.getElementById("dcm-detail-modal").style.display = "none";
+}
 // ESC 키로 닫기
 document.addEventListener("keydown", e => {
-  if (e.key === "Escape") { closeClaimModal(); closeGradeModal(); }
+  if (e.key === "Escape") { closeClaimModal(); closeGradeModal(); closeDcmModal(); }
 });
 
 // ══════════════════════════════════════════════════════════
@@ -4245,15 +4891,16 @@ async function loadClaimStatus() {
     }
 
     // reason 파싱: "0.12% (9건/7,537건)" → { rate:"0.12%", cnt:9, total:7537 }
+    // 구버전 문구("0.01%(발생 1건 / 주문 13,539건), 10/10점 반영 / 감점 없음")도 함께 대응합니다.
+    // — 시트에 신/구 버전 계산 결과가 같이 남아있는 경우, 구버전 문구는 기존 정규식과 안 맞아
+    //   건수가 0으로 보이는 문제가 있어 별도 패턴을 추가로 시도합니다.
     function parseReason(reason) {
-      if (!reason) return { rate:"—", cnt:0, total:0 };
-      const m = reason.match(/([\d.]+)%\s*\((\d+)건\/([\d,]+)건\)/);
-      if (!m) return { rate: reason.split("%")[0]+"%"||"—", cnt:0, total:0 };
-      return {
-        rate: m[1] + "%",
-        cnt:  parseInt(m[2]) || 0,
-        total: parseInt(m[3].replace(/,/g,"")) || 0,
-      };
+      if (!reason) return { rate:"—", cnt:0, total:0, ok:false };
+      const m = reason.match(/([\d.]+)%\s*\((\d+)건\s*\/\s*([\d,]+)건\)/);
+      if (m) return { rate: m[1]+"%", cnt: parseInt(m[2])||0, total: parseInt(m[3].replace(/,/g,""))||0, ok:true };
+      const m2 = reason.match(/([\d.]+)%\s*\(발생\s*(\d+)건\s*\/\s*주문\s*([\d,]+)건\)/);
+      if (m2) return { rate: m2[1]+"%", cnt: parseInt(m2[2])||0, total: parseInt(m2[3].replace(/,/g,""))||0, ok:true };
+      return { rate: reason.split("%")[0]+"%"||"—", cnt:0, total:0, ok:false };
     }
 
     // 거점별 그룹핑
@@ -4262,10 +4909,14 @@ async function loadClaimStatus() {
       if (!grouped[r.unit_id]) grouped[r.unit_id] = { unit_id:r.unit_id, items:{} };
       const p = parseReason(r.reason);
       const itemKey = canonicalClaimItemName(r.item_name||r.item)||r.item_name;
+      const prev = grouped[r.unit_id].items[itemKey];
+      // 동일 항목이 신/구 버전으로 중복 저장된 경우, 파싱에 실패한(구문 형식이 다른) 값이
+      // 이미 정상 파싱된 기존 값을 덮어써서 0건으로 보이지 않도록 방지합니다.
+      if (prev && prev.ok && !p.ok) return;
       grouped[r.unit_id].items[itemKey] = {
         score: parseFloat(r.score)||0,
         reason: r.reason||"",
-        rate: p.rate, cnt: p.cnt, total: p.total,
+        rate: p.rate, cnt: p.cnt, total: p.total, ok: p.ok,
       };
     });
 
@@ -4296,11 +4947,8 @@ async function loadClaimStatus() {
           border-bottom:0.5px solid var(--gray-100);cursor:pointer;border-radius:4px;transition:background .15s"
           onmouseover="this.style.background='var(--gray-50)'" onmouseout="this.style.background=''">
           <span style="color:var(--gray-500)">${label}</span>
-          <span style="display:flex;align-items:center;gap:6px">
-            <span style="font-size:10px;color:var(--gray-400)">${v.cnt}건 ${v.rate}</span>
-            <span style="font-weight:700;color:${ded?"var(--red)":"var(--gray-600)"}">${v.score}점${ded?" ▼":""}
-              <span style="color:var(--gray-300);font-size:9px"> 🔍</span>
-            </span>
+          <span style="font-weight:700;color:${ded?"var(--red)":"var(--gray-600)"}">${v.cnt}건${ded?" ▼":""}
+            <span style="color:var(--gray-300);font-size:9px"> 🔍</span>
           </span>
         </div>`;
       }).join("");
@@ -4315,8 +4963,8 @@ async function loadClaimStatus() {
             </div>
           </div>
           <div style="text-align:right">
-            <div style="font-size:22px;font-weight:900;color:${color}">${totalScore}</div>
-            <div style="font-size:10px;color:var(--gray-400)">/ ${maxScore}점</div>
+            <div style="font-size:22px;font-weight:900;color:${color}">${g.total_cnt}</div>
+            <div style="font-size:10px;color:var(--gray-400)">클레임 합계건수</div>
           </div>
         </div>
         ${itemRows}
@@ -4333,8 +4981,7 @@ async function loadClaimStatus() {
         if (!v) return `<td style="text-align:center;color:var(--gray-300)">—</td>`;
         const ded = v.score < 10;
         return `<td style="text-align:center;cursor:pointer" onclick="openClaimDetail('${itemName}','${g.unit_id}','${month}')" title="상세 보기">
-          <span style="font-weight:700;color:${ded?"var(--red)":"var(--mint)"}">${v.score}점</span><br>
-          <span style="font-size:10px;color:var(--gray-400)">${v.cnt}건 / ${v.rate} 🔍</span>
+          <span style="font-weight:700;color:${ded?"var(--red)":"var(--mint)"}">${v.cnt}건 🔍</span>
         </td>`;
       };
       return `<tr>
@@ -4345,7 +4992,7 @@ async function loadClaimStatus() {
           <span style="font-size:10px;color:${g.total_cnt>0?"#E53E3E":"var(--gray-400)"}">클레임 ${g.total_cnt}건</span>
         </td>
         ${items.map(mkCell).join("")}
-        <td style="text-align:center;font-weight:700;color:${totalScore<40?"var(--red)":"var(--mint)"}">${totalScore}/40</td>
+        <td style="text-align:center;font-weight:700;color:${g.total_cnt>0?"var(--red)":"var(--mint)"}">${g.total_cnt}건</td>
       </tr>`;
     }).join("");
 
@@ -4643,6 +5290,802 @@ async function changePw(){
   document.getElementById("pw-confirm").value="";
   document.getElementById("pw-strength").className="pw-strength";
 }
+
+// ══════════════════════════════════════════════════════════
+//  업로드 양식 다운로드 / Sheets 반영 / 이력  (v7 신규)
+// ══════════════════════════════════════════════════════════
+function downloadTemplate(){
+  // 항목별상세점수 시트 스키마와 동일 (평가월·평가단위코드·평가구분·평가항목·획득점수·만점·감점사유)
+  // — 이 항목만 채워 올리면 월별 총점/등급은 buildMonthlyResultsFromDetails()가 자동 합산합니다.
+  const headers=["평가월","도매상코드","평가구분","평가항목","획득점수","만점","감점사유","도매상명(선택)"];
+  const sample=["2026-07","W001","거점도매","구색","8","10","","김포 이지메디컴"];
+  const csv="﻿"+headers.join(",")+"\n"+sample.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")+"\n";
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download="SLA_평가_업로드_양식.csv";
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast("업로드 양식 다운로드 완료 ✓","ok");
+}
+
+function cancelUpload(){
+  S.uploadData=null;
+  S.uploadMeta=null;
+  S.uploadFile=null;
+  const fi=document.getElementById("file-in"); if(fi)fi.value="";
+  const dn=document.getElementById("drop-name"); if(dn)dn.textContent="파일이 선택되지 않았습니다";
+  const pa=document.getElementById("preview-area"); if(pa)pa.style.display="none";
+}
+
+// NOTE: 이 함수는 Apps Script 백엔드에 action="save_detail_eval" 핸들러가 추가되어 있어야 실제로
+// "항목별상세점수" 시트에 반영됩니다. 기존 save_claim_score / save_improvement 와 동일한 방식의
+// 액션이 필요합니다. (Apps Script doPost 쪽에 해당 액션 분기를 추가해야 합니다 — 별도 안내 스크립트 참고)
+// 항목별 점수만 넣으면 총점/등급은 fetchMonthlyResults() -> buildMonthlyResultsFromDetails()가
+// 자동으로 합산·산정하므로, "월별평가결과" 시트에 별도로 총점 행을 넣을 필요가 없습니다.
+async function uploadToSheets(){
+  const meta=S.uploadMeta;
+  if(!meta||!meta.rows||!meta.rows.length){toast("업로드할 데이터가 없습니다","err");return;}
+  if(!S.cfg.url){toast("Apps Script URL을 먼저 설정하세요","err");return;}
+  if(meta.months.length>1){toast("한 번에 한 평가월만 업로드해 주세요. 파일을 월별로 나눠주세요.","err");return;}
+  loading(true);
+  try{
+    const d=await sheetsPost("save_detail_eval",{
+      eval_month:meta.months[0]||"",
+      rows:meta.rows,
+      file_name:S.uploadFile||"",
+      uploaded_by:S.user?.name||S.user?.id||"",
+    });
+    loading(false);
+    if(!d.success)throw new Error(d.error||"저장 실패");
+    toast(`업로드 완료 ✓ (${d.saved_rows||meta.rows.length}행 반영)`,"ok");
+    cancelUpload();
+    clearDataCache();
+    loadUploadHist();
+  }catch(e){
+    loading(false);
+    toast("업로드 오류: "+e.message,"err");
+  }
+}
+
+async function loadUploadHist(){
+  const tbody=document.getElementById("upload-hist");
+  if(!tbody||!S.cfg.url)return;
+  try{
+    const d=await sheetsGet("업로드이력",{limit:20});
+    const rows=(d?.data||[]).map(normalizeRow).slice(-20).reverse();
+    tbody.innerHTML=rows.length?rows.map(r=>`<tr>
+      <td>${r.uploaded_at||"—"}</td><td>${r.uploaded_by||"—"}</td>
+      <td>${r.file_name||"—"}</td><td>${r.row_count||"—"}</td>
+      <td>${r.status||"완료"}</td></tr>`).join("")
+      :'<tr><td colspan="5"><div class="empty"><p>이력 없음</p></div></td></tr>';
+  }catch(e){
+    tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p>이력 조회 실패 (업로드이력 시트 확인 필요)</p></div></td></tr>';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  월별 수치 추이 차트  (v7 신규 — Chart.js는 기존에 로드만 되고 미사용 상태였음)
+// ══════════════════════════════════════════════════════════
+function shiftMonthKey(mk,delta){
+  const s=monthKey(mk);
+  const m=s.match(/^(\d{4})-(\d{2})$/);
+  if(!m)return "";
+  const d=new Date(parseInt(m[1],10),parseInt(m[2],10)-1+delta,1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+}
+function lastNMonths(n){
+  const now=new Date();
+  const arr=[];
+  for(let i=n-1;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    arr.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`);
+  }
+  return arr;
+}
+async function fetchTrendSeries(months,baseParams={}){
+  const results=await Promise.all(months.map(m=>fetchMonthlyResults({...baseParams,eval_month:m}).catch(()=>[])));
+  return months.map((m,i)=>{
+    const rows=(results[i]||[]).filter(r=>!isPendingRow(r)&&!isPartialRow(r));
+    const rates=rows.map(r=>parseFloat(r.achievement_rate)).filter(n=>!isNaN(n));
+    const avg=rates.length?rates.reduce((a,b)=>a+b,0)/rates.length:null;
+    return {month:m,avg:avg!==null?+avg.toFixed(1):null,count:rows.length};
+  });
+}
+const TREND_PALETTE=["#0E4C92","#0E9070","#D4A017","#C0392B","#7D3C98","#16A085","#95A5A6"];
+const TREND_TYPES=[{key:"거점도매",color:TREND_PALETTE[0]},{key:"종합도매",color:TREND_PALETTE[1]}];
+let _dashTrendCharts={};
+async function renderDashTrend(){
+  if(!window.Chart)return;
+  const months=lastNMonths(6);
+  for(const t of TREND_TYPES){
+    const canvas=document.getElementById(`dash-trend-canvas-${t.key}`);
+    if(!canvas)continue;
+    if(!S.cfg.url){
+      if(_dashTrendCharts[t.key]){_dashTrendCharts[t.key].destroy();delete _dashTrendCharts[t.key];}
+      continue;
+    }
+    try{
+      const series=await fetchTrendSeries(months,{eval_type:t.key});
+      const dataset={
+        label:t.key,
+        data:series.map(x=>x.avg),
+        borderColor:t.color,
+        backgroundColor:"rgba(0,0,0,0.04)",
+        fill:true,
+        borderWidth:2.5,
+        tension:0.3,
+        spanGaps:true,
+      };
+      if(_dashTrendCharts[t.key])_dashTrendCharts[t.key].destroy();
+      _dashTrendCharts[t.key]=new Chart(canvas.getContext("2d"),{
+        type:"line",
+        data:{labels:months,datasets:[dataset]},
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          layout:{padding:{top:22}},
+          plugins:{
+            legend:{display:false},
+            datalabels:{display:true,align:"top",clamp:true,font:{size:11,weight:"600"},formatter:v=>v!==null&&v!==undefined?v+"%":""},
+          },
+          scales:{
+            x:{grid:{display:false}},
+            y:{min:0,max:100,ticks:{callback:v=>v+"%"},grid:{display:false}}
+          },
+        }
+      });
+    }catch(e){ console.warn(`[SLA] ${t.key} 추이 차트 로드 실패:`,e.message); }
+  }
+}
+let _myTrendCharts={};
+async function renderMyTrend(){
+  if(!window.Chart)return;
+  const months=lastNMonths(6);
+  for(const t of TREND_TYPES){
+    const canvas=document.getElementById(`my-trend-canvas-${t.key}`);
+    const card=document.getElementById(`my-trend-card-${t.key}`);
+    if(!canvas)continue;
+    if(!S.cfg.url){
+      if(_myTrendCharts[t.key]){_myTrendCharts[t.key].destroy();delete _myTrendCharts[t.key];}
+      if(card)card.style.display="none";
+      continue;
+    }
+    try{
+      const series=await fetchTrendSeries(months,{company_id:S.user.co,eval_type:t.key});
+      const hasData=series.some(x=>x.avg!==null);
+      if(card)card.style.display=hasData?"":"none"; // 해당 유형 데이터가 없는 회사는 카드 자체를 숨김
+      if(!hasData){
+        if(_myTrendCharts[t.key]){_myTrendCharts[t.key].destroy();delete _myTrendCharts[t.key];}
+        continue;
+      }
+      const dataset={
+        label:t.key,
+        data:series.map(x=>x.avg),
+        borderColor:t.color,
+        backgroundColor:"rgba(0,0,0,0.04)",
+        fill:true,
+        borderWidth:2.5,
+        tension:0.3,
+        spanGaps:true,
+      };
+      if(_myTrendCharts[t.key])_myTrendCharts[t.key].destroy();
+      _myTrendCharts[t.key]=new Chart(canvas.getContext("2d"),{
+        type:"line",
+        data:{labels:months,datasets:[dataset]},
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          layout:{padding:{top:22}},
+          plugins:{
+            legend:{display:false},
+            datalabels:{display:true,align:"top",clamp:true,font:{size:11,weight:"600"},formatter:v=>v!==null&&v!==undefined?v+"%":""},
+          },
+          scales:{
+            x:{grid:{display:false}},
+            y:{min:0,max:100,ticks:{callback:v=>v+"%"},grid:{display:false}}
+          },
+        }
+      });
+    }catch(e){ console.warn(`[SLA] ${t.key} 내 추이 차트 로드 실패:`,e.message); }
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  항목별 평가상세 - 전달 대비 비교 차트
+// ══════════════════════════════════════════════════════════
+// 항목마다 개별 도넛(gauge) 미니차트를 그립니다(막대그래프 대신). 거점도매처럼
+// "기본 운영"/"고객클레임" 두 그룹이 있는 채널은 줄을 나눠서 각 줄이 그 그룹
+// 항목 수만큼 가로로 꽉 차게(예: 4개면 4등분) 배치하고, 종합도매·VC처럼 그룹이
+// 하나뿐이면 한 줄에 그 항목 수만큼 꽉 채웁니다. 항목 수를 코드에 고정하지 않고
+// 그 달 실제 데이터 기준으로 계산하므로, 일부만 채점된 달에도 정확히 등분됩니다.
+let _detCompareCharts=[];
+async function renderDetCompareChart(uid, month, basicRows, claimRows, prevByItemRate, prevMonthArg){
+  const card=document.getElementById("det-compare-card");
+  const grid=document.getElementById("det-compare-grid");
+  if(!card||!grid)return;
+
+  _detCompareCharts.forEach(c=>c.destroy());
+  _detCompareCharts=[];
+
+  const groupsInput=[
+    {label:"기본 운영", rows:basicRows||[]},
+    {label:"고객클레임", rows:claimRows||[]},
+  ].filter(g=>g.rows.length);
+
+  if(!window.Chart || !groupsInput.length){
+    card.style.display="none";
+    grid.innerHTML="";
+    return;
+  }
+
+  // openDetail()에서 이미 조회해둔 전달 항목별 점수(prevByItemRate: {item_name:{score,max,rate}})를
+  // 그대로 재사용합니다(같은 데이터를 표와 차트가 중복 조회하지 않도록).
+  const prevMonth=prevMonthArg||shiftMonthKey(month,-1);
+  const prevByItem={};
+  Object.entries(prevByItemRate||{}).forEach(([name,v])=>{ prevByItem[name]=v.rate; });
+
+  const toItem=r=>{
+    const sc=parseFloat(r.score),mx=parseFloat(r.max_score);
+    const cur=(isNaN(sc)||isNaN(mx)||mx===0)?null:parseFloat((sc/mx*100).toFixed(1));
+    const prev=(r.item_name in prevByItem)?prevByItem[r.item_name]:null;
+    return {name:r.item_name,cur,prev};
+  };
+  const groups=groupsInput
+    .map(g=>({label:g.label, items:g.rows.map(toItem).filter(it=>it.cur!==null)}))
+    .filter(g=>g.items.length);
+
+  const anyPrev=groups.some(g=>g.items.some(it=>it.prev!==null));
+  if(!groups.length || !anyPrev){
+    // 전달 데이터가 아예 없으면(신규 평가단위 등) 비교 자체가 무의미하므로 카드를 숨깁니다.
+    card.style.display="none";
+    grid.innerHTML="";
+    return;
+  }
+
+  // 색상 팔레트(원색 대신 톤 다운된 계열):
+  //  - 도넛 "만점 대비 여백" 구간: 하늘색으로 고정
+  //  - 도넛 "달성" 구간: 전달 대비 증가/감소/동일에 따라 색이 달라짐(톤 다운된 녹색·붉은색·회색)
+  //  - 타일 배경: 전달 대비 증가는 옅은 민트, 감소는 옅은 로즈, 동일/데이터없음은 기본 회색
+  const NO_PREV_RING="#4A7BA6";
+  const UP_RING="#4C9A78";
+  const DOWN_RING="#C1554F";
+  const SAME_RING="#8B96A5";
+  const FULL_RING="#2F6FA8";
+  const SKY_BG="#D8ECFA";
+
+  card.style.display="";
+  let idx=0;
+  grid.innerHTML=groups.map(g=>{
+    const cellsHtml=g.items.map(it=>{
+      const i=idx++;
+      // 100% 만점 달성 항목은 증감과 무관하게 박스 배경을 하늘색으로 표시하고,
+      // 그 외에는 기존처럼 전달 대비 증가(옅은 민트)/감소(옅은 로즈)로 구분합니다.
+      let tileBg="";
+      if(it.cur===100){
+        tileBg="#D8ECFA";
+      } else if(it.prev!==null){
+        const delta=parseFloat((it.cur-it.prev).toFixed(1));
+        tileBg=delta>0?"#E7F5EF":delta<0?"#FCEEEE":"";
+      }
+      return `
+      <div class="det-cmp-item"${tileBg?` style="background:${tileBg}"`:""}>
+        <div class="det-cmp-name" title="${it.name}">${it.name}</div>
+        <div class="det-cmp-donut-wrap">
+          <canvas id="det-cmp-c-${i}"></canvas>
+          <div class="det-cmp-center">${it.cur}%</div>
+        </div>
+        <div class="det-cmp-delta" id="det-cmp-d-${i}"></div>
+      </div>`;
+    }).join("");
+    return `
+    <div class="det-cmp-group">
+      <div class="det-cmp-group-hd"><span class="t">${g.label}</span><span class="cnt">${g.items.length}개 항목</span></div>
+      <div class="det-cmp-grid" style="grid-template-columns:repeat(${g.items.length},1fr)">${cellsHtml}</div>
+    </div>`;
+  }).join("");
+
+  idx=0;
+  groups.forEach(g=>{
+    g.items.forEach(it=>{
+      const i=idx++;
+      const canvas=document.getElementById(`det-cmp-c-${i}`);
+      const deltaEl=document.getElementById(`det-cmp-d-${i}`);
+      if(!canvas)return;
+
+      let deltaText=`전달(${prevMonth}) 데이터 없음`, deltaColor="#9CA3AF", ringColor=NO_PREV_RING;
+      if(it.prev!==null){
+        const delta=parseFloat((it.cur-it.prev).toFixed(1));
+        if(delta>0){ deltaColor="#0F6E56"; ringColor=UP_RING; deltaText=`▲ 전달대비 +${delta}%p`; }
+        else if(delta<0){ deltaColor="#A32D2D"; ringColor=DOWN_RING; deltaText=`▼ 전달대비 ${delta}%p`; }
+        else { deltaColor="#64748B"; ringColor=SAME_RING; deltaText=`전달과 동일`; }
+      }
+      // 100% 만점 달성이면 증감 방향과 무관하게 링 색도 파란색으로 통일합니다.
+      if(it.cur===100)ringColor=FULL_RING;
+      if(deltaEl){ deltaEl.textContent=deltaText; deltaEl.style.color=deltaColor; }
+
+      _detCompareCharts.push(new Chart(canvas.getContext("2d"),{
+        type:"doughnut",
+        data:{
+          datasets:[{
+            data:[it.cur, Math.max(0,100-it.cur)],
+            backgroundColor:[ringColor,SKY_BG],
+            borderWidth:0,
+          }]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          cutout:"72%",
+          plugins:{
+            legend:{display:false},
+            datalabels:{display:false},
+            tooltip:{
+              callbacks:{
+                label:(ctx)=>ctx.dataIndex===0?`이번달(${month}) ${it.cur}%`:(it.prev!==null?`전달(${prevMonth}) ${it.prev}%`:"")
+              }
+            }
+          }
+        }
+      }));
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+//  보고서 출력 (통합표 · 전체 도매상 한눈에 보기)
+//  - 관리자: 전체 회사 / 회사(도매사) 계정: 본인 회사만 자동 필터링
+//  - 평가유형(거점도매/종합도매/VC)마다 표 1개, 그 달에 실제로 채점된
+//    항목만 열로 표시(채점 안 된 항목은 —로 표시, 열 자체가 없어지진
+//    않지만 회사/단위마다 데이터가 있는 셀만 채워짐)
+// ══════════════════════════════════════════════════════════
+async function loadReport(){
+  const month=document.getElementById("report-month")?.value;
+  const sub=document.getElementById("report-sub");
+  const root=document.getElementById("report-root");
+  const printBtn=document.getElementById("report-print-btn");
+  if(sub)sub.textContent=month?`${month} 평가 결과 · 전체 데이터 한눈에 보기`:"평가월을 선택하세요";
+  if(!month){ if(root)root.innerHTML=""; if(printBtn)printBtn.style.display="none"; return; }
+  if(printBtn)printBtn.style.display="none";
+
+  const isAdmin=S.user.role==="admin";
+  const scopeParams=isAdmin?{}:{company_id:S.user.co};
+  const prevMonth=shiftMonthKey(month,-1);
+
+  let results=[],details=[],prevResults=[],prevDetails=[];
+  if(S.cfg.url){
+    try{
+      loading(true);
+      results=await fetchMonthlyResults({eval_month:month,...scopeParams});
+      details=await fetchDetailRowsWithClaim({eval_month:month,...scopeParams});
+      // 전달 대비 비교용 데이터: 조회가 실패해도 이번 달 보고서 자체는 정상 출력돼야 하므로
+      // 실패 시 빈 배열로 대체합니다(전달대비 표시만 생략됨).
+      [prevResults,prevDetails]=await Promise.all([
+        fetchMonthlyResults({eval_month:prevMonth,...scopeParams}).catch(()=>[]),
+        fetchDetailRowsWithClaim({eval_month:prevMonth,...scopeParams}).catch(()=>[]),
+      ]);
+      loading(false);
+    }catch(e){ loading(false); toast("보고서 데이터 로드 오류: "+e.message,"err"); return; }
+  }
+  results=(results||[]).filter(r=>!isPendingRow(r));
+  prevResults=(prevResults||[]).filter(r=>!isPendingRow(r));
+
+  const detailMap={};
+  (details||[]).forEach(d=>{
+    if(!d.unit_id||!d.item_name)return;
+    const sc=parseFloat(d.score),mx=parseFloat(d.max_score);
+    if(isNaN(sc)||isNaN(mx))return;
+    (detailMap[d.unit_id]||(detailMap[d.unit_id]={}))[d.item_name]={score:sc,max:mx,reason:d.reason||""};
+  });
+  const prevDetailMap={};
+  (prevDetails||[]).forEach(d=>{
+    if(!d.unit_id||!d.item_name)return;
+    const sc=parseFloat(d.score),mx=parseFloat(d.max_score);
+    if(isNaN(sc)||isNaN(mx))return;
+    (prevDetailMap[d.unit_id]||(prevDetailMap[d.unit_id]={}))[d.item_name]={score:sc,max:mx,reason:d.reason||""};
+  });
+  const prevRowsByKey={};
+  prevResults.forEach(r=>{ prevRowsByKey[`${r.unit_id}__${r.eval_type}`]=r; });
+
+  const companyIds=[...new Set(results.map(r=>r.company_id||unitCompanyId(r.unit_id)))]
+    .filter(Boolean).sort((a,b)=>(coName(a)||a).localeCompare(coName(b)||b));
+  const scopeLabel=isAdmin?"전체 회사":(coName(S.user.co)||"");
+  const pages=buildReportPages(companyIds,results,detailMap,prevRowsByKey,prevDetailMap,month,scopeLabel);
+  if(root)root.innerHTML = pages.length ? pages.join("") : `<div class="empty"><p>${month} 데이터가 없습니다</p></div>`;
+  if(printBtn)printBtn.style.display = pages.length ? "" : "none";
+
+  // 인쇄용 새 창에서 그대로 재사용할 수 있도록 마지막 조회 결과를 보관
+  S._reportCtx={month, isAdmin, results, detailMap, prevRowsByKey, prevDetailMap, companyIds, scopeLabel};
+}
+
+// 표지+요약(1p) → 회사마다 지점(거점도매+종합도매 세트) 1페이지씩 → 마지막 VC 페이지.
+// 화면 미리보기와 인쇄창이 완전히 같은 페이지 구성을 쓰도록 이 함수 하나로 조립합니다.
+function buildReportPages(companyIds,results,detailMap,prevRowsByKey,prevDetailMap,month,scopeLabel){
+  if(!companyIds.length)return [];
+  const pages=[buildCoverSummaryPage(companyIds,results,month,scopeLabel)];
+  companyIds.forEach(cid=>{
+    const coNm=coName(cid)||cid;
+    const rows=results.filter(r=>(r.company_id||unitCompanyId(r.unit_id))===cid);
+    const gjRows=rows.filter(r=>r.eval_type==="거점도매");
+    const jhRows=rows.filter(r=>r.eval_type==="종합도매");
+    const groups=rpBuildLocationGroups(gjRows,jhRows);
+    groups.forEach(g=>pages.push(buildLocationPage(coNm,g,detailMap,prevDetailMap,prevRowsByKey)));
+  });
+  const vcPage=buildVcPage(companyIds,results,detailMap,prevDetailMap,prevRowsByKey);
+  if(vcPage)pages.push(vcPage);
+  return pages;
+}
+
+// 회사 1개 = 보고서 블록 1개 (페이지 나눔의 기준 단위)
+//  1) 종합 요약 : 채널(거점도매/종합도매/VC)별로 그 회사에 속한 평가단위들의 총점·등급 타일
+//  2) 채널 섹션 : 거점도매 → 종합도매 → VC 순으로, 채널 안에서는 페이지를 강제로 나누지 않고
+//     회사 경계에서만 나눕니다(지점이 여러 개라도 "OO약품"이라는 하나의 보고서로 보이도록).
+//     섹션 안에는 그 채널에 속한 평가단위(지점)마다 카드 1개 —
+//     총점/등급/전달대비 + 항목별 전달대비 도넛차트 + 상세항목표(감점사유, 고객클레임 포함)
+const RP_PILL_CLASS={"거점도매":"rp-pill-gj","종합도매":"rp-pill-jh","VC":"rp-pill-vc"};
+
+function rpRate(score,max){
+  const sc=parseFloat(score),mx=parseFloat(max);
+  if(isNaN(sc)||isNaN(mx)||mx===0)return null;
+  return parseFloat((sc/mx*100).toFixed(1));
+}
+function rpIsClaim(name){ return CLAIM_ITEM_NAMES.includes(name) || !!canonicalClaimItemName(name||""); }
+function rpUnitItems(uid,detailMap){
+  const im=detailMap[uid]||{};
+  return Object.keys(im).map(name=>({name,score:im[name].score,max:im[name].max,reason:im[name].reason}));
+}
+function rpGradeChip(g){ return `<span class="rp-grade-chip rp-g-${g}">${g}등급</span>`; }
+function rpPrevBadge(curRow,prevRow){
+  if(!prevRow||isPendingRow(prevRow)||isPartialRow(prevRow))return "";
+  if(isPendingRow(curRow)||isPartialRow(curRow))return "";
+  const cur=parseFloat(curRow.total_score), prev=parseFloat(prevRow.total_score);
+  if(isNaN(cur)||isNaN(prev))return "";
+  const delta=parseFloat((cur-prev).toFixed(1));
+  const cls=delta>0?"up":delta<0?"down":"";
+  const arrow=delta>0?"▲":delta<0?"▼":"－";
+  return `<span class="rp-prev ${cls}">전달대비 ${arrow}${Math.abs(delta)}점</span>`;
+}
+// 항목별 전달대비 도넛: Chart.js/canvas 대신 CSS conic-gradient로 그려서
+// 인쇄 새 창에서도 스크립트 로드 타이밍 문제 없이 동일하게 보이도록 합니다.
+function rpDonut(name,cur,prev){
+  const NO_PREV="#4A7BA6",UP="#4C9A78",DOWN="#C1554F",SAME="#8B96A5",FULL="#2F6FA8",SKY="#D8ECFA";
+  let ring=SAME;
+  if(prev===null)ring=NO_PREV;
+  else if(cur>prev)ring=UP;
+  else if(cur<prev)ring=DOWN;
+  if(cur>=100)ring=FULL;
+  const pct=Math.min(100,Math.max(0,cur));
+  let deltaHtml="";
+  if(prev!==null){
+    const d=parseFloat((cur-prev).toFixed(1));
+    const dColor=d>0?"#0F6E56":d<0?"#A32D2D":"#9CA3AF";
+    const dText=d>0?`▲+${d}%p`:d<0?`▼${d}%p`:"동일";
+    deltaHtml=`<div class="rp-cmp-delta" style="color:${dColor}">${dText}</div>`;
+  }
+  return `<div class="rp-cmp-item">
+    <div class="rp-cmp-donut" style="background:conic-gradient(${ring} ${(pct*3.6).toFixed(1)}deg, ${SKY} 0deg)">
+      <div class="rp-cmp-center">${Math.round(cur)}%</div>
+    </div>
+    <div class="rp-cmp-name" title="${name}">${name}</div>
+    ${deltaHtml}
+  </div>`;
+}
+function rpDetailRow(item,evalType,withReason){
+  const {name,score,max,reason}=item;
+  const docked=parseFloat(score)<parseFloat(max);
+  const isClaim=rpIsClaim(name);
+  let reasonCell="";
+  if(withReason){
+    const realCount=claimCountText(reason);
+    const reasonText=realCount?realCount:(docked?buildReasonText(name,score,max,evalType,reason):(reason||"—"));
+    reasonCell=`<td class="rs">${reasonText}</td>`;
+  }
+  return `<tr class="${isClaim?'claim':''}">
+    <td class="nm">${name}</td>
+    <td class="${docked?'dock':''}">${fs(score)}/${fs(max)}</td>
+    ${reasonCell}
+  </tr>`;
+}
+// 채널(거점도매/종합도매/VC) 1개 평가단위를 한 블록으로 렌더링 —
+// 헤더(채널 pill + [여러 단위가 한 페이지에 섞일 때만 지점명] + 총점/등급/전달대비)
+// + 항목별 전달대비 도넛(거점도매는 기본운영/고객클레임 두 그룹) + 상세항목표.
+function rpChannelBlock(r, ch, detailMap, prevDetailMap, prevRow, showName){
+  const uid=r.unit_id;
+  const items=rpUnitItems(uid,detailMap);
+  // 예전에는 VC만 감점사유 열을 뺐지만, VC 항목(구색/재고금액/반품/데이터 공유)도
+  // ITEM_META에 기준값이 있어 다른 채널과 동일하게 사유 문구를 만들 수 있으므로 통일합니다.
+  const withReason=true;
+
+  const header=`<div class="rp-ch-hd2">
+    <span class="rp-pill ${RP_PILL_CLASS[ch]}">${ch}</span>
+    ${showName?`<span class="rp-ch-unit-nm">${r.unit_name||unitName(uid)}</span>`:""}
+    <span class="score">${scoreDisplay(r)}<span>/${maxDisplay(r)}</span></span>
+    ${r.grade?rpGradeChip(r.grade):""}
+    ${rpPrevBadge(r,prevRow)}
+  </div>`;
+
+  if(!items.length){
+    return `<div class="rp-ch-block">${header}<div style="padding:6px 0;color:var(--gray-400);font-size:11px">세부 항목 데이터 없음</div></div>`;
+  }
+
+  const donutFor=(it)=>{
+    const cur=rpRate(it.score,it.max);
+    if(cur===null)return "";
+    const prevIm=(prevDetailMap[uid]||{})[it.name];
+    const prev=prevIm?rpRate(prevIm.score,prevIm.max):null;
+    return rpDonut(it.name,cur,prev);
+  };
+
+  let cmpHtml="",tableRows="";
+  if(ch==="거점도매"){
+    const basic=items.filter(it=>!rpIsClaim(it.name));
+    const claim=items.filter(it=>rpIsClaim(it.name));
+    const basicDonuts=basic.map(donutFor).filter(Boolean);
+    const claimDonuts=claim.map(donutFor).filter(Boolean);
+    if(basicDonuts.length)cmpHtml+=`<div class="rp-grp-tag">기본 운영</div><div class="rp-cmp-grid" style="grid-template-columns:repeat(${basicDonuts.length},1fr)">${basicDonuts.join("")}</div>`;
+    if(claimDonuts.length)cmpHtml+=`<div class="rp-grp-tag">고객 클레임</div><div class="rp-cmp-grid" style="grid-template-columns:repeat(${claimDonuts.length},1fr)">${claimDonuts.join("")}</div>`;
+    tableRows=basic.map(it=>rpDetailRow(it,ch,withReason)).join("")+claim.map(it=>rpDetailRow(it,ch,withReason)).join("");
+  } else {
+    const donuts=items.map(donutFor).filter(Boolean);
+    if(donuts.length)cmpHtml=`<div class="rp-cmp-grid" style="grid-template-columns:repeat(${donuts.length},1fr)">${donuts.join("")}</div>`;
+    tableRows=items.map(it=>rpDetailRow(it,ch,withReason)).join("");
+  }
+
+  const colgroup=withReason
+    ? `<colgroup><col style="width:28%"><col style="width:14%"><col style="width:58%"></colgroup>`
+    : `<colgroup><col style="width:60%"><col style="width:40%"></colgroup>`;
+
+  return `<div class="rp-ch-block">
+    ${header}
+    ${cmpHtml?`<div class="rp-cmp-hd">📈 항목별 전달 대비</div>${cmpHtml}`:""}
+    <table class="rp-grid rp-grid-fixed">${colgroup}
+      <thead><tr><th style="text-align:left">평가항목</th><th>점수</th>${withReason?'<th style="text-align:left">감점사유</th>':""}</tr></thead>
+      <tbody>${tableRows}</tbody>
+    </table>
+  </div>`;
+}
+
+// 이름만으로는 자동으로 못 묶는 거점도매↔종합도매 조합을 수동으로 지정합니다.
+// 평택·파주 거점도매는 담당 종합도매 권역이 "백제영등포(수도권2,3)"라서 이름은 달라도 실제로는 한 묶음입니다.
+// 여기에 추가할 때는 unit_id(W번호) 기준으로 적어주세요.
+const RP_MANUAL_GROUPS=[
+  {label:"평택·파주 백제약품 (수도권2,3)", gjIds:["W010","W011"], jhIds:["W018"]},
+];
+
+// 같은 물리적 지점이 거점도매·종합도매 두 채널로 각각 평가받는 경우가 많습니다
+// (예: "대전 백제약품"=거점도매, "백제대전(대전)"=종합도매). 아래 순서로 짝을 짓습니다:
+//  1) RP_MANUAL_GROUPS에 지정된 수동 조합을 먼저 뽑아내고
+//  2) 남은 것들은 지점명 앞부분(지역명)이 서로의 이름에 포함되는지로 1:1 자동 매칭하고
+//  3) 그래도 이름 규칙이 달라 못 찾았는데 거점도매·종합도매가 각 1개씩만 남았다면 그 둘을 그대로 짝짓습니다.
+function rpBuildLocationGroups(gjRows, jhRows){
+  const gjPool=gjRows.slice();
+  const jhPool=jhRows.slice();
+  const groups=[];
+
+  RP_MANUAL_GROUPS.forEach(mg=>{
+    const gjList=mg.gjIds.map(id=>{
+      const idx=gjPool.findIndex(r=>r.unit_id===id);
+      return idx>=0?gjPool.splice(idx,1)[0]:null;
+    }).filter(Boolean);
+    const jhList=mg.jhIds.map(id=>{
+      const idx=jhPool.findIndex(r=>r.unit_id===id);
+      return idx>=0?jhPool.splice(idx,1)[0]:null;
+    }).filter(Boolean);
+    if(gjList.length||jhList.length) groups.push({label:mg.label, gjList, jhList});
+  });
+
+  const gjLeft=[];
+  gjPool.forEach(gj=>{
+    const gjName=gj.unit_name||unitName(gj.unit_id);
+    const region=gjName.split(/\s+/)[0]||gjName;
+    const idx=jhPool.findIndex(jh=>(jh.unit_name||unitName(jh.unit_id)).includes(region));
+    if(idx>=0){
+      groups.push({label:gjName, gjList:[gj], jhList:[jhPool.splice(idx,1)[0]]});
+    } else {
+      gjLeft.push(gj);
+    }
+  });
+  if(gjLeft.length===1 && jhPool.length===1){
+    const gj=gjLeft.pop(), jh=jhPool.pop();
+    groups.push({label:gj.unit_name||unitName(gj.unit_id), gjList:[gj], jhList:[jh]});
+  }
+  gjLeft.forEach(gj=>groups.push({label:gj.unit_name||unitName(gj.unit_id), gjList:[gj], jhList:[]}));
+  jhPool.forEach(jh=>groups.push({label:jh.unit_name||unitName(jh.unit_id), gjList:[], jhList:[jh]}));
+  return groups;
+}
+// 1페이지: 표지(상단 절반) + 전체 평가 요약표(회사·평가단위·채널·총점·등급을 한 표에)
+function buildCoverSummaryPage(companyIds,results,month,scopeLabel){
+  let rows="";
+  companyIds.forEach(cid=>{
+    const coNm=coName(cid)||cid;
+    const coRows=results.filter(r=>(r.company_id||unitCompanyId(r.unit_id))===cid);
+    const gjRows=coRows.filter(r=>r.eval_type==="거점도매");
+    const jhRows=coRows.filter(r=>r.eval_type==="종합도매");
+    const vcRows=coRows.filter(r=>r.eval_type==="VC");
+    const groups=rpBuildLocationGroups(gjRows,jhRows);
+
+    // 이 회사에 속한 모든 행(거점도매/종합도매/VC)을 먼저 다 모은 뒤, 첫 행에만
+    // rowspan으로 회사명 셀을 붙여서 표 안에서 회사 단위로 묶습니다. 지점 세트(예: 원주
+    // 백제약품+백제원주(강원))가 바뀌는 경계는 선이 아니라 배경색을 번갈아 칠해서 구분합니다.
+    const items=[];
+    let band=0;
+    groups.forEach(g=>{
+      band++;
+      const bandCls=band%2?"band-a":"band-b";
+      g.gjList.forEach(r=>items.push({r,ch:"거점도매",bandCls}));
+      g.jhList.forEach(r=>items.push({r,ch:"종합도매",bandCls}));
+    });
+    vcRows.forEach(r=>{ band++; items.push({r,ch:"VC",bandCls:band%2?"band-a":"band-b"}); });
+    if(!items.length)return;
+
+    items.forEach(({r,ch,bandCls},i)=>{
+      const cls = `${bandCls}${i===0?' co-first':''}`;
+      rows+=`<tr class="${cls}">
+        ${i===0?`<td class="co" rowspan="${items.length}">${coNm}</td>`:""}
+        <td class="nm">${r.unit_name||unitName(r.unit_id)}</td>
+        <td>${ch}</td>
+        <td>${scoreDisplay(r)}/${maxDisplay(r)}</td>
+        <td>${r.grade?rpGradeChip(r.grade):"—"}</td>
+      </tr>`;
+    });
+  });
+
+  return `<div class="rp-page">
+    <div class="rp-cover">
+      <div class="rp-cover-mark">DW</div>
+      <div class="rp-cover-brand">대웅제약 유통지원팀</div>
+      <div class="rp-cover-title">블록형 거점도매 평가 종합 보고서</div>
+      <div class="rp-cover-scope">${scopeLabel}</div>
+      <div class="rp-cover-period">평가기간 ${month}</div>
+    </div>
+    <div class="rp-sumhd"><span class="t">📋 전체 평가 요약</span><span class="n">회사 · 평가단위별 총점/등급 한눈에 보기</span></div>
+    <table class="rp-sum-grid">
+      <colgroup><col style="width:20%"><col style="width:28%"><col style="width:16%"><col style="width:18%"><col style="width:18%"></colgroup>
+      <thead><tr><th style="text-align:left">회사</th><th style="text-align:left">평가단위</th><th>채널</th><th>총점</th><th>등급</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+// 지점 1페이지: 그 위치에 속한 거점도매·종합도매 단위(1개 이상)를 한 페이지 안에 이어붙입니다.
+// (평택·파주처럼 같은 채널이 여러 개 섞이면 채널 pill 옆에 지점명도 함께 표시합니다.)
+function buildLocationPage(coNm, group, detailMap, prevDetailMap, prevRowsByKey){
+  const {label, gjList=[], jhList=[]}=group;
+  const gjShowName=gjList.length>1, jhShowName=jhList.length>1;
+  const blocks=[
+    ...gjList.map(gj=>rpChannelBlock(gj,"거점도매",detailMap,prevDetailMap,prevRowsByKey[`${gj.unit_id}__거점도매`],gjShowName)),
+    ...jhList.map(jh=>rpChannelBlock(jh,"종합도매",detailMap,prevDetailMap,prevRowsByKey[`${jh.unit_id}__종합도매`],jhShowName)),
+  ];
+  return `<div class="rp-page">
+    <div class="rp-loc-title">${label}</div>
+    <div class="rp-loc-sub">${coNm} · 거점도매+종합도매 한 세트</div>
+    ${blocks.join("")}
+  </div>`;
+}
+
+// 마지막 페이지: VC는 지점이 아니라 회사 전체 단위 평가라 모든 회사를 모아 한 페이지에 둡니다.
+function buildVcPage(companyIds,results,detailMap,prevDetailMap,prevRowsByKey){
+  let blocks="";
+  companyIds.forEach(cid=>{
+    const vcRows=results.filter(r=>(r.company_id||unitCompanyId(r.unit_id))===cid && r.eval_type==="VC");
+    if(!vcRows.length)return;
+    const coNm=coName(cid)||cid;
+    const showName=vcRows.length>1;
+    blocks+=`<div class="rp-vc-co-block">
+      <div class="rp-vc-co-name">${coNm}</div>
+      ${vcRows.map(r=>rpChannelBlock(r,"VC",detailMap,prevDetailMap,prevRowsByKey[`${r.unit_id}__VC`],showName)).join("")}
+    </div>`;
+  });
+  if(!blocks)return "";
+  return `<div class="rp-page">
+    <div class="rp-loc-title">🤝 VC 평가</div>
+    <div class="rp-loc-sub">전체 회사 · 회사 전체 단위 평가라 지점과 별도로 마지막 장에 모았습니다</div>
+    ${blocks}
+  </div>`;
+}
+
+// 인쇄용: 새 창에 전용 스타일로 동일한 보고서를 다시 그려서 인쇄합니다.
+// (본 화면의 다른 페이지 인쇄 설정에 영향을 주지 않기 위해 별도 창을 사용합니다.
+//  창에서 뜨는 인쇄 대화상자의 "프린터" 선택에서 "PDF로 저장"을 고르면 파일로 저장됩니다.)
+function printReportWindow(){
+  const ctx=S._reportCtx;
+  if(!ctx||!ctx.results||!ctx.results.length){toast("먼저 평가월을 선택하세요","err");return}
+  const pages=buildReportPages(ctx.companyIds,ctx.results,ctx.detailMap,ctx.prevRowsByKey,ctx.prevDetailMap,ctx.month,ctx.scopeLabel);
+  const w=window.open("","_blank");
+  w.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
+    <title>보고서 출력 · ${ctx.month}</title>
+    <style>
+      /* 브라우저는 인쇄 시 기본적으로 배경색·배경이미지를 생략합니다(잉크 절약 기본 동작).
+         표 헤더 색, 알약형 배지, 도넛차트(conic-gradient), 지점명 구분선이 전부 이 설정
+         때문에 인쇄/PDF에서 사라지므로, 모든 요소에 강제로 색을 인쇄하도록 지정합니다. */
+      *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact}
+      body{margin:0;font-family:'Pretendard','Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+        color:#1F2937;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      /* 페이지 1개 = rp-page 1개(표지+요약 / 지점 1개 / 마지막 VC). 지점 카드 하나가
+         두 채널 상세를 다 담아 길어질 수 있으므로, 페이지 전체가 아니라 도넛·표 행처럼
+         작은 단위에만 break-inside:avoid를 걸어 내용이 잘리거나 빈 페이지가 생기지 않게 합니다. */
+      .rp-page{padding:0}
+      .rp-page+.rp-page{break-before:page;page-break-before:always}
+      .rp-pill{font-size:9px;font-weight:800;padding:2px 10px;border-radius:20px}
+      .rp-pill-gj{background:#EEF2FF;color:#4338CA}
+      .rp-pill-jh{background:#F0FDF4;color:#15803D}
+      .rp-pill-vc{background:#FFF7ED;color:#C2410C}
+      .rp-grade-chip{display:inline-block;font-size:9px;font-weight:800;padding:2px 9px;border-radius:20px;color:#fff}
+      .rp-g-S{background:#0EA5E9}.rp-g-A{background:#2563EB}.rp-g-B{background:#64748B}.rp-g-C{background:#D97706}.rp-g-D{background:#DC2626}
+      .rp-prev{font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:20px;background:#F1F5F9;color:#64748B}
+      .rp-prev.up{background:#EAFBF1;color:#15803D}
+      .rp-prev.down{background:#FEF2F2;color:#B91C1C}
+      /* 1페이지: 표지(상단 절반) + 전체 요약표(하단) */
+      .rp-cover{min-height:110mm;display:flex;flex-direction:column;align-items:center;justify-content:center;
+        text-align:center;border-bottom:3px solid #C7CDD6;margin-bottom:9mm}
+      .rp-cover-mark{width:50px;height:50px;border-radius:50%;background:#0E2A52;color:#fff;
+        display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:900;margin-bottom:12px}
+      .rp-cover-brand{font-size:11px;color:#9CA3AF;font-weight:700;letter-spacing:1px}
+      .rp-cover-title{font-size:21px;font-weight:900;color:#111827;margin:9px 0 6px}
+      .rp-cover-scope{font-size:12.5px;font-weight:800;color:#0E2A52;margin-top:5px}
+      .rp-cover-period{font-size:11px;color:#6B7280;margin-top:11px;background:#F3F4F6;padding:5px 14px;border-radius:20px}
+      .rp-sumhd{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+      .rp-sumhd .t{font-size:12px;font-weight:900;color:#111827}
+      .rp-sumhd .n{margin-left:auto;font-size:9.5px;color:#9CA3AF}
+      table.rp-sum-grid{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed}
+      table.rp-sum-grid th{background:#3F4C6C;color:#fff;font-weight:700;padding:5px 4px;text-align:center;font-size:9.5px}
+      table.rp-sum-grid td{padding:4.5px 6px;border-bottom:0.5px solid #F3F4F6;text-align:center}
+      table.rp-sum-grid td.nm{text-align:left;font-weight:700}
+      table.rp-sum-grid td.co{text-align:left;font-weight:800;color:#0E2A52;background:#F7F9FC;
+        vertical-align:middle;border-right:2px solid #E5E9F0}
+      table.rp-sum-grid tr.co-first td{border-top:2.5px solid #9AA5B1}
+      /* 지점 세트 경계는 선 대신 배경색을 번갈아 칠해서 구분합니다 */
+      table.rp-sum-grid tr.band-a td:not(.co){background:#fff}
+      table.rp-sum-grid tr.band-b td:not(.co){background:#EEF2F8}
+      table.rp-sum-grid tr{break-inside:avoid;page-break-inside:avoid}
+      /* 지점 페이지 / VC 페이지 */
+      .rp-loc-title{font-size:15px;font-weight:900;color:#111827;margin-bottom:3px}
+      .rp-loc-sub{font-size:10px;color:#9CA3AF;margin-bottom:9mm;padding-bottom:6mm;border-bottom:2px solid #EEF1F6;
+        break-after:avoid;page-break-after:avoid}
+      .rp-ch-block{margin-bottom:8mm}
+      .rp-ch-block:last-child{margin-bottom:0}
+      .rp-ch-hd2{display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap;
+        break-after:avoid;page-break-after:avoid}
+      .rp-ch-hd2 .score{margin-left:auto;font-size:14px;font-weight:900;color:#111827}
+      .rp-ch-hd2 .score span{font-size:9px;font-weight:600;color:#9CA3AF}
+      .rp-ch-unit-nm{font-size:10.5px;font-weight:700;color:#6B7280}
+      .rp-vc-co-block{margin-bottom:8mm}
+      .rp-vc-co-block:last-child{margin-bottom:0}
+      .rp-vc-co-name{font-size:12px;font-weight:900;color:#0E2A52;margin-bottom:6px;
+        break-after:avoid;page-break-after:avoid}
+      /* 항목별 전달대비 도넛(CSS conic-gradient — 스크립트 없이 인쇄 시에도 그대로 렌더링) */
+      .rp-cmp-hd{font-size:8.5px;font-weight:800;color:#9CA3AF;margin:3px 0 5px}
+      .rp-cmp-grid{display:grid;gap:6px;margin-bottom:8px}
+      .rp-cmp-item{background:#F7F9FC;border-radius:8px;padding:6px 3px;text-align:center;break-inside:avoid}
+      .rp-cmp-donut{width:42px;height:42px;border-radius:50%;margin:0 auto;position:relative;display:flex;align-items:center;justify-content:center}
+      .rp-cmp-donut::before{content:"";position:absolute;inset:5px;background:#fff;border-radius:50%}
+      .rp-cmp-center{position:relative;z-index:1;font-size:8.5px;font-weight:900;color:#2F3442}
+      .rp-cmp-name{font-size:7.8px;color:#6B7280;font-weight:700;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .rp-cmp-delta{font-size:7.5px;font-weight:700;margin-top:1px}
+      .rp-grp-tag{font-size:7.5px;font-weight:800;color:#9CA3AF;margin:6px 0 2px}
+      table.rp-grid{width:100%;border-collapse:collapse;font-size:9.5px}
+      table.rp-grid-fixed{table-layout:fixed}
+      table.rp-grid-fixed td.nm,table.rp-grid-fixed td.rs{word-break:break-word}
+      table.rp-grid thead{display:table-header-group}
+      table.rp-grid th{background:#3F4C6C;color:#fff;font-weight:700;padding:5px 4px;text-align:center;font-size:9px}
+      table.rp-grid th:first-child{border-radius:6px 0 0 0}
+      table.rp-grid th:last-child{border-radius:0 6px 0 0}
+      table.rp-grid td{padding:4px 6px;border-bottom:0.5px solid #F3F4F6;text-align:center}
+      table.rp-grid td.nm{text-align:left;font-weight:700;color:#2F3442}
+      table.rp-grid tr{break-inside:avoid;page-break-inside:avoid}
+      table.rp-grid td.rs{text-align:left;color:#4B5563;font-weight:400}
+      table.rp-grid tr:nth-child(even) td{background:#FAFBFC}
+      table.rp-grid td.dock{color:#B91C1C;font-weight:800}
+      table.rp-grid tr.claim td{background:#FFFBEB}
+      table.rp-grid tr.claim td.nm{color:#92400E}
+      @page{size:A4 portrait;margin:10mm}
+    </style></head><body>
+    ${pages.join("")}
+    <script>window.onload=()=>{setTimeout(()=>window.print(),200)}<\/script>
+    </body></html>`);
+  w.document.close();
+}
+
 document.addEventListener("DOMContentLoaded",()=>{
   // Chart.js datalabels 플러그인 전역 등록
   if(window.Chart && window.ChartDataLabels){
@@ -4726,3 +6169,4 @@ document.addEventListener("DOMContentLoaded",()=>{
 
 </body>
 </html>
+                                                                                                                                                                                                                                                                                               
