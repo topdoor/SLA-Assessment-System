@@ -2082,7 +2082,10 @@ const CFG_KEY="sla_cfg_kor_force_working_20260630_v3_detail_summary";
 const DEFAULT_APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbzzRg0dpVcj8BIDs8FJDiv0z3KYZyThfUXrmTuNnLDoY7P7abj_1Wbl_0upcauNQhCL5w/exec";
 // 직전 수정본에서 잘못 저장될 수 있었던 URL입니다. 발견되면 위 정상 URL로 교체합니다.
 const WRONG_APPS_SCRIPT_URLS=[
-  "https://script.google.com/macros/s/AKfycby2cusoxz6ELx1rAe_T4Q0D2hSKrscV8Yrs8q-BxqLYOMckyDX8x3wKb03DBzqr5xjQQA/exec"
+  "https://script.google.com/macros/s/AKfycby2cusoxz6ELx1rAe_T4Q0D2hSKrscV8Yrs8q-BxqLYOMckyDX8x3wKb03DBzqr5xjQQA/exec",
+  // get_claim_detail 등 최신 기능이 없는 구버전 배포 — 이 URL이 브라우저에 이미 저장돼 있으면
+  // 파일의 DEFAULT_APPS_SCRIPT_URL을 바꿔도 무시되고 계속 이 URL을 쓰는 문제가 있어 추가합니다.
+  "https://script.google.com/macros/s/AKfycbySLve_3-_v3t2NNfbvPqLNNUksxkDrpYVMOtldCFMVxIzPce01m5J2v82GmjuHRUy7eA/exec"
 ];
 
 // ── 6월 거점도매 실적 보조 조회
