@@ -4911,6 +4911,10 @@ async function loadClaimStatus() {
     myUnitIdSet = new Set(UNITS.filter(x => x.co === cu.co).map(x => x.id));
   }
 
+  // [2026-07] 클레임현황은 거점도매 평가 지표입니다. 종합도매/VC는 이름이 같아도
+  // 무관한 별개 채널이므로 화면에서 제외합니다.
+  const hubUnitIdSet = new Set(UNITS.filter(x => x.ch === "거점도매").map(x => x.id));
+
   loading(true);
   try {
     const d = await sheetsPost("get_claim_counts", { eval_month: month });
@@ -4922,6 +4926,7 @@ async function loadClaimStatus() {
     // 화면에 표시할 평가단위 목록: 마스터 목록(UNIT_NAME_MAP) 기준 + 원본에만 있는 코드도 누락 없이 포함
     let unitIds = Object.keys(UNIT_NAME_MAP);
     Object.keys(counts).forEach(id => { if (!unitIds.includes(id)) unitIds.push(id); });
+    unitIds = unitIds.filter(id => hubUnitIdSet.has(id));
     if (!isAdmin && myUnitIdSet) unitIds = unitIds.filter(id => myUnitIdSet.has(id));
 
     if (!unitIds.length) {
@@ -5022,7 +5027,7 @@ async function loadClaimStatus() {
     // 수 있으므로, 재배포를 기다리지 않고 항목별상세점수 기반 구버전 방식으로 자동 전환합니다.
     console.warn("[클레임현황] get_claim_counts 실패 → 구버전 방식으로 폴백:", e.message);
     try {
-      await loadClaimStatusLegacy(month, isAdmin, cu, myUnitIdSet);
+      await loadClaimStatusLegacy(month, isAdmin, cu, myUnitIdSet, hubUnitIdSet);
     } catch(e2) {
       loading(false);
       toast("오류: " + e2.message, "err");
@@ -5034,7 +5039,7 @@ async function loadClaimStatus() {
 // 빈 화면/오류로 남지 않도록, 기존에 이미 저장돼 있던 항목별상세점수(fetchDetailRowsWithClaim)
 // 데이터로 집계해 보여줍니다. 새 방식보다 정확도는 떨어질 수 있지만(저장 시점 스냅샷 기준),
 // "아무것도 안 뜨는" 상황은 방지합니다.
-async function loadClaimStatusLegacy(month, isAdmin, cu, myUnitIdSet) {
+async function loadClaimStatusLegacy(month, isAdmin, cu, myUnitIdSet, hubUnitIdSet) {
   loading(true);
   try {
     const params = { eval_month: month };
@@ -5045,6 +5050,9 @@ async function loadClaimStatusLegacy(month, isAdmin, cu, myUnitIdSet) {
     let rows = (allClaimRows || []).filter(r =>
       CLAIM_ITEM_NAMES.includes(canonicalClaimItemName(r.item_name||r.item))
     ).map(r=>normalizeRow({...r,item_name:canonicalClaimItemName(r.item_name||r.item)||r.item_name}));
+
+    // 클레임현황은 거점도매 지표 — 종합도매/VC 단위는 제외합니다.
+    if (hubUnitIdSet) rows = rows.filter(r => hubUnitIdSet.has(r.unit_id));
 
     if (!isAdmin && myUnitIdSet) {
       rows = rows.filter(r => myUnitIdSet.has(r.unit_id));
