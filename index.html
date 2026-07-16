@@ -3175,6 +3175,35 @@ async function doLogin(){
   initApp();
 }
 
+// [2026-07] 평가단위 명칭을 하드코딩된 UNITS 배열 대신 구글시트 "평가단위마스터"의
+// "평가단위명" 컬럼을 실시간 원본으로 사용합니다. 로그인 직후 한 번 조회해서
+// UNITS 배열(및 UNIT_NAME_MAP)의 표시명을 덮어씁니다 — 시트에서 이름을 바꾸면
+// 코드 재배포 없이 다음 로그인부터 바로 반영됩니다. 조회 실패 시에는 기존
+// 하드코딩된 이름을 그대로 사용해 화면이 깨지지 않도록 합니다.
+async function syncUnitMasterFromSheet(){
+  if(!S.cfg.url) return;
+  try{
+    const d = await sheetsGet("평가단위마스터", {});
+    if(!d?.success || !d.data?.length) return;
+    d.data.forEach(row=>{
+      const code = String(row["평가단위코드"]||"").trim();
+      const nm   = String(row["평가단위명"]||"").trim();
+      if(!code || !nm) return;
+      const co = String(row["회사코드"]||"").trim();
+      const ch = row["평가구분"] ? normalizeEvalType(row["평가구분"]) : "";
+      const u = UNITS.find(x=>x.id===code);
+      if(u){
+        u.name = nm;
+        if(co) u.co = co;
+        if(ch) u.ch = ch;
+      } else {
+        UNITS.push({id:code, name:nm, co, ch});
+      }
+      if(typeof UNIT_NAME_MAP==="object") UNIT_NAME_MAP[code]=nm;
+    });
+  }catch(e){ /* 조회 실패 시 하드코딩된 기본값 유지 */ }
+}
+
 // ══════════════════════════════════════════════════════════
 //  APP INIT
 // ══════════════════════════════════════════════════════════
@@ -3194,7 +3223,7 @@ function initApp(){
   // 자동으로 7월이 기본이 됩니다). 조회에 실패해도 fillMonths()의 기본값(이번 달)으로
   // 그대로 진행합니다.
   loading(true);
-  applyLatestDataMonth().finally(()=>{
+  Promise.all([applyLatestDataMonth(), syncUnitMasterFromSheet()]).finally(()=>{
     loading(false);
     navTo(u.role==="admin"?"dashboard":"my-eval");
   });
