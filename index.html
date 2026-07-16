@@ -1806,11 +1806,14 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
         <div class="card-t" id="cs-table-title">거점별 클레임 발생율 상세</div>
         <div class="tw"><table>
           <thead><tr>
-            <th>코드</th><th style="text-align:left">평가단위</th><th>주문건수</th>
+            <th>코드</th><th>도매상명</th>
             <th>배송지연</th><th>오배송</th><th>오출하</th><th>불량파손</th><th>클레임 합계건수</th>
           </tr></thead>
           <tbody id="cs-tbody"></tbody>
         </table></div>
+        <div style="background:var(--navy);color:#fff;font-weight:700;padding:9px 11px;border-radius:0 0 7px 7px;font-size:12px;margin-top:1px">
+          ※ 해당월 접수 기준 클레임 집계 자료이며, 실제 평가 결과와 차이가 있을 수 있으니 참고 부탁드립니다.
+        </div>
       </div>
     </div>
 
@@ -4853,6 +4856,11 @@ const UNIT_NAME_MAP = {
   W010:"평택 백제약품",W011:"파주 백제약품",
 };
 
+// [2026-07 개선] "클레임현황"은 더 이상 항목별상세점수(저장된 스냅샷 점수)를
+// 거치지 않습니다. 서버의 get_claim_counts 액션이 원본 클레임 스프레드시트
+// (CS 티켓 원본 탭 + 주문수량 DB 탭)만 그대로 집계해서 돌려주고, 화면은
+// 그 결과를 그대로 표시합니다 — 저장 시점이 어긋나 건수가 실제와 달라지는
+// 문제(스냅샷과 원본 데이터의 불일치)를 근본적으로 없애기 위함입니다.
 async function loadClaimStatus() {
   const month = document.getElementById("cs-month")?.value;
   if (!month) return;
@@ -4869,83 +4877,60 @@ async function loadClaimStatus() {
 
   loading(true);
   try {
-    // 관리자: 전체 조회 / 도매상: company_id 파라미터로 서버측 필터링 요청
-    const params = { eval_month: month };
-    if (!isAdmin && cu) params.company_id = cu.co;
-
-    const allClaimRows = await fetchDetailRowsWithClaim(params);
+    const d = await sheetsPost("get_claim_counts", { eval_month: month });
     loading(false);
-    let rows = (allClaimRows || []).filter(r =>
-      CLAIM_ITEM_NAMES.includes(canonicalClaimItemName(r.item_name||r.item))
-    ).map(r=>normalizeRow({...r,item_name:canonicalClaimItemName(r.item_name||r.item)||r.item_name}));
+    if (!d.success) throw new Error(d.error || "조회 실패");
 
-    // 도매상: 클라이언트 측 이중 필터링 (서버 필터가 안 될 경우 대비)
-    if (!isAdmin && myUnitIdSet) {
-      rows = rows.filter(r => myUnitIdSet.has(r.unit_id));
-    }
+    const counts = d.counts || {};
 
-    if (!rows.length) {
+    // 화면에 표시할 평가단위 목록: 마스터 목록(UNIT_NAME_MAP) 기준 + 원본에만 있는 코드도 누락 없이 포함
+    let unitIds = Object.keys(UNIT_NAME_MAP);
+    Object.keys(counts).forEach(id => { if (!unitIds.includes(id)) unitIds.push(id); });
+    if (!isAdmin && myUnitIdSet) unitIds = unitIds.filter(id => myUnitIdSet.has(id));
+
+    if (!unitIds.length) {
       document.getElementById("cs-cards").innerHTML =
         `<div style="grid-column:1/-1;padding:30px;text-align:center;color:var(--gray-400)">
-          ${month} 클레임 데이터가 없습니다.<br>
-          <small>📤 데이터 업로드 → 클레임 점수 자동 반영을 먼저 실행하세요</small>
+          ${month} 클레임 데이터가 없습니다.
         </div>`;
       document.getElementById("cs-table-card").style.display = "none";
       return;
     }
 
-    // reason 파싱: "0.12% (9건/7,537건)" → { rate:"0.12%", cnt:9, total:7537 }
-    // 구버전 문구("0.01%(발생 1건 / 주문 13,539건), 10/10점 반영 / 감점 없음")도 함께 대응합니다.
-    // — 시트에 신/구 버전 계산 결과가 같이 남아있는 경우, 구버전 문구는 기존 정규식과 안 맞아
-    //   건수가 0으로 보이는 문제가 있어 별도 패턴을 추가로 시도합니다.
-    function parseReason(reason) {
-      if (!reason) return { rate:"—", cnt:0, total:0, ok:false };
-      const m = reason.match(/([\d.]+)%\s*\((\d+)건\s*\/\s*([\d,]+)건\)/);
-      if (m) return { rate: m[1]+"%", cnt: parseInt(m[2])||0, total: parseInt(m[3].replace(/,/g,""))||0, ok:true };
-      const m2 = reason.match(/([\d.]+)%\s*\(발생\s*(\d+)건\s*\/\s*주문\s*([\d,]+)건\)/);
-      if (m2) return { rate: m2[1]+"%", cnt: parseInt(m2[2])||0, total: parseInt(m2[3].replace(/,/g,""))||0, ok:true };
-      return { rate: reason.split("%")[0]+"%"||"—", cnt:0, total:0, ok:false };
-    }
+    const items = ["배송지연 발생율","오배송 발생율","오출하 발생율","불량및파손 발생율"];
+    // 이번 달 일수 대비 "주문수량 DB"에 실제 채워진 일자 수가 적으면 주문건수가
+    // 과소 집계됐을 수 있어 경고 표시에 사용합니다.
+    const [yy,mm] = month.split("-").map(Number);
+    const daysInMonth = (yy && mm) ? new Date(yy, mm, 0).getDate() : 31;
 
-    // 거점별 그룹핑
     const grouped = {};
-    rows.forEach(r => {
-      if (!grouped[r.unit_id]) grouped[r.unit_id] = { unit_id:r.unit_id, items:{} };
-      const p = parseReason(r.reason);
-      const itemKey = canonicalClaimItemName(r.item_name||r.item)||r.item_name;
-      const prev = grouped[r.unit_id].items[itemKey];
-      // 동일 항목이 신/구 버전으로 중복 저장된 경우, 파싱에 실패한(구문 형식이 다른) 값이
-      // 이미 정상 파싱된 기존 값을 덮어써서 0건으로 보이지 않도록 방지합니다.
-      if (prev && prev.ok && !p.ok) return;
-      grouped[r.unit_id].items[itemKey] = {
-        score: parseFloat(r.score)||0,
-        reason: r.reason||"",
-        rate: p.rate, cnt: p.cnt, total: p.total, ok: p.ok,
+    unitIds.forEach(uid => {
+      const c = counts[uid] || {};
+      const itemsObj = {};
+      items.forEach(item => { itemsObj[item] = { cnt: c[CLAIM_TYPE_MAP[item]] || 0 }; });
+      grouped[uid] = {
+        unit_id: uid,
+        items: itemsObj,
+        total_cnt: Object.values(itemsObj).reduce((s,v)=>s+v.cnt,0),
+        total_order: c.order || 0,
+        order_days: c.order_days || 0,
       };
     });
 
-    // 주문건수: 배송지연 발생율의 total 사용 (4개 항목 동일)
-    Object.values(grouped).forEach(g => {
-      const first = Object.values(g.items)[0];
-      g.total_order = first ? first.total : 0;
-      // 총 클레임 건수
-      g.total_cnt = Object.values(g.items).reduce((s,v)=>s+v.cnt,0);
-    });
+    const orderWarn = (g) => (g.order_days > 0 && g.order_days < daysInMonth)
+      ? ` <span title="주문수량 DB에 ${g.order_days}/${daysInMonth}일치만 집계돼 있어 실제보다 적을 수 있음" style="color:#DD8500;cursor:help">⚠</span>`
+      : (g.order_days === 0 ? ` <span title="주문수량 DB에 해당 평가월 데이터가 없습니다" style="color:#DD8500;cursor:help">⚠</span>` : "");
 
     // ── 카드 렌더링 ──
     const cards = document.getElementById("cs-cards");
     cards.innerHTML = Object.values(grouped).sort((a,b)=>a.unit_id.localeCompare(b.unit_id)).map(g => {
-      const totalScore = Object.values(g.items).reduce((s,v)=>s+v.score,0);
-      const maxScore   = Object.keys(g.items).length * 10;
-      const hasDeduct  = totalScore < maxScore;
-      const color      = hasDeduct ? "var(--red)" : "var(--mint)";
-      const items      = ["배송지연 발생율","오배송 발생율","오출하 발생율","불량및파손 발생율"];
+      const hasDeduct = g.total_cnt > 0;
+      const color     = hasDeduct ? "var(--red)" : "var(--mint)";
 
       const itemRows = items.map(item => {
         const v = g.items[item];
-        if (!v) return "";
         const label = item.replace(" 발생율","");
-        const ded   = v.score < 10;
+        const ded   = v.cnt > 0;
         return `<div onclick="openClaimDetail('${item}','${g.unit_id}','${month}')"
           style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:4px 6px;
           border-bottom:0.5px solid var(--gray-100);cursor:pointer;border-radius:4px;transition:background .15s"
@@ -4963,7 +4948,7 @@ async function loadClaimStatus() {
             <div style="font-size:11px;color:var(--gray-400)">${g.unit_id}</div>
             <div style="font-size:13px;font-weight:700;color:var(--navy)">${UNIT_NAME_MAP[g.unit_id]||g.unit_id}</div>
             <div style="font-size:11px;color:var(--gray-400);margin-top:2px">
-              주문 ${g.total_order.toLocaleString()}건 · 클레임 ${g.total_cnt}건
+              클레임 ${g.total_cnt}건
             </div>
           </div>
           <div style="text-align:right">
@@ -4978,29 +4963,22 @@ async function loadClaimStatus() {
     // ── 테이블 렌더링 ──
     const tbody = document.getElementById("cs-tbody");
     tbody.innerHTML = Object.values(grouped).sort((a,b)=>a.unit_id.localeCompare(b.unit_id)).map(g => {
-      const items      = ["배송지연 발생율","오배송 발생율","오출하 발생율","불량및파손 발생율"];
-      const totalScore = Object.values(g.items).reduce((s,v)=>s+v.score,0);
       const mkCell = (itemName) => {
         const v = g.items[itemName];
-        if (!v) return `<td style="text-align:center;color:var(--gray-300)">—</td>`;
-        const ded = v.score < 10;
+        const ded = v.cnt > 0;
         return `<td style="text-align:center;cursor:pointer" onclick="openClaimDetail('${itemName}','${g.unit_id}','${month}')" title="상세 보기">
           <span style="font-weight:700;color:${ded?"var(--red)":"var(--mint)"}">${v.cnt}건 🔍</span>
         </td>`;
       };
       return `<tr>
         <td style="text-align:center;font-size:11px;color:var(--gray-400)">${g.unit_id}</td>
-        <td style="font-size:12px">${UNIT_NAME_MAP[g.unit_id]||g.unit_id}</td>
-        <td style="text-align:center;font-size:12px">
-          ${g.total_order.toLocaleString()}<br>
-          <span style="font-size:10px;color:${g.total_cnt>0?"#E53E3E":"var(--gray-400)"}">클레임 ${g.total_cnt}건</span>
-        </td>
+        <td style="text-align:center;font-size:12px">${UNIT_NAME_MAP[g.unit_id]||g.unit_id}</td>
         ${items.map(mkCell).join("")}
         <td style="text-align:center;font-weight:700;color:${g.total_cnt>0?"var(--red)":"var(--mint)"}">${g.total_cnt}건</td>
       </tr>`;
     }).join("");
 
-    document.getElementById("cs-table-title").textContent = `${month} 거점별 클레임 발생율 상세`;
+    document.getElementById("cs-table-title").textContent = `${month} 거점별 클레임 발생율 상세 (원본 데이터 직접 집계)`;
     document.getElementById("cs-table-card").style.display = "";
 
   } catch(e) {
