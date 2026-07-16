@@ -4914,8 +4914,8 @@ async function loadClaimStatus() {
   loading(true);
   try {
     const d = await sheetsPost("get_claim_counts", { eval_month: month });
-    loading(false);
     if (!d.success) throw new Error(d.error || "조회 실패");
+    loading(false);
 
     const counts = d.counts || {};
 
@@ -5018,8 +5018,150 @@ async function loadClaimStatus() {
     document.getElementById("cs-table-card").style.display = "";
 
   } catch(e) {
+    // get_claim_counts 액션이 없는 배포(다른 PC/브라우저에 저장된 예전 Apps Script URL 등)일
+    // 수 있으므로, 재배포를 기다리지 않고 항목별상세점수 기반 구버전 방식으로 자동 전환합니다.
+    console.warn("[클레임현황] get_claim_counts 실패 → 구버전 방식으로 폴백:", e.message);
+    try {
+      await loadClaimStatusLegacy(month, isAdmin, cu, myUnitIdSet);
+    } catch(e2) {
+      loading(false);
+      toast("오류: " + e2.message, "err");
+    }
+  }
+}
+
+// [폴백] get_claim_counts를 지원하지 않는 구버전 Apps Script 배포에서도 클레임현황이
+// 빈 화면/오류로 남지 않도록, 기존에 이미 저장돼 있던 항목별상세점수(fetchDetailRowsWithClaim)
+// 데이터로 집계해 보여줍니다. 새 방식보다 정확도는 떨어질 수 있지만(저장 시점 스냅샷 기준),
+// "아무것도 안 뜨는" 상황은 방지합니다.
+async function loadClaimStatusLegacy(month, isAdmin, cu, myUnitIdSet) {
+  loading(true);
+  try {
+    const params = { eval_month: month };
+    if (!isAdmin && cu) params.company_id = cu.co;
+
+    const allClaimRows = await fetchDetailRowsWithClaim(params);
     loading(false);
-    toast("오류: " + e.message, "err");
+    let rows = (allClaimRows || []).filter(r =>
+      CLAIM_ITEM_NAMES.includes(canonicalClaimItemName(r.item_name||r.item))
+    ).map(r=>normalizeRow({...r,item_name:canonicalClaimItemName(r.item_name||r.item)||r.item_name}));
+
+    if (!isAdmin && myUnitIdSet) {
+      rows = rows.filter(r => myUnitIdSet.has(r.unit_id));
+    }
+
+    if (!rows.length) {
+      document.getElementById("cs-cards").innerHTML =
+        `<div style="grid-column:1/-1;padding:30px;text-align:center;color:var(--gray-400)">
+          ${month} 클레임 데이터가 없습니다.
+        </div>`;
+      document.getElementById("cs-table-card").style.display = "none";
+      return;
+    }
+
+    function parseReason(reason) {
+      if (!reason) return { rate:"—", cnt:0, total:0 };
+      const m = reason.match(/([\d.]+)%\s*\((\d+)건\/([\d,]+)건\)/);
+      if (!m) return { rate: reason.split("%")[0]+"%"||"—", cnt:0, total:0 };
+      return {
+        rate: m[1] + "%",
+        cnt:  parseInt(m[2]) || 0,
+        total: parseInt(m[3].replace(/,/g,"")) || 0,
+      };
+    }
+
+    const grouped = {};
+    rows.forEach(r => {
+      if (!grouped[r.unit_id]) grouped[r.unit_id] = { unit_id:r.unit_id, items:{} };
+      const p = parseReason(r.reason);
+      const itemKey = canonicalClaimItemName(r.item_name||r.item)||r.item_name;
+      grouped[r.unit_id].items[itemKey] = {
+        score: parseFloat(r.score)||0, reason: r.reason||"",
+        rate: p.rate, cnt: p.cnt, total: p.total,
+      };
+    });
+
+    Object.values(grouped).forEach(g => {
+      const first = Object.values(g.items)[0];
+      g.total_order = first ? first.total : 0;
+      g.total_cnt = Object.values(g.items).reduce((s,v)=>s+v.cnt,0);
+    });
+
+    const items = CLAIM_ITEM_NAMES;
+
+    const cards = document.getElementById("cs-cards");
+    cards.innerHTML = Object.values(grouped).sort((a,b)=>a.unit_id.localeCompare(b.unit_id)).map(g => {
+      const totalScore = Object.values(g.items).reduce((s,v)=>s+v.score,0);
+      const maxScore   = Object.keys(g.items).length * 10;
+      const hasDeduct  = totalScore < maxScore;
+      const color      = hasDeduct ? "var(--red)" : "var(--mint)";
+
+      const itemRows = items.map(item => {
+        const v = g.items[item];
+        if (!v) return "";
+        const label = item.replace(" 발생율","");
+        const ded   = v.score < 10;
+        return `<div onclick="openClaimDetail('${item}','${g.unit_id}','${month}')"
+          style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:4px 6px;
+          border-bottom:0.5px solid var(--gray-100);cursor:pointer;border-radius:4px;transition:background .15s"
+          onmouseover="this.style.background='var(--gray-50)'" onmouseout="this.style.background=''">
+          <span style="color:var(--gray-500)">${label}</span>
+          <span style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:10px;color:var(--gray-400)">${v.cnt}건 ${v.rate}</span>
+            <span style="font-weight:700;color:${ded?"var(--red)":"var(--gray-600)"}">${v.score}점${ded?" ▼":""}
+              <span style="color:var(--gray-300);font-size:9px"> 🔍</span>
+            </span>
+          </span>
+        </div>`;
+      }).join("");
+
+      return `<div class="card" style="padding:14px;border-top:3px solid ${color}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+          <div>
+            <div style="font-size:11px;color:var(--gray-400)">${g.unit_id}</div>
+            <div style="font-size:13px;font-weight:700;color:var(--navy)">${UNIT_NAME_MAP[g.unit_id]||g.unit_id}</div>
+            <div style="font-size:11px;color:var(--gray-400);margin-top:2px">
+              주문 ${g.total_order.toLocaleString()}건 · 클레임 ${g.total_cnt}건
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:22px;font-weight:900;color:${color}">${totalScore}</div>
+            <div style="font-size:10px;color:var(--gray-400)">/ ${maxScore}점</div>
+          </div>
+        </div>
+        ${itemRows}
+      </div>`;
+    }).join("");
+
+    const tbody = document.getElementById("cs-tbody");
+    tbody.innerHTML = Object.values(grouped).sort((a,b)=>a.unit_id.localeCompare(b.unit_id)).map(g => {
+      const totalScore = Object.values(g.items).reduce((s,v)=>s+v.score,0);
+      const mkCell = (itemName) => {
+        const v = g.items[itemName];
+        if (!v) return `<td style="text-align:center;color:var(--gray-300)">—</td>`;
+        const ded = v.score < 10;
+        return `<td style="text-align:center;cursor:pointer" onclick="openClaimDetail('${itemName}','${g.unit_id}','${month}')" title="상세 보기">
+          <span style="font-weight:700;color:${ded?"var(--red)":"var(--mint)"}">${v.score}점</span><br>
+          <span style="font-size:10px;color:var(--gray-400)">${v.cnt}건 / ${v.rate} 🔍</span>
+        </td>`;
+      };
+      return `<tr>
+        <td style="text-align:center;font-size:11px;color:var(--gray-400)">${g.unit_id}</td>
+        <td style="font-size:12px">${UNIT_NAME_MAP[g.unit_id]||g.unit_id}</td>
+        <td style="text-align:center;font-size:12px">
+          ${g.total_order.toLocaleString()}<br>
+          <span style="font-size:10px;color:${g.total_cnt>0?"#E53E3E":"var(--gray-400)"}">클레임 ${g.total_cnt}건</span>
+        </td>
+        ${items.map(mkCell).join("")}
+        <td style="text-align:center;font-weight:700;color:${totalScore<40?"var(--red)":"var(--mint)"}">${totalScore}/40</td>
+      </tr>`;
+    }).join("");
+
+    document.getElementById("cs-table-title").textContent = `${month} 거점별 클레임 발생율 상세 (구버전 방식 · 저장된 점수 기준)`;
+    document.getElementById("cs-table-card").style.display = "";
+  } catch(e) {
+    loading(false);
+    throw e;
   }
 }
 
