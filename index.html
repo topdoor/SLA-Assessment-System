@@ -1505,16 +1505,17 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
         <div style="overflow-y:auto;padding:16px 22px;flex:1">
           <div id="dcm-modal-loading" style="text-align:center;padding:30px;color:var(--gray-400);display:none">불러오는 중...</div>
           <div id="dcm-modal-body" style="display:none">
-            <div id="dcm-modal-summary" style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap"></div>
+            <div id="dcm-modal-summary" style="font-size:12px;color:var(--gray-400);margin-bottom:14px"></div>
             <div class="tw">
               <table>
                 <thead><tr>
-                  <th style="width:90px">관계사</th>
-                  <th>거래처명</th>
-                  <th>주소</th>
+                  <th>거래처명 / 주소</th>
+                  <th style="width:90px;text-align:center">대웅제약</th>
+                  <th style="width:90px;text-align:center">대웅바이오</th>
+                  <th style="width:90px;text-align:center">한올바이오</th>
                 </tr></thead>
                 <tbody id="dcm-modal-tbody">
-                  <tr><td colspan="3"><div class="empty"><p>데이터 없음</p></div></td></tr>
+                  <tr><td colspan="4"><div class="empty"><p>데이터 없음</p></div></td></tr>
                 </tbody>
               </table>
             </div>
@@ -4787,8 +4788,8 @@ async function openDcmDetail(uid, month){
     if(!dcmName){
       loading.style.display="none";
       body.style.display="block";
-      summary.innerHTML=`<span style="font-size:12px;color:var(--gray-400)">이 평가단위는 DCM미연동 매핑 대상이 아닙니다.</span>`;
-      tbody.innerHTML='<tr><td colspan="3"><div class="empty"><p>데이터 없음</p></div></td></tr>';
+      summary.textContent = "이 평가단위는 DCM미연동 매핑 대상이 아닙니다.";
+      tbody.innerHTML='<tr><td colspan="4"><div class="empty"><p>데이터 없음</p></div></td></tr>';
       return;
     }
     const allRows = await fetchDcmSheetRows();
@@ -4811,68 +4812,59 @@ async function openDcmDetail(uid, month){
     loading.style.display="none";
     body.style.display="block";
 
-    // 필터 탭에서 재사용할 수 있도록 전체 목록을 저장해둡니다.
-    S._dcmModal = { rows: unlinked, filter: "ALL" };
-    renderDcmModalSummary(counts, unlinked.length);
+    // [2026-07 개선] 관계사 탭으로 하나씩 넘겨보던 방식 대신, 거래처 하나당 한 행에
+    // 대웅제약·대웅바이오·한올바이오 3개 열로 미연동 여부를 한 번에 보여줍니다.
+    const pivot = {};
+    unlinked.forEach(r=>{
+      const shopName = dcmField(r,["거래처명"]) || "—";
+      const addr = dcmField(r,["주소"]) || "";
+      const aff = String(dcmField(r,["관계사"])).trim();
+      if(!pivot[shopName]) pivot[shopName] = { name:shopName, addr, flags:{} };
+      if(!pivot[shopName].addr && addr) pivot[shopName].addr = addr;
+      pivot[shopName].flags[aff] = true;
+    });
+    const pivotRows = Object.values(pivot).sort((a,b)=>a.name.localeCompare(b.name,"ko"));
+
+    S._dcmModal = { pivotRows, counts };
+    renderDcmModalSummary(counts, unlinked.length, pivotRows.length);
     renderDcmModalTable();
   }catch(e){
     loading.style.display="none";
     body.style.display="block";
-    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--red);padding:20px">오류: ${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--red);padding:20px">오류: ${e.message}</td></tr>`;
   }
 }
 
-// 관계사별 필터 탭(전체/대웅제약/대웅바이오/한올바이오)을 그립니다.
-// 클릭하면 아래 표가 해당 관계사 거래처만 보이도록 필터링됩니다.
-function renderDcmModalSummary(counts, totalCnt){
+// 요약 한 줄: 거래처 수 + 관계사별 미연동 건수 (탭이 아닌 안내 텍스트)
+function renderDcmModalSummary(counts, totalCnt, shopCnt){
   const summary = document.getElementById("dcm-modal-summary");
-  const curFilter = S._dcmModal?.filter || "ALL";
-
-  const tabBtn = (key, label, n)=>{
-    const active = curFilter===key;
-    const hasIssue = key!=="ALL" && n>0;
-    const color  = active ? "#fff" : (hasIssue ? "var(--red)" : "var(--mint)");
-    const bg     = active ? (hasIssue?"var(--red)":"var(--navy)") : (hasIssue?"#FCEBEB":"#EAF3DE");
-    const border = active ? "transparent" : (hasIssue?"#F09595":"#C0DD97");
-    return `<span onclick="filterDcmModal('${key}')"
-      style="cursor:pointer;font-size:12px;font-weight:700;padding:5px 12px;border-radius:14px;background:${bg};color:${color};border:0.5px solid ${border}">
-      ${label}${key!=="ALL"?` ${n}건`:""}
-    </span>`;
-  };
-
-  summary.innerHTML = tabBtn("ALL","전체")
-    + Object.keys(counts).map(a=>tabBtn(a,a,counts[a])).join("")
-    + `<span style="font-size:12px;color:var(--gray-400);padding:5px 4px">총 ${totalCnt}건</span>`;
-}
-
-// 필터 탭 클릭 핸들러 — 저장해둔 전체 목록에서 다시 필터링만 하므로 재조회 없이 즉시 반영됩니다.
-function filterDcmModal(key){
-  if(!S._dcmModal)return;
-  S._dcmModal.filter = key;
-  renderDcmModalTable();
-  // 탭 활성 표시 갱신을 위해 요약 배지도 다시 그립니다.
-  const counts = {};
-  DCM_AFFILIATES.forEach(a=>counts[a]=0);
-  S._dcmModal.rows.forEach(r=>{
-    const aff = String(dcmField(r,["관계사"])).trim();
-    if(counts[aff]===undefined)counts[aff]=0;
-    counts[aff]++;
-  });
-  renderDcmModalSummary(counts, S._dcmModal.rows.length);
+  if(!totalCnt){
+    summary.textContent = "미연동 거래처가 없습니다 🎉";
+    return;
+  }
+  const parts = DCM_AFFILIATES.map(a=>`${a} ${counts[a]||0}건`).join(" · ");
+  summary.textContent = `거래처 ${shopCnt}곳 · 미연동 합계 ${totalCnt}건 (${parts})`;
 }
 
 function renderDcmModalTable(){
   const tbody = document.getElementById("dcm-modal-tbody");
-  const { rows, filter } = S._dcmModal || { rows:[], filter:"ALL" };
-  const filtered = filter==="ALL" ? rows : rows.filter(r=>String(dcmField(r,["관계사"])).trim()===filter);
+  const { pivotRows } = S._dcmModal || { pivotRows:[] };
 
-  tbody.innerHTML = filtered.length
-    ? filtered.map(r=>`<tr>
-        <td style="font-size:12px;white-space:nowrap">${dcmField(r,["관계사"])||"—"}</td>
-        <td style="font-size:12px">${dcmField(r,["거래처명"])||"—"}</td>
-        <td style="font-size:11px;color:var(--gray-500)">${dcmField(r,["주소"])||"—"}</td>
+  const flagCell = (r,a)=> r.flags[a]
+    ? `<span style="font-size:12px;font-weight:700;color:var(--red)">미연동</span>`
+    : `<span style="font-size:12px;color:var(--gray-300)">—</span>`;
+
+  tbody.innerHTML = pivotRows.length
+    ? pivotRows.map(r=>`<tr>
+        <td>
+          <div style="font-size:12px;font-weight:700;color:var(--navy)">${r.name}</div>
+          <div style="font-size:11px;color:var(--gray-500)">${r.addr||"—"}</div>
+        </td>
+        <td style="text-align:center">${flagCell(r,"대웅제약")}</td>
+        <td style="text-align:center">${flagCell(r,"대웅바이오")}</td>
+        <td style="text-align:center">${flagCell(r,"한올바이오")}</td>
       </tr>`).join("")
-    : `<tr><td colspan="3"><div class="empty"><p>${filter==="ALL"?"미연동 거래처가 없습니다 🎉":"이 관계사는 미연동 거래처가 없습니다 🎉"}</p></div></td></tr>`;
+    : `<tr><td colspan="4"><div class="empty"><p>미연동 거래처가 없습니다 🎉</p></div></td></tr>`;
 }
 function closeDcmModal(){
   document.getElementById("dcm-detail-modal").style.display = "none";
