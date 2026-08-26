@@ -1202,11 +1202,42 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
       <!-- 거점도매 매출·이익 현황 (관리자 전용) -->
       <div class="card" id="sp-panel" style="display:none">
         <div class="card-t">💰 거점도매 매출·이익 현황 <span style="font-weight:400;color:var(--gray-400)">(단위: 억원 · 2026년 4~7월, 관리자 전용)</span></div>
-        <div class="kpi-g">
-          <div class="kpi k-navy"><div class="kpi-l">7월 총매출</div><div class="kpi-v" id="sp-kpi-rev">—</div><div class="kpi-d" id="sp-kpi-rev-d">전월 대비 —</div></div>
-          <div class="kpi k-mint"><div class="kpi-l">7월 총이익</div><div class="kpi-v" id="sp-kpi-profit">—</div><div class="kpi-d" id="sp-kpi-profit-d">전월 대비 —</div></div>
-          <div class="kpi k-gold"><div class="kpi-l">연간 추정 이익 (7월 기준)</div><div class="kpi-v" id="sp-kpi-yearly">—</div><div class="kpi-d" id="sp-kpi-growth">25년 대비 —</div></div>
-          <div class="kpi k-navy"><div class="kpi-l">거점도매 수</div><div class="kpi-v" id="sp-kpi-count">—</div><div class="kpi-d">전국 거점도매 기준</div></div>
+        <div style="display:grid;grid-template-columns:2fr 3fr;gap:16px;align-items:stretch;margin-bottom:18px">
+          <div style="background:var(--gray-100);border-radius:14px;padding:16px;display:flex;flex-direction:column">
+            <div style="font-size:12px;font-weight:800;color:var(--gray-600);letter-spacing:.3px;margin-bottom:12px;white-space:nowrap">25년 평균</div>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;flex:1">
+              <div style="background:var(--white);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow);border-top:3px solid var(--navy);min-width:0;display:flex;flex-direction:column">
+                <div style="font-size:10px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">매출</div>
+                <div style="font-size:23px;font-weight:900;color:var(--gray-600);margin-top:6px;white-space:nowrap" id="sp-25-revenue">—</div>
+                <span style="visibility:hidden;display:inline-block;margin-top:7px;padding:2px 8px;border-radius:50px;font-size:10px;font-weight:800;white-space:nowrap">0.0%</span>
+              </div>
+              <div style="background:var(--white);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow);border-top:3px solid var(--mint);min-width:0;display:flex;flex-direction:column">
+                <div style="font-size:10px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">이익</div>
+                <div style="font-size:23px;font-weight:900;color:var(--gray-600);margin-top:6px;white-space:nowrap" id="sp-25-profit">—</div>
+                <span style="visibility:hidden;display:inline-block;margin-top:7px;padding:2px 8px;border-radius:50px;font-size:10px;font-weight:800;white-space:nowrap">0.0%</span>
+              </div>
+            </div>
+          </div>
+          <div style="background:#E4E9F2;border-radius:14px;padding:16px;display:flex;flex-direction:column">
+            <div style="font-size:12px;font-weight:800;color:var(--navy);letter-spacing:.3px;margin-bottom:12px;white-space:nowrap">26년 <span id="sp-26-month-label">7월</span></div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;flex:1">
+              <div style="background:var(--white);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow);border-top:3px solid var(--navy);min-width:0;display:flex;flex-direction:column">
+                <div style="font-size:10px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">매출</div>
+                <div style="font-size:23px;font-weight:900;color:var(--navy-dk);margin-top:6px;white-space:nowrap" id="sp-26-revenue">—</div>
+                <span style="display:inline-block;margin-top:7px;padding:2px 8px;border-radius:50px;font-size:10px;font-weight:800;background:var(--mint-bg);color:var(--mint);white-space:nowrap" id="sp-26-revenue-badge">—</span>
+              </div>
+              <div style="background:var(--white);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow);border-top:3px solid var(--mint);min-width:0;display:flex;flex-direction:column">
+                <div style="font-size:10px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">이익</div>
+                <div style="font-size:23px;font-weight:900;color:var(--navy-dk);margin-top:6px;white-space:nowrap" id="sp-26-profit">—</div>
+                <span style="display:inline-block;margin-top:7px;padding:2px 8px;border-radius:50px;font-size:10px;font-weight:800;background:var(--mint-bg);color:var(--mint);white-space:nowrap" id="sp-26-profit-badge">—</span>
+              </div>
+              <div style="background:var(--white);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow);border-top:3px solid var(--gold);min-width:0;display:flex;flex-direction:column">
+                <div style="font-size:10px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">연간추정</div>
+                <div style="font-size:23px;font-weight:900;color:var(--navy-dk);margin-top:6px;white-space:nowrap" id="sp-26-yearly">—</div>
+                <span style="display:inline-block;margin-top:7px;padding:2px 8px;border-radius:50px;font-size:10px;font-weight:800;background:var(--gold-bg);color:var(--gold);white-space:nowrap" id="sp-26-yearly-badge">—</span>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="frow" style="margin-bottom:10px">
           <select id="sp-chart-group" onchange="renderSalesProfitCharts()">
@@ -5672,15 +5703,16 @@ function renderSalesProfitPanel(){
   panel.style.display=isAdmin?"":"none";
   if(!isAdmin)return;
   const D=SALES_PROFIT_DATA, t=D.total;
-  const revDelta=(t.revenue.m06)?((t.revenue.m07-t.revenue.m06)/t.revenue.m06):null;
-  const profitDelta=(t.profit.m06)?((t.profit.m07-t.profit.m06)/t.profit.m06):null;
-  document.getElementById("sp-kpi-rev").textContent=fmtEok(t.revenue.m07);
-  document.getElementById("sp-kpi-rev-d").textContent="전월 대비 "+fmtPctSigned(revDelta);
-  document.getElementById("sp-kpi-profit").textContent=fmtEok(t.profit.m07);
-  document.getElementById("sp-kpi-profit-d").textContent="전월 대비 "+fmtPctSigned(profitDelta);
-  document.getElementById("sp-kpi-yearly").textContent=fmtEok(t.profit.yearlyEst26);
-  document.getElementById("sp-kpi-growth").textContent="25년 대비 "+fmtPctSigned(t.profit.growth);
-  document.getElementById("sp-kpi-count").textContent=D.rows.length;
+  const revVs25=(t.revenue.avg25)?((t.revenue.m07-t.revenue.avg25)/t.revenue.avg25):null;
+  const profitVs25=(t.profit.avg25)?((t.profit.m07-t.profit.avg25)/t.profit.avg25):null;
+  document.getElementById("sp-25-revenue").textContent=fmtEok(t.revenue.avg25);
+  document.getElementById("sp-25-profit").textContent=fmtEok(t.profit.avg25);
+  document.getElementById("sp-26-revenue").textContent=fmtEok(t.revenue.m07);
+  document.getElementById("sp-26-revenue-badge").textContent=fmtPctSigned(revVs25);
+  document.getElementById("sp-26-profit").textContent=fmtEok(t.profit.m07);
+  document.getElementById("sp-26-profit-badge").textContent=fmtPctSigned(profitVs25);
+  document.getElementById("sp-26-yearly").textContent=fmtEok(t.profit.yearlyEst26);
+  document.getElementById("sp-26-yearly-badge").textContent=fmtPctSigned(t.profit.growth);
 
   // group selector options (populate once)
   const sel=document.getElementById("sp-chart-group");
