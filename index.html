@@ -1208,19 +1208,12 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
           <div class="kpi k-gold"><div class="kpi-l">연간 추정 이익 (7월 기준)</div><div class="kpi-v" id="sp-kpi-yearly">—</div><div class="kpi-d" id="sp-kpi-growth">25년 대비 —</div></div>
           <div class="kpi k-navy"><div class="kpi-l">거점도매 수</div><div class="kpi-v" id="sp-kpi-count">—</div><div class="kpi-d">전국 거점도매 기준</div></div>
         </div>
-        <div class="tw"><table style="table-layout:fixed;width:100%">
-          <colgroup>
-            <col style="width:16%"><col style="width:10%">
-            <col style="width:7%"><col style="width:7%"><col style="width:7%"><col style="width:7%">
-            <col style="width:7%"><col style="width:7%"><col style="width:7%"><col style="width:7%">
-          </colgroup>
-          <thead>
-            <tr><th rowspan="2" style="text-align:left;padding-left:14px">거점도매</th><th rowspan="2">권역</th><th colspan="4">매출</th><th colspan="4">이익</th></tr>
-            <tr><th>25년평균</th><th>5월</th><th>6월</th><th>7월</th><th>25년평균</th><th>5월</th><th>6월</th><th>7월</th></tr>
-          </thead>
-          <tbody id="sp-tbody"><tr><td colspan="10"><div class="empty"><p>데이터 없음</p></div></td></tr></tbody>
-        </table></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">
+        <div class="frow" style="margin-bottom:10px">
+          <select id="sp-chart-group" onchange="renderSalesProfitCharts()">
+            <option value="__ALL__">전체 합계</option>
+          </select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
           <div>
             <div class="card-t" style="font-size:12px">📈 월별 총매출 추이</div>
             <div style="position:relative;height:220px"><canvas id="sp-rev-chart" class="chart-canvas" role="img" aria-label="거점도매 월별 총매출 추이"></canvas></div>
@@ -1230,6 +1223,34 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
             <div style="position:relative;height:220px"><canvas id="sp-profit-chart" class="chart-canvas" role="img" aria-label="거점도매 월별 총이익 추이"></canvas></div>
           </div>
         </div>
+        <div class="card-t" style="font-size:12px">🏢 회사 그룹별 현황</div>
+        <div class="tw"><table style="table-layout:fixed;width:100%">
+          <colgroup>
+            <col style="width:18%">
+            <col style="width:10.25%"><col style="width:10.25%"><col style="width:10.25%"><col style="width:10.25%">
+            <col style="width:10.25%"><col style="width:10.25%"><col style="width:10.25%"><col style="width:10.25%">
+          </colgroup>
+          <thead>
+            <tr><th rowspan="3" style="text-align:left;padding-left:14px">거점도매</th><th colspan="4">매출</th><th colspan="4">이익</th></tr>
+            <tr><th style="background:var(--navy-soft)">25년</th><th colspan="3">26년</th><th style="background:var(--navy-soft)">25년</th><th colspan="3">26년</th></tr>
+            <tr><th style="background:var(--navy-soft)">평균</th><th>5월</th><th>6월</th><th>7월</th><th style="background:var(--navy-soft)">평균</th><th>5월</th><th>6월</th><th>7월</th></tr>
+          </thead>
+          <tbody id="sp-group-tbody"><tr><td colspan="9"><div class="empty"><p>데이터 없음</p></div></td></tr></tbody>
+        </table></div>
+        <div class="card-t" style="font-size:12px;margin-top:16px">📍 거점도매별 현황</div>
+        <div class="tw"><table style="table-layout:fixed;width:100%">
+          <colgroup>
+            <col style="width:18%">
+            <col style="width:10.25%"><col style="width:10.25%"><col style="width:10.25%"><col style="width:10.25%">
+            <col style="width:10.25%"><col style="width:10.25%"><col style="width:10.25%"><col style="width:10.25%">
+          </colgroup>
+          <thead>
+            <tr><th rowspan="3" style="text-align:left;padding-left:14px">거점도매</th><th colspan="4">매출</th><th colspan="4">이익</th></tr>
+            <tr><th style="background:var(--navy-soft)">25년</th><th colspan="3">26년</th><th style="background:var(--navy-soft)">25년</th><th colspan="3">26년</th></tr>
+            <tr><th style="background:var(--navy-soft)">평균</th><th>5월</th><th>6월</th><th>7월</th><th style="background:var(--navy-soft)">평균</th><th>5월</th><th>6월</th><th>7월</th></tr>
+          </thead>
+          <tbody id="sp-tbody"><tr><td colspan="9"><div class="empty"><p>데이터 없음</p></div></td></tr></tbody>
+        </table></div>
       </div>
 
       <div class="kpi-g">
@@ -1955,22 +1976,34 @@ const UNITS=[
 // 단위: 억원. growth/yearlyEst*는 이익 시트의 "25년 대비"/"년간 추정" 값입니다.
 const SALES_PROFIT_DATA={
  "rows": [
-  {"name":"인천약품","region":"수도권1","revenue":{"avg25":22.4,"m07":65.45,"m06":82.68,"m05":81.0,"m04":83.9},"profit":{"avg25":0.56,"m07":1.54,"m06":1.98,"m05":1.95,"m04":2.02,"growth":1.75,"yearlyEst25":6.72,"yearlyEst26":18.51}},
-  {"name":"백제약품영등포지점","region":"수도권2,3","revenue":{"avg25":65.0,"m07":185.97,"m06":187.04,"m05":155.2,"m04":163.8},"profit":{"avg25":1.24,"m07":2.97,"m06":3.08,"m05":2.88,"m04":3.05,"growth":1.39,"yearlyEst25":14.91,"yearlyEst26":35.62}},
-  {"name":"(주)복산나이스","region":"수도권4,부산","revenue":{"avg25":153.0,"m07":285.73,"m06":271.85,"m05":169.73,"m04":158.6},"profit":{"avg25":2.34,"m07":3.94,"m06":3.91,"m05":2.64,"m04":2.34,"growth":0.68,"yearlyEst25":28.11,"yearlyEst26":47.29}},
-  {"name":"백제약품(주)원주지점","region":"강원","revenue":{"avg25":12.8,"m07":34.11,"m06":29.75,"m05":20.61,"m04":19.5},"profit":{"avg25":0.15,"m07":0.47,"m06":0.42,"m05":0.34,"m04":0.34,"growth":2.15,"yearlyEst25":1.8,"yearlyEst26":5.68}},
-  {"name":"대전백제약품","region":"충청","revenue":{"avg25":38.9,"m07":81.0,"m06":78.59,"m05":36.39,"m04":37.8},"profit":{"avg25":0.46,"m07":0.99,"m06":0.99,"m05":0.5,"m04":0.51,"growth":1.18,"yearlyEst25":5.46,"yearlyEst26":11.9}},
-  {"name":"아이팜코리아(주)","region":"대구","revenue":{"avg25":38.7,"m07":94.07,"m06":84.8,"m05":50.14,"m04":39.8},"profit":{"avg25":0.57,"m07":1.33,"m06":1.17,"m05":0.8,"m04":0.62,"growth":1.34,"yearlyEst25":6.81,"yearlyEst26":15.94}},
-  {"name":"백제약품(주)영남본부","region":"경남","revenue":{"avg25":37.8,"m07":81.4,"m06":93.54,"m05":66.68,"m04":67.2},"profit":{"avg25":0.55,"m07":1.05,"m06":1.21,"m05":1.09,"m04":1.16,"growth":0.89,"yearlyEst25":6.66,"yearlyEst26":12.6}},
-  {"name":"유진약품(주)","region":"전라","revenue":{"avg25":48.1,"m07":116.85,"m06":92.53,"m05":50.65,"m04":53.2},"profit":{"avg25":0.42,"m07":1.57,"m06":1.21,"m05":0.76,"m04":0.77,"growth":2.75,"yearlyEst25":5.01,"yearlyEst26":18.79}},
-  {"name":"김포이지메디컴","region":"수도권1","revenue":{"avg25":32.3,"m07":139.94,"m06":131.47,"m05":80.73,"m04":86.6},"profit":{"avg25":0.9,"m07":1.83,"m06":1.72,"m05":1.2,"m04":1.2,"growth":1.03,"yearlyEst25":10.8,"yearlyEst26":21.93}},
-  {"name":"향남이지메디컴","region":"수도권2","revenue":{"avg25":210.6,"m07":211.15,"m06":248.23,"m05":137.14,"m04":152.3},"profit":{"avg25":2.8,"m07":2.64,"m06":3.06,"m05":1.56,"m04":1.56,"growth":-0.06,"yearlyEst25":33.6,"yearlyEst26":31.68}}
+  {"name":"영등포 백제약품","region":"수도권2,3","group":"백제약품","revenue":{"avg25":65.0,"m07":185.97,"m06":187.04,"m05":155.2,"m04":163.8},"profit":{"avg25":1.24,"m07":2.97,"m06":3.08,"m05":2.88,"m04":3.05,"growth":1.39,"yearlyEst25":14.91,"yearlyEst26":35.62}},
+  {"name":"원주 백제약품","region":"강원","group":"백제약품","revenue":{"avg25":12.8,"m07":34.11,"m06":29.75,"m05":20.61,"m04":19.5},"profit":{"avg25":0.15,"m07":0.47,"m06":0.42,"m05":0.34,"m04":0.34,"growth":2.15,"yearlyEst25":1.8,"yearlyEst26":5.68}},
+  {"name":"대전 백제약품","region":"충청","group":"백제약품","revenue":{"avg25":38.9,"m07":81.0,"m06":78.59,"m05":36.39,"m04":37.8},"profit":{"avg25":0.46,"m07":0.99,"m06":0.99,"m05":0.5,"m04":0.51,"growth":1.18,"yearlyEst25":5.46,"yearlyEst26":11.9}},
+  {"name":"영남 백제약품","region":"경남","group":"백제약품","revenue":{"avg25":37.8,"m07":81.4,"m06":93.54,"m05":66.68,"m04":67.2},"profit":{"avg25":0.55,"m07":1.05,"m06":1.21,"m05":1.09,"m04":1.16,"growth":0.89,"yearlyEst25":6.66,"yearlyEst26":12.6}},
+  {"name":"인천약품","region":"수도권1","group":"인천약품","revenue":{"avg25":22.4,"m07":65.45,"m06":82.68,"m05":81.0,"m04":83.9},"profit":{"avg25":0.56,"m07":1.54,"m06":1.98,"m05":1.95,"m04":2.02,"growth":1.75,"yearlyEst25":6.72,"yearlyEst26":18.51}},
+  {"name":"(주)복산나이스","region":"수도권4,부산","group":"복산나이스","revenue":{"avg25":153.0,"m07":285.73,"m06":271.85,"m05":169.73,"m04":158.6},"profit":{"avg25":2.34,"m07":3.94,"m06":3.91,"m05":2.64,"m04":2.34,"growth":0.68,"yearlyEst25":28.11,"yearlyEst26":47.29}},
+  {"name":"유진약품(주)","region":"전라","group":"유진약품","revenue":{"avg25":48.1,"m07":116.85,"m06":92.53,"m05":50.65,"m04":53.2},"profit":{"avg25":0.42,"m07":1.57,"m06":1.21,"m05":0.76,"m04":0.77,"growth":2.75,"yearlyEst25":5.01,"yearlyEst26":18.79}},
+  {"name":"아이팜코리아(주)","region":"대구","group":"아이팜코리아","revenue":{"avg25":38.7,"m07":94.07,"m06":84.8,"m05":50.14,"m04":39.8},"profit":{"avg25":0.57,"m07":1.33,"m06":1.17,"m05":0.8,"m04":0.62,"growth":1.34,"yearlyEst25":6.81,"yearlyEst26":15.94}},
+  {"name":"김포이지메디컴","region":"수도권1","group":"이지메디컴","revenue":{"avg25":32.3,"m07":139.94,"m06":131.47,"m05":80.73,"m04":86.6},"profit":{"avg25":0.9,"m07":1.83,"m06":1.72,"m05":1.2,"m04":1.2,"growth":1.03,"yearlyEst25":10.8,"yearlyEst26":21.93}},
+  {"name":"향남이지메디컴","region":"수도권2","group":"이지메디컴","revenue":{"avg25":210.6,"m07":211.15,"m06":248.23,"m05":137.14,"m04":152.3},"profit":{"avg25":2.8,"m07":2.64,"m06":3.06,"m05":1.56,"m04":1.56,"growth":-0.06,"yearlyEst25":33.6,"yearlyEst26":31.68}}
  ],
  "total": {"name":"합계","region":null,
   "revenue":{"avg25":659.6,"m07":1295.67,"m06":1300.49,"m05":848.27,"m04":862.7},
   "profit":{"avg25":9.99,"m07":18.33,"m06":18.73,"m05":13.73,"m04":13.57,"growth":0.83,"yearlyEst25":119.88,"yearlyEst26":219.94}
  }
 };
+const SP_GROUP_ORDER=["백제약품","인천약품","복산나이스","유진약품","아이팜코리아","이지메디컴"];
+function aggregateGroup(groupName){
+  const members=SALES_PROFIT_DATA.rows.filter(r=>r.group===groupName);
+  const sum=(field,key)=>members.reduce((s,r)=>s+(r[field][key]||0),0);
+  const keys=["avg25","m07","m06","m05","m04"];
+  const revenue={}; keys.forEach(k=>revenue[k]=sum("revenue",k));
+  const profit={}; keys.forEach(k=>profit[k]=sum("profit",k));
+  profit.yearlyEst25=sum("profit","yearlyEst25");
+  profit.yearlyEst26=sum("profit","yearlyEst26");
+  profit.growth=profit.yearlyEst25?(profit.yearlyEst26-profit.yearlyEst25)/profit.yearlyEst25:null;
+  return {name:groupName,revenue,profit,memberCount:members.length};
+}
 const LOCAL_USERS=[
   {id:"admin",pw:"admin1234",role:"admin",co:"ALL",name:"관리자"},
   {id:"baekje",pw:"1234",role:"company",co:"C001",name:"백제약품 담당자"},
@@ -5617,6 +5650,21 @@ function fmtPctSigned(v){
   const pct=v*100;
   return (pct>=0?"+":"")+pct.toFixed(1)+"%";
 }
+function spRowHtml(r,bold){
+  const b=bold?"font-weight:800":"";
+  return `
+    <tr style="${b?'background:var(--gray-50);'+b:''}">
+      <td class="left">${r.name}</td>
+      <td style="background:var(--gray-50)">${fmtEok(r.revenue.avg25)}</td>
+      <td>${fmtEok(r.revenue.m05)}</td>
+      <td>${fmtEok(r.revenue.m06)}</td>
+      <td><b>${fmtEok(r.revenue.m07)}</b></td>
+      <td style="background:var(--gray-50)">${fmtEok(r.profit.avg25)}</td>
+      <td>${fmtEok(r.profit.m05)}</td>
+      <td>${fmtEok(r.profit.m06)}</td>
+      <td><b>${fmtEok(r.profit.m07)}</b></td>
+    </tr>`;
+}
 function renderSalesProfitPanel(){
   const panel=document.getElementById("sp-panel");
   if(!panel)return;
@@ -5634,26 +5682,26 @@ function renderSalesProfitPanel(){
   document.getElementById("sp-kpi-growth").textContent="25년 대비 "+fmtPctSigned(t.profit.growth);
   document.getElementById("sp-kpi-count").textContent=D.rows.length;
 
+  // group selector options (populate once)
+  const sel=document.getElementById("sp-chart-group");
+  if(sel && sel.options.length<=1){
+    SP_GROUP_ORDER.forEach(g=>{
+      const opt=document.createElement("option");
+      opt.value=g; opt.textContent=g;
+      sel.appendChild(opt);
+    });
+  }
+
+  // group table (합계 first computed via aggregateGroup, tied to total)
+  const groupTbody=document.getElementById("sp-group-tbody");
+  const groupRows=SP_GROUP_ORDER.map(g=>spRowHtml(aggregateGroup(g),false)).join("");
+  const groupTotalRow=spRowHtml(t,true);
+  groupTbody.innerHTML=groupRows+groupTotalRow;
+
+  // location table
   const tbody=document.getElementById("sp-tbody");
-  const dataRows=D.rows.map(r=>`
-    <tr>
-      <td class="left">${r.name}</td>
-      <td>${r.region||"—"}</td>
-      <td>${fmtEok(r.revenue.avg25)}</td>
-      <td>${fmtEok(r.revenue.m05)}</td>
-      <td>${fmtEok(r.revenue.m06)}</td>
-      <td><b>${fmtEok(r.revenue.m07)}</b></td>
-      <td>${fmtEok(r.profit.avg25)}</td>
-      <td>${fmtEok(r.profit.m05)}</td>
-      <td>${fmtEok(r.profit.m06)}</td>
-      <td><b>${fmtEok(r.profit.m07)}</b></td>
-    </tr>`).join("");
-  const totalRow=`
-    <tr style="background:var(--gray-50);font-weight:800">
-      <td class="left">${t.name}</td><td>전체</td>
-      <td>${fmtEok(t.revenue.avg25)}</td><td>${fmtEok(t.revenue.m05)}</td><td>${fmtEok(t.revenue.m06)}</td><td>${fmtEok(t.revenue.m07)}</td>
-      <td>${fmtEok(t.profit.avg25)}</td><td>${fmtEok(t.profit.m05)}</td><td>${fmtEok(t.profit.m06)}</td><td>${fmtEok(t.profit.m07)}</td>
-    </tr>`;
+  const dataRows=D.rows.map(r=>spRowHtml(r,false)).join("");
+  const totalRow=spRowHtml(t,true);
   tbody.innerHTML=dataRows+totalRow;
 
   renderSalesProfitCharts();
@@ -5661,7 +5709,8 @@ function renderSalesProfitPanel(){
 let _spCharts={};
 function renderSalesProfitCharts(){
   if(!window.Chart)return;
-  const D=SALES_PROFIT_DATA, t=D.total;
+  const groupSel=document.getElementById("sp-chart-group")?.value||"__ALL__";
+  const entity=(groupSel==="__ALL__")?SALES_PROFIT_DATA.total:aggregateGroup(groupSel);
   const labels=["25년평균","4월","5월","6월","7월"];
   const specs=[
     {id:"sp-rev-chart",metric:"revenue",color:"#0E4C92",fmt:fmtEok},
@@ -5670,7 +5719,7 @@ function renderSalesProfitCharts(){
   specs.forEach(sp=>{
     const canvas=document.getElementById(sp.id);
     if(!canvas)return;
-    const series=["avg25","m04","m05","m06","m07"].map(k=>t[sp.metric][k]);
+    const series=["avg25","m04","m05","m06","m07"].map(k=>entity[sp.metric][k]);
     if(_spCharts[sp.id])_spCharts[sp.id].destroy();
     _spCharts[sp.id]=new Chart(canvas.getContext("2d"),{
       type:"line",
