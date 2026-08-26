@@ -1260,30 +1260,30 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
         <div class="card-t" style="font-size:12px">🏢 회사 그룹별 현황</div>
         <div class="tw"><table style="table-layout:fixed;width:100%">
           <colgroup>
-            <col style="width:18%">
-            <col style="width:10.25%"><col style="width:10.25%"><col style="width:10.25%"><col style="width:10.25%">
-            <col style="width:10.25%"><col style="width:10.25%"><col style="width:10.25%"><col style="width:10.25%">
+            <col style="width:15%">
+            <col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:8.5%">
+            <col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:8.5%">
           </colgroup>
           <thead>
-            <tr><th rowspan="3" style="text-align:left;padding-left:14px">거점도매</th><th colspan="4">매출</th><th colspan="4">이익</th></tr>
-            <tr><th style="background:var(--navy-soft)">25년</th><th colspan="3">26년</th><th style="background:var(--navy-soft)">25년</th><th colspan="3">26년</th></tr>
+            <tr><th rowspan="3" style="text-align:left;padding-left:14px">거점도매</th><th colspan="5">매출</th><th colspan="5">이익</th></tr>
+            <tr><th style="background:var(--navy-soft)">25년</th><th colspan="3">26년</th><th rowspan="2" style="background:var(--mint)">증감</th><th style="background:var(--navy-soft)">25년</th><th colspan="3">26년</th><th rowspan="2" style="background:var(--mint)">증감</th></tr>
             <tr><th style="background:var(--navy-soft)">평균</th><th>5월</th><th>6월</th><th>7월</th><th style="background:var(--navy-soft)">평균</th><th>5월</th><th>6월</th><th>7월</th></tr>
           </thead>
-          <tbody id="sp-group-tbody"><tr><td colspan="9"><div class="empty"><p>데이터 없음</p></div></td></tr></tbody>
+          <tbody id="sp-group-tbody"><tr><td colspan="11"><div class="empty"><p>데이터 없음</p></div></td></tr></tbody>
         </table></div>
         <div class="card-t" style="font-size:12px;margin-top:16px">📍 거점도매별 현황</div>
         <div class="tw"><table style="table-layout:fixed;width:100%">
           <colgroup>
-            <col style="width:18%">
-            <col style="width:10.25%"><col style="width:10.25%"><col style="width:10.25%"><col style="width:10.25%">
-            <col style="width:10.25%"><col style="width:10.25%"><col style="width:10.25%"><col style="width:10.25%">
+            <col style="width:15%">
+            <col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:8.5%">
+            <col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:8.5%">
           </colgroup>
           <thead>
-            <tr><th rowspan="3" style="text-align:left;padding-left:14px">거점도매</th><th colspan="4">매출</th><th colspan="4">이익</th></tr>
-            <tr><th style="background:var(--navy-soft)">25년</th><th colspan="3">26년</th><th style="background:var(--navy-soft)">25년</th><th colspan="3">26년</th></tr>
+            <tr><th rowspan="3" style="text-align:left;padding-left:14px">거점도매</th><th colspan="5">매출</th><th colspan="5">이익</th></tr>
+            <tr><th style="background:var(--navy-soft)">25년</th><th colspan="3">26년</th><th rowspan="2" style="background:var(--mint)">증감</th><th style="background:var(--navy-soft)">25년</th><th colspan="3">26년</th><th rowspan="2" style="background:var(--mint)">증감</th></tr>
             <tr><th style="background:var(--navy-soft)">평균</th><th>5월</th><th>6월</th><th>7월</th><th style="background:var(--navy-soft)">평균</th><th>5월</th><th>6월</th><th>7월</th></tr>
           </thead>
-          <tbody id="sp-tbody"><tr><td colspan="9"><div class="empty"><p>데이터 없음</p></div></td></tr></tbody>
+          <tbody id="sp-tbody"><tr><td colspan="11"><div class="empty"><p>데이터 없음</p></div></td></tr></tbody>
         </table></div>
       </div>
 
@@ -5684,8 +5684,21 @@ function fmtPctSigned(v){
   const pct=v*100;
   return (pct>=0?"+":"")+pct.toFixed(1)+"%";
 }
+function spDeltaVs25(metric){
+  if(!metric||!metric.avg25)return null;
+  return (metric.m07-metric.avg25)/metric.avg25;
+}
+function spDeltaHtml(v){
+  if(v===null||v===undefined||isNaN(v))return `<td>—</td>`;
+  const up=v>=0;
+  const color=up?"var(--mint)":"var(--red)";
+  const arrow=up?"▲":"▼";
+  return `<td style="font-weight:800;color:${color}">${arrow}${Math.abs(v*100).toFixed(1)}%</td>`;
+}
 function spRowHtml(r,bold){
   const b=bold?"font-weight:800":"";
+  const revDelta=spDeltaVs25(r.revenue);
+  const profitDelta=spDeltaVs25(r.profit);
   return `
     <tr style="${b?'background:var(--gray-50);'+b:''}">
       <td class="left">${r.name}</td>
@@ -5693,10 +5706,12 @@ function spRowHtml(r,bold){
       <td>${fmtEok(r.revenue.m05)}</td>
       <td>${fmtEok(r.revenue.m06)}</td>
       <td><b>${fmtEok(r.revenue.m07)}</b></td>
+      ${spDeltaHtml(revDelta)}
       <td style="background:var(--gray-50)">${fmtEok(r.profit.avg25)}</td>
       <td>${fmtEok(r.profit.m05)}</td>
       <td>${fmtEok(r.profit.m06)}</td>
       <td><b>${fmtEok(r.profit.m07)}</b></td>
+      ${spDeltaHtml(profitDelta)}
     </tr>`;
 }
 function renderSalesProfitPanel(){
