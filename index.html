@@ -1254,6 +1254,9 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
             <div style="position:relative;height:220px"><canvas id="sp-profit-chart" class="chart-canvas" role="img" aria-label="거점도매 월별 총이익 추이"></canvas></div>
           </div>
         </div>
+        <div style="font-size:11px;color:var(--gray-400);margin:-10px 0 16px;display:flex;align-items:center;gap:5px">
+          <span style="display:inline-block;width:14px;border-top:1.5px dashed #E24B4A"></span>25년평균 기준선
+        </div>
         <div class="card-t" style="font-size:12px">🏢 회사 그룹별 현황</div>
         <div class="tw"><table style="table-layout:fixed;width:100%">
           <colgroup>
@@ -5708,11 +5711,11 @@ function renderSalesProfitPanel(){
   document.getElementById("sp-25-revenue").textContent=fmtEok(t.revenue.avg25);
   document.getElementById("sp-25-profit").textContent=fmtEok(t.profit.avg25);
   document.getElementById("sp-26-revenue").textContent=fmtEok(t.revenue.m07);
-  document.getElementById("sp-26-revenue-badge").textContent=fmtPctSigned(revVs25);
+  document.getElementById("sp-26-revenue-badge").textContent="25년평균 대비 "+fmtPctSigned(revVs25);
   document.getElementById("sp-26-profit").textContent=fmtEok(t.profit.m07);
-  document.getElementById("sp-26-profit-badge").textContent=fmtPctSigned(profitVs25);
+  document.getElementById("sp-26-profit-badge").textContent="25년평균 대비 "+fmtPctSigned(profitVs25);
   document.getElementById("sp-26-yearly").textContent=fmtEok(t.profit.yearlyEst26);
-  document.getElementById("sp-26-yearly-badge").textContent=fmtPctSigned(t.profit.growth);
+  document.getElementById("sp-26-yearly-badge").textContent="25년 대비 "+fmtPctSigned(t.profit.growth);
 
   // group selector options (populate once)
   const sel=document.getElementById("sp-chart-group");
@@ -5752,6 +5755,7 @@ function renderSalesProfitCharts(){
     const canvas=document.getElementById(sp.id);
     if(!canvas)return;
     const series=["avg25","m04","m05","m06","m07"].map(k=>entity[sp.metric][k]);
+    const baseline=entity[sp.metric].avg25;
     if(_spCharts[sp.id])_spCharts[sp.id].destroy();
     _spCharts[sp.id]=new Chart(canvas.getContext("2d"),{
       type:"line",
@@ -5766,6 +5770,16 @@ function renderSalesProfitCharts(){
         pointRadius:4,
         pointBackgroundColor:sp.color,
         spanGaps:true,
+      },{
+        label:"25년평균 기준선",
+        data:labels.map(()=>baseline),
+        borderColor:"#E24B4A",
+        borderWidth:1.5,
+        borderDash:[6,4],
+        pointRadius:0,
+        fill:false,
+        tension:0,
+        datalabels:{display:false},
       }]},
       options:{
         responsive:true,
