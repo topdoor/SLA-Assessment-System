@@ -5685,15 +5685,15 @@ function fmtPctSigned(v){
   return (pct>=0?"+":"")+pct.toFixed(1)+"%";
 }
 function spDeltaVs25(metric){
-  if(!metric||!metric.avg25)return null;
-  return (metric.m07-metric.avg25)/metric.avg25;
+  if(!metric||metric.avg25===null||metric.avg25===undefined||metric.m07===null||metric.m07===undefined)return null;
+  return metric.m07-metric.avg25;
 }
 function spDeltaHtml(v){
   if(v===null||v===undefined||isNaN(v))return `<td>—</td>`;
   const up=v>=0;
   const color=up?"var(--mint)":"var(--red)";
   const arrow=up?"▲":"▼";
-  return `<td style="font-weight:800;color:${color}">${arrow}${Math.abs(v*100).toFixed(1)}%</td>`;
+  return `<td style="font-weight:800;color:${color}">${arrow}${fmtEok(Math.abs(v))}</td>`;
 }
 function spRowHtml(r,bold){
   const b=bold?"font-weight:800":"";
