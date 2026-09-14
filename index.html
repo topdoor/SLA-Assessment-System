@@ -600,20 +600,34 @@ table.rp-sum-grid tr.band-b td:not(.co){background:#EEF2F8}
 .sbar{height:5px;background:var(--gray-200);border-radius:3px;margin-top:4px}
 .sbar-f{height:100%;border-radius:3px;background:var(--gold);transition:width .4s}
 
-/* ── 항목별 평가상세: 전달 대비 도넛 미니차트 ── */
+/* ── 항목별 전달 대비: 좌측 세로 카드 + 우측 월별 추이 ── */
+.det-cmp-layout{display:grid;grid-template-columns:minmax(270px,340px) minmax(0,1fr);gap:18px;align-items:stretch}
+.det-cmp-list{min-width:0}
 .det-cmp-group+.det-cmp-group{margin-top:18px}
 .det-cmp-group-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .det-cmp-group-hd .t{font-size:12px;font-weight:700;color:var(--navy-dk)}
 .det-cmp-group-hd .cnt{font-size:10.5px;font-weight:600;color:var(--gray-400);background:var(--gray-100);padding:2px 8px;border-radius:8px}
-.det-cmp-grid{display:grid;gap:12px}
-.det-cmp-item{background:var(--gray-50);border-radius:12px;padding:12px 8px;text-align:center}
-.det-cmp-name{font-size:12px;font-weight:700;color:var(--navy-dk);margin-bottom:8px;
+.det-cmp-grid{display:grid;grid-template-columns:1fr!important;gap:8px}
+.det-cmp-item{background:var(--gray-50);border:1px solid var(--gray-100);border-radius:11px;padding:9px 12px;display:grid;grid-template-columns:minmax(0,1fr) 58px;grid-template-rows:auto auto;column-gap:10px;align-items:center;text-align:left}
+.det-cmp-name{font-size:12px;font-weight:700;color:var(--navy-dk);margin:0;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.det-cmp-donut-wrap{position:relative;width:92px;height:92px;margin:0 auto}
+.det-cmp-donut-wrap{position:relative;width:54px;height:54px;grid-column:2;grid-row:1/3;margin:0}
 .det-cmp-donut-wrap canvas{width:100%!important;height:100%!important}
 .det-cmp-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  font-size:16px;font-weight:900;color:var(--navy-dk)}
-.det-cmp-delta{margin-top:8px;font-size:11.5px;font-weight:700}
+  font-size:11px;font-weight:900;color:var(--navy-dk)}
+.det-cmp-delta{margin-top:4px;font-size:10.5px;font-weight:700}
+.det-trend-panel{min-width:0;border-left:1px solid var(--gray-100);padding-left:18px;display:flex;flex-direction:column}
+.det-trend-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:8px}
+.det-trend-title{font-size:13px;font-weight:800;color:var(--navy-dk)}
+.det-trend-sub{font-size:10.5px;color:var(--gray-400);margin-top:3px}
+.det-trend-legend{font-size:10.5px;color:var(--gray-400);white-space:nowrap}
+.det-trend-legend strong{color:var(--navy-dk)}
+.det-trend-canvas{position:relative;min-height:300px;flex:1}
+@media(max-width:900px){
+  .det-cmp-layout{grid-template-columns:1fr}
+  .det-trend-panel{border-left:0;border-top:1px solid var(--gray-100);padding:16px 0 0}
+  .det-trend-canvas{min-height:280px}
+}
 /* ── COMPANY GRID ── */
 .co-g{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:16px}
 .co-c{background:var(--white);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);
@@ -4384,7 +4398,7 @@ async function openDetail(uid,evalType,month,fromPage){
     catch(e){loading(false);toast("오류: "+e.message,"err")}
   }
   // 현재 상세 조회 컨텍스트 저장 (클레임 팝업에서 사용)
-  S.detailCtx = { uid, month };
+  S.detailCtx = { uid, month, evalType };
 
   // DCM 미연동 상세 버튼: 항목별 상세 카드 제목 옆(상단)에 한 번만 노출.
   // 매핑된 평가단위이면서 이번 상세 데이터에 DCM 항목이 실제로 있을 때만 보여줍니다.
@@ -6334,6 +6348,29 @@ function drawMyTrendChart(key,data,selected){
 // 하나뿐이면 한 줄에 그 항목 수만큼 꽉 채웁니다. 항목 수를 코드에 고정하지 않고
 // 그 달 실제 데이터 기준으로 계산하므로, 일부만 채점된 달에도 정확히 등분됩니다.
 let _detCompareCharts=[];
+let _detUnitTrendChart=null;
+function monthsEndingAt(month,n=6){
+  const end=monthKey(month);
+  const arr=[];
+  for(let i=n-1;i>=0;i--)arr.push(shiftMonthKey(end,-i));
+  return arr;
+}
+async function fetchDetailUnitTrends(months,evalType,companyId){
+  const base={eval_type:evalType};
+  if(companyId)base.company_id=companyId;
+  const rowsByMonth=await Promise.all(months.map(m=>fetchMonthlyResults({...base,eval_month:m}).catch(()=>[])));
+  const unitIds=[...new Set(rowsByMonth.flat().map(r=>r.unit_id).filter(Boolean))];
+  const byUnit={};
+  unitIds.forEach(id=>{
+    byUnit[id]=rowsByMonth.map(rows=>{
+      const row=(rows||[]).find(r=>r.unit_id===id&&!isPendingRow(r)&&!isPartialRow(r));
+      if(!row)return null;
+      const score=parseFloat(row.total_score);
+      return isNaN(score)?null:+score.toFixed(1);
+    });
+  });
+  return {months,byUnit};
+}
 async function renderDetCompareChart(uid, month, basicRows, claimRows, prevByItemRate, prevMonthArg){
   const card=document.getElementById("det-compare-card");
   const grid=document.getElementById("det-compare-grid");
@@ -6341,6 +6378,7 @@ async function renderDetCompareChart(uid, month, basicRows, claimRows, prevByIte
 
   _detCompareCharts.forEach(c=>c.destroy());
   _detCompareCharts=[];
+  if(_detUnitTrendChart){_detUnitTrendChart.destroy();_detUnitTrendChart=null;}
 
   const groupsInput=[
     {label:"기본 운영", rows:basicRows||[]},
@@ -6369,9 +6407,7 @@ async function renderDetCompareChart(uid, month, basicRows, claimRows, prevByIte
     .map(g=>({label:g.label, items:g.rows.map(toItem).filter(it=>it.cur!==null)}))
     .filter(g=>g.items.length);
 
-  const anyPrev=groups.some(g=>g.items.some(it=>it.prev!==null));
-  if(!groups.length || !anyPrev){
-    // 전달 데이터가 아예 없으면(신규 평가단위 등) 비교 자체가 무의미하므로 카드를 숨깁니다.
+  if(!groups.length){
     card.style.display="none";
     grid.innerHTML="";
     return;
@@ -6390,7 +6426,7 @@ async function renderDetCompareChart(uid, month, basicRows, claimRows, prevByIte
 
   card.style.display="";
   let idx=0;
-  grid.innerHTML=groups.map(g=>{
+  const itemGroupsHtml=groups.map(g=>{
     const cellsHtml=g.items.map(it=>{
       const i=idx++;
       // 100% 만점 달성 항목은 증감과 무관하게 박스 배경을 하늘색으로 표시하고,
@@ -6418,6 +6454,17 @@ async function renderDetCompareChart(uid, month, basicRows, claimRows, prevByIte
       <div class="det-cmp-grid" style="grid-template-columns:repeat(${g.items.length},1fr)">${cellsHtml}</div>
     </div>`;
   }).join("");
+  grid.innerHTML=`
+    <div class="det-cmp-layout">
+      <div class="det-cmp-list">${itemGroupsHtml}</div>
+      <div class="det-trend-panel">
+        <div class="det-trend-hd">
+          <div><div class="det-trend-title">월별 총점 추이</div><div class="det-trend-sub">최근 6개월 · 동일 평가유형 내 비교</div></div>
+          <div class="det-trend-legend"><strong>● 현재 평가단위</strong>&nbsp;&nbsp;● 다른 평가단위</div>
+        </div>
+        <div class="det-trend-canvas"><canvas id="det-unit-trend-canvas"></canvas></div>
+      </div>
+    </div>`;
 
   idx=0;
   groups.forEach(g=>{
@@ -6464,6 +6511,43 @@ async function renderDetCompareChart(uid, month, basicRows, claimRows, prevByIte
       }));
     });
   });
+
+  const evalType=S.detailCtx?.evalType;
+  const trendCanvas=document.getElementById("det-unit-trend-canvas");
+  if(!evalType||!trendCanvas)return;
+  try{
+    const months=monthsEndingAt(month,6);
+    const companyId=unitCompanyId(uid)||S.results.find(r=>r.unit_id===uid)?.company_id||"";
+    const trend=await fetchDetailUnitTrends(months,evalType,companyId);
+    const ids=Object.keys(trend.byUnit).filter(id=>trend.byUnit[id].some(v=>v!==null));
+    if(!ids.length){trendCanvas.parentElement.innerHTML='<div class="empty"><p>월별 추이 데이터가 없습니다</p></div>';return;}
+    const ordered=[...ids.filter(id=>id!==uid),...ids.filter(id=>id===uid)];
+    const datasets=ordered.map((id,i)=>{
+      const selected=id===uid;
+      const baseColor=selected?"#D33B3B":colorForUnitIndex(i);
+      return {
+        label:unitName(id),data:trend.byUnit[id],isSelected:selected,
+        borderColor:selected?baseColor:hexToRgba(baseColor,.16),backgroundColor:"transparent",
+        borderWidth:selected?4:1.25,pointRadius:selected?4:0,pointHoverRadius:selected?6:3,
+        pointBackgroundColor:selected?"#fff":hexToRgba(baseColor,.25),pointBorderColor:baseColor,
+        pointBorderWidth:selected?3:1,tension:.28,spanGaps:true,fill:false,order:selected?0:10,
+      };
+    });
+    _detUnitTrendChart=new Chart(trendCanvas.getContext("2d"),{
+      type:"line",data:{labels:trend.months,datasets},
+      options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},layout:{padding:{top:24,right:12}},plugins:{
+        legend:{display:false},
+        datalabels:{display:ctx=>!!ctx.dataset.isSelected,align:"top",offset:4,clamp:true,color:"#B42323",font:{size:11,weight:"800"},formatter:v=>v===null||v===undefined?"":fs(v)+"점"},
+        tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y===null?"—":fs(ctx.parsed.y)+"점"}`}}
+      },scales:{
+        x:{grid:{display:false},ticks:{font:{size:11},callback:(v,i)=>`${parseInt(trend.months[i].slice(5),10)}월`}},
+        y:{beginAtZero:true,grace:"8%",ticks:{font:{size:10},callback:v=>v+"점"},grid:{color:"rgba(148,163,184,.14)"}}
+      }}
+    });
+  }catch(e){
+    console.warn("[SLA] 상세 월별 추이 로드 실패:",e.message);
+    trendCanvas.parentElement.innerHTML='<div class="empty"><p>월별 추이를 불러오지 못했습니다</p></div>';
+  }
 }
 
 // ══════════════════════════════════════════════════════════
