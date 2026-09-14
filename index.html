@@ -600,15 +600,18 @@ table.rp-sum-grid tr.band-b td:not(.co){background:#EEF2F8}
 .sbar{height:5px;background:var(--gray-200);border-radius:3px;margin-top:4px}
 .sbar-f{height:100%;border-radius:3px;background:var(--gold);transition:width .4s}
 
-/* ── 항목별 전달 대비: 좌측 세로 카드 + 우측 월별 추이 ── */
-.det-cmp-layout{display:grid;grid-template-columns:minmax(270px,340px) minmax(0,1fr);gap:18px;align-items:stretch}
+/* ── 항목별 전달 대비: 좌측 월별 추이 + 우측 세로 카드 ── */
+.det-cmp-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:stretch}
 .det-cmp-list{min-width:0}
 .det-cmp-group+.det-cmp-group{margin-top:18px}
 .det-cmp-group-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .det-cmp-group-hd .t{font-size:12px;font-weight:700;color:var(--navy-dk)}
 .det-cmp-group-hd .cnt{font-size:10.5px;font-weight:600;color:var(--gray-400);background:var(--gray-100);padding:2px 8px;border-radius:8px}
 .det-cmp-grid{display:grid;grid-template-columns:1fr!important;gap:8px}
-.det-cmp-item{background:var(--gray-50);border:1px solid var(--gray-100);border-radius:11px;padding:9px 12px;display:grid;grid-template-columns:minmax(0,1fr) 58px;grid-template-rows:auto auto;column-gap:10px;align-items:center;text-align:left}
+.det-cmp-item{background:var(--gray-50);border:1px solid var(--gray-100);border-radius:11px;padding:9px 12px;display:grid;grid-template-columns:minmax(0,1fr) 58px;grid-template-rows:auto auto;column-gap:10px;align-items:center;text-align:left;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s}
+.det-cmp-item:hover{border-color:#F09595;transform:translateY(-1px)}
+.det-cmp-item.active{border:2px solid #D33B3B;box-shadow:0 3px 12px rgba(211,59,59,.14)}
+.det-cmp-item:focus-visible{outline:3px solid rgba(211,59,59,.24);outline-offset:2px}
 .det-cmp-name{font-size:12px;font-weight:700;color:var(--navy-dk);margin:0;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .det-cmp-donut-wrap{position:relative;width:54px;height:54px;grid-column:2;grid-row:1/3;margin:0}
@@ -616,7 +619,7 @@ table.rp-sum-grid tr.band-b td:not(.co){background:#EEF2F8}
 .det-cmp-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   font-size:11px;font-weight:900;color:var(--navy-dk)}
 .det-cmp-delta{margin-top:4px;font-size:10.5px;font-weight:700}
-.det-trend-panel{min-width:0;border-left:1px solid var(--gray-100);padding-left:18px;display:flex;flex-direction:column}
+.det-trend-panel{min-width:0;border-right:1px solid var(--gray-100);padding-right:18px;display:flex;flex-direction:column}
 .det-trend-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:8px}
 .det-trend-title{font-size:13px;font-weight:800;color:var(--navy-dk)}
 .det-trend-sub{font-size:10.5px;color:var(--gray-400);margin-top:3px}
@@ -625,7 +628,7 @@ table.rp-sum-grid tr.band-b td:not(.co){background:#EEF2F8}
 .det-trend-canvas{position:relative;min-height:300px;flex:1}
 @media(max-width:900px){
   .det-cmp-layout{grid-template-columns:1fr}
-  .det-trend-panel{border-left:0;border-top:1px solid var(--gray-100);padding:16px 0 0}
+  .det-trend-panel{border-right:0;border-bottom:1px solid var(--gray-100);padding:0 0 16px}
   .det-trend-canvas{min-height:280px}
 }
 /* ── COMPANY GRID ── */
@@ -6349,27 +6352,73 @@ function drawMyTrendChart(key,data,selected){
 // 그 달 실제 데이터 기준으로 계산하므로, 일부만 채점된 달에도 정확히 등분됩니다.
 let _detCompareCharts=[];
 let _detUnitTrendChart=null;
-function monthsEndingAt(month,n=6){
+let _detItemTrendData=null;
+function evaluationMonthsFromMay(month){
   const end=monthKey(month);
+  const match=end.match(/^(\d{4})-(\d{2})$/);
+  if(!match)return [];
+  const year=match[1],endMonth=parseInt(match[2],10);
   const arr=[];
-  for(let i=n-1;i>=0;i--)arr.push(shiftMonthKey(end,-i));
+  for(let m=5;m<=endMonth;m++)arr.push(`${year}-${String(m).padStart(2,"0")}`);
   return arr;
 }
-async function fetchDetailUnitTrends(months,evalType,companyId){
+async function fetchDetailItemTrends(months,evalType,companyId,itemNames){
   const base={eval_type:evalType};
   if(companyId)base.company_id=companyId;
-  const rowsByMonth=await Promise.all(months.map(m=>fetchMonthlyResults({...base,eval_month:m}).catch(()=>[])));
+  const rowsByMonth=await Promise.all(months.map(m=>fetchDetailRowsWithClaim({...base,eval_month:m}).catch(()=>[])));
   const unitIds=[...new Set(rowsByMonth.flat().map(r=>r.unit_id).filter(Boolean))];
-  const byUnit={};
-  unitIds.forEach(id=>{
-    byUnit[id]=rowsByMonth.map(rows=>{
-      const row=(rows||[]).find(r=>r.unit_id===id&&!isPendingRow(r)&&!isPartialRow(r));
-      if(!row)return null;
-      const score=parseFloat(row.total_score);
-      return isNaN(score)?null:+score.toFixed(1);
+  const byItem={};
+  itemNames.forEach(itemName=>{
+    byItem[itemName]={};
+    unitIds.forEach(id=>{
+      byItem[itemName][id]=rowsByMonth.map(rows=>{
+        const row=(rows||[]).find(r=>r.unit_id===id&&r.item_name===itemName);
+        if(!row)return null;
+        const score=parseFloat(row.score);
+        return isNaN(score)?null:+score.toFixed(1);
+      });
     });
   });
-  return {months,byUnit};
+  return {months,unitIds,byItem};
+}
+function selectDetCompareItem(index){
+  document.querySelectorAll(".det-cmp-item").forEach((el,i)=>el.classList.toggle("active",i===index));
+  drawDetItemTrend(index);
+}
+function drawDetItemTrend(index){
+  const state=_detItemTrendData;
+  const canvas=document.getElementById("det-unit-trend-canvas");
+  if(!state||!canvas||!window.Chart)return;
+  if(_detUnitTrendChart){_detUnitTrendChart.destroy();_detUnitTrendChart=null;}
+  const item=state.items[index];
+  const itemSeries=state.trend.byItem[item.name]||{};
+  const ids=state.trend.unitIds.filter(id=>(itemSeries[id]||[]).some(v=>v!==null));
+  const titleEl=document.getElementById("det-trend-title");
+  if(titleEl)titleEl.textContent=`${item.name} · 월별 점수 추이`;
+  if(!ids.length){canvas.parentElement.innerHTML='<div class="empty"><p>선택 항목의 월별 추이 데이터가 없습니다</p></div>';return;}
+  const ordered=[...ids.filter(id=>id!==state.uid),...ids.filter(id=>id===state.uid)];
+  const datasets=ordered.map((id,i)=>{
+    const selected=id===state.uid;
+    const baseColor=selected?"#D33B3B":colorForUnitIndex(i);
+    return {
+      label:unitName(id),data:itemSeries[id],isSelected:selected,
+      borderColor:selected?baseColor:hexToRgba(baseColor,.16),backgroundColor:"transparent",
+      borderWidth:selected?4:1.25,pointRadius:selected?4:0,pointHoverRadius:selected?6:3,
+      pointBackgroundColor:selected?"#fff":hexToRgba(baseColor,.25),pointBorderColor:baseColor,
+      pointBorderWidth:selected?3:1,tension:.28,spanGaps:true,fill:false,order:selected?0:10,
+    };
+  });
+  _detUnitTrendChart=new Chart(canvas.getContext("2d"),{
+    type:"line",data:{labels:state.trend.months,datasets},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},layout:{padding:{top:24,right:12}},plugins:{
+      legend:{display:false},
+      datalabels:{display:ctx=>!!ctx.dataset.isSelected,align:"top",offset:4,clamp:true,color:"#B42323",font:{size:11,weight:"800"},formatter:v=>v===null||v===undefined?"":fs(v)+"점"},
+      tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y===null?"—":fs(ctx.parsed.y)+"점"}`}}
+    },scales:{
+      x:{grid:{display:false},ticks:{font:{size:11},callback:(v,i)=>`${parseInt(state.trend.months[i].slice(5),10)}월`}},
+      y:{beginAtZero:true,grace:"12%",ticks:{font:{size:10},callback:v=>v+"점"},grid:{color:"rgba(148,163,184,.14)"}}
+    }}
+  });
 }
 async function renderDetCompareChart(uid, month, basicRows, claimRows, prevByItemRate, prevMonthArg){
   const card=document.getElementById("det-compare-card");
@@ -6378,6 +6427,7 @@ async function renderDetCompareChart(uid, month, basicRows, claimRows, prevByIte
 
   _detCompareCharts.forEach(c=>c.destroy());
   _detCompareCharts=[];
+  _detItemTrendData=null;
   if(_detUnitTrendChart){_detUnitTrendChart.destroy();_detUnitTrendChart=null;}
 
   const groupsInput=[
@@ -6439,7 +6489,7 @@ async function renderDetCompareChart(uid, month, basicRows, claimRows, prevByIte
         tileBg=delta>0?"#E7F5EF":delta<0?"#FCEEEE":"";
       }
       return `
-      <div class="det-cmp-item"${tileBg?` style="background:${tileBg}"`:""}>
+      <div class="det-cmp-item${i===0?" active":""}" role="button" tabindex="0" onclick="selectDetCompareItem(${i})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectDetCompareItem(${i})}"${tileBg?` style="background:${tileBg}"`:""}>
         <div class="det-cmp-name" title="${it.name}">${it.name}</div>
         <div class="det-cmp-donut-wrap">
           <canvas id="det-cmp-c-${i}"></canvas>
@@ -6456,14 +6506,14 @@ async function renderDetCompareChart(uid, month, basicRows, claimRows, prevByIte
   }).join("");
   grid.innerHTML=`
     <div class="det-cmp-layout">
-      <div class="det-cmp-list">${itemGroupsHtml}</div>
       <div class="det-trend-panel">
         <div class="det-trend-hd">
-          <div><div class="det-trend-title">월별 총점 추이</div><div class="det-trend-sub">최근 6개월 · 동일 평가유형 내 비교</div></div>
+          <div><div class="det-trend-title" id="det-trend-title">월별 항목 점수 추이</div><div class="det-trend-sub">5월부터 · 카드를 선택해 항목 변경</div></div>
           <div class="det-trend-legend"><strong>● 현재 평가단위</strong>&nbsp;&nbsp;● 다른 평가단위</div>
         </div>
         <div class="det-trend-canvas"><canvas id="det-unit-trend-canvas"></canvas></div>
       </div>
+      <div class="det-cmp-list">${itemGroupsHtml}</div>
     </div>`;
 
   idx=0;
@@ -6516,34 +6566,12 @@ async function renderDetCompareChart(uid, month, basicRows, claimRows, prevByIte
   const trendCanvas=document.getElementById("det-unit-trend-canvas");
   if(!evalType||!trendCanvas)return;
   try{
-    const months=monthsEndingAt(month,6);
+    const months=evaluationMonthsFromMay(month);
     const companyId=unitCompanyId(uid)||S.results.find(r=>r.unit_id===uid)?.company_id||"";
-    const trend=await fetchDetailUnitTrends(months,evalType,companyId);
-    const ids=Object.keys(trend.byUnit).filter(id=>trend.byUnit[id].some(v=>v!==null));
-    if(!ids.length){trendCanvas.parentElement.innerHTML='<div class="empty"><p>월별 추이 데이터가 없습니다</p></div>';return;}
-    const ordered=[...ids.filter(id=>id!==uid),...ids.filter(id=>id===uid)];
-    const datasets=ordered.map((id,i)=>{
-      const selected=id===uid;
-      const baseColor=selected?"#D33B3B":colorForUnitIndex(i);
-      return {
-        label:unitName(id),data:trend.byUnit[id],isSelected:selected,
-        borderColor:selected?baseColor:hexToRgba(baseColor,.16),backgroundColor:"transparent",
-        borderWidth:selected?4:1.25,pointRadius:selected?4:0,pointHoverRadius:selected?6:3,
-        pointBackgroundColor:selected?"#fff":hexToRgba(baseColor,.25),pointBorderColor:baseColor,
-        pointBorderWidth:selected?3:1,tension:.28,spanGaps:true,fill:false,order:selected?0:10,
-      };
-    });
-    _detUnitTrendChart=new Chart(trendCanvas.getContext("2d"),{
-      type:"line",data:{labels:trend.months,datasets},
-      options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},layout:{padding:{top:24,right:12}},plugins:{
-        legend:{display:false},
-        datalabels:{display:ctx=>!!ctx.dataset.isSelected,align:"top",offset:4,clamp:true,color:"#B42323",font:{size:11,weight:"800"},formatter:v=>v===null||v===undefined?"":fs(v)+"점"},
-        tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y===null?"—":fs(ctx.parsed.y)+"점"}`}}
-      },scales:{
-        x:{grid:{display:false},ticks:{font:{size:11},callback:(v,i)=>`${parseInt(trend.months[i].slice(5),10)}월`}},
-        y:{beginAtZero:true,grace:"8%",ticks:{font:{size:10},callback:v=>v+"점"},grid:{color:"rgba(148,163,184,.14)"}}
-      }}
-    });
+    const items=groups.flatMap(g=>g.items);
+    const trend=await fetchDetailItemTrends(months,evalType,companyId,items.map(it=>it.name));
+    _detItemTrendData={uid,items,trend};
+    drawDetItemTrend(0);
   }catch(e){
     console.warn("[SLA] 상세 월별 추이 로드 실패:",e.message);
     trendCanvas.parentElement.innerHTML='<div class="empty"><p>월별 추이를 불러오지 못했습니다</p></div>';
