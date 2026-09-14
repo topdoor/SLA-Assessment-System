@@ -2216,6 +2216,15 @@ const DCM_UNIT_NAME_MAP={
   W020:"아이팜코리아(주)",
 };
 const DCM_AFFILIATES=["대웅제약","대웅바이오","한올바이오"];
+// 2026-09-14: 7~8월 도도매 리스트 원본은 관계사명을 "한올바이오파마"(정식명)로
+// 표기하는데, 기존 DCM_AFFILIATES/모달 컬럼은 "한올바이오"로 고정되어 있어
+// 그대로 두면 7~8월 한올 관계 행이 집계·표시에서 통째로 누락됩니다. 표시 직전에
+// 정규화해서 기존 3개 컬럼(대웅제약/대웅바이오/한올바이오)에 그대로 합칩니다.
+function normDcmAffiliate(aff){
+  const s=String(aff||"").trim();
+  if(s.startsWith("한올바이오"))return"한올바이오";
+  return s;
+}
 function isDcmRow(itemName){
   const s=String(itemName||"");
   return s.includes("DCM")||s.includes("데이터 연계")||s.includes("정보제공");
@@ -5168,7 +5177,7 @@ async function openDcmDetail(uid, month){
     const counts = {};
     DCM_AFFILIATES.forEach(a=>counts[a]=0);
     unlinked.forEach(r=>{
-      const aff = String(dcmField(r,["관계사"])).trim();
+      const aff = normDcmAffiliate(dcmField(r,["관계사"]));
       if(counts[aff]===undefined)counts[aff]=0;
       counts[aff]++;
     });
@@ -5182,7 +5191,7 @@ async function openDcmDetail(uid, month){
     unlinked.forEach(r=>{
       const shopName = dcmField(r,["거래처명"]) || "—";
       const addr = dcmField(r,["주소"]) || "";
-      const aff = String(dcmField(r,["관계사"])).trim();
+      const aff = normDcmAffiliate(dcmField(r,["관계사"]));
       if(!pivot[shopName]) pivot[shopName] = { name:shopName, addr, flags:{} };
       if(!pivot[shopName].addr && addr) pivot[shopName].addr = addr;
       pivot[shopName].flags[aff] = true;
