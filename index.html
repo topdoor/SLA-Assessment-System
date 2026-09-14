@@ -5167,10 +5167,14 @@ async function openDcmDetail(uid, month){
     }
     const allRows = await fetchDcmSheetRows();
     const targetKey = cleanKey(dcmName);
+    // 2026-09-14: DCM미연동 시트에 6/7/8월 데이터가 함께 들어있는데, 이전에는
+    // 월 필터가 없어서 상세를 열 때마다 전체 월이 합쳐져 보였습니다(해당월과
+    // 무관하게 항상 같은 결과). 반드시 조회 중인 평가월(해당월)만 걸러야 합니다.
     const unlinked = allRows.filter(r=>{
       const shop = cleanKey(dcmField(r,["도매상명"]));
       const status = String(dcmField(r,["연동유무"])).trim();
-      return shop===targetKey && (status==="X"||status.toUpperCase()==="X");
+      const rowMonth = dcmField(r,["해당월"]);
+      return shop===targetKey && sameMonth(rowMonth,month) && (status==="X"||status.toUpperCase()==="X");
     });
 
     // 관계사별 집계
