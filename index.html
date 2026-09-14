@@ -437,24 +437,27 @@ html,body{height:100%;font-family:'Pretendard','Noto Sans KR','Apple SD Gothic N
 .my-kpi-card{
   background:var(--white);border-radius:var(--radius);
   box-shadow:var(--shadow);border-top:3px solid var(--gold);
-  flex:1 1 130px;height:160px;padding:14px;
+  flex:1 1 130px;height:210px;padding:14px;
   display:flex;flex-direction:column;overflow:hidden;
 }
 /* 평균 달성률 카드는 평가단위 카드들이 다 채워지고 남는 공간을 차지하되,
    단위가 적어도(또는 0개여도) 줄 전체의 절반(5:5)을 넘지 않게 상한을 둡니다. */
 .my-kpi-card.my-kpi-card-navy{border-top-color:var(--navy);max-width:50%}
 .my-kpi-unit-card .name{
-  font-size:11px;font-weight:700;color:var(--gray-400);
+  font-size:12px;font-weight:700;color:var(--gray-600);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  flex-shrink:0; /* overflow:hidden이 있으면 flex가 이 항목의 자동 최소높이를 0으로 잡아
+                    카드가 좁을 때 이름이 통째로 사라지는 버그가 있어 강제로 방지합니다 */
 }
 .my-kpi-unit-card .cur-grade{
   flex:1;display:flex;align-items:center;justify-content:center;
+  min-height:0;
 }
 .my-kpi-unit-card .prev-info{
-  font-size:10.5px;color:var(--gray-500);line-height:1.45;
+  font-size:11px;color:var(--gray-500);line-height:1.5;
   display:flex;flex-direction:column;align-items:center;gap:2px;
+  flex-shrink:0;
 }
-.my-kpi-unit-card .prev-info .g-badge{margin:0 2px;vertical-align:-3px}
 .my-kpi-unit-card .prev-info .change{font-weight:800}
 .my-kpi-gauge-wrap{position:relative;flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
 .my-kpi-gauge-wrap canvas{max-width:100%;max-height:100%}
@@ -468,17 +471,17 @@ html,body{height:100%;font-family:'Pretendard','Noto Sans KR','Apple SD Gothic N
 .card-t{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:14px}
 /* ── TABLE ── */
 .tw{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:13px}
-thead th{background:var(--navy);color:#fff;padding:9px 11px;text-align:center;
-  font-weight:700;font-size:12px;white-space:nowrap}
+table{width:100%;border-collapse:collapse;font-size:17px}
+thead th{background:var(--navy);color:#fff;padding:13px 11px;text-align:center;
+  font-weight:700;font-size:16px;white-space:nowrap}
 thead th:first-child{border-radius:7px 0 0 0}
 thead th:last-child{border-radius:0 7px 0 0}
 tbody tr{border-bottom:1px solid var(--gray-100);transition:background .1s}
 tbody tr:hover{background:var(--gray-50)}
-tbody td{padding:9px 11px;text-align:center;vertical-align:middle}
+tbody td{padding:13px 11px;text-align:center;vertical-align:middle}
 td.left{text-align:left;font-weight:600}
 /* ── BADGES ── */
-.badge{display:inline-block;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:800}
+.badge{display:inline-block;padding:3px 10px;border-radius:50px;font-size:15px;font-weight:800}
 .bS{background:#0EA5E9;color:#fff}.bA{background:#2563EB;color:#fff}
 .bB{background:var(--gray-600);color:#fff}.bC{background:#D97706;color:#fff}
 .bD{background:var(--red);color:#fff}
@@ -486,7 +489,7 @@ td.left{text-align:left;font-weight:600}
 /* 등급 배지(S/A/B/C/D) — assets/등급 배지/SABCD-등급배지-시안.png 스프라이트를 그대로 사용 */
 .g-badge{
   display:inline-block;vertical-align:middle;
-  width:30px;aspect-ratio:434.4/724;
+  width:34px;aspect-ratio:434.4/724;
   background-image:url("assets/등급 배지/SABCD-등급배지-시안.png");
   background-repeat:no-repeat;background-size:500% 100%;
   flex-shrink:0;
@@ -496,7 +499,7 @@ td.left{text-align:left;font-weight:600}
 .g-badge.g-B{background-position:50% 0%}
 .g-badge.g-C{background-position:75% 0%}
 .g-badge.g-D{background-position:100% 0%}
-.g-badge.g-lg{width:52px}
+.g-badge.g-lg{width:72px}
 .pending-msg{display:inline-block;font-size:11px;line-height:1.35;color:#6B7280;font-weight:700;white-space:normal}
 .pending-msg small{display:block;font-size:10px;color:#9CA3AF;font-weight:600;margin-top:2px}
 .partial-msg{display:inline-block;font-size:11px;line-height:1.35;color:#C07800;font-weight:800;white-space:normal}
@@ -679,6 +682,24 @@ table.rp-sum-grid tr.band-b td:not(.co){background:#EEF2F8}
 .btn-sm{padding:6px 13px;font-size:12px}
 .btn-navy{background:var(--navy);color:#fff}.btn-navy:hover{background:var(--navy-dk)}
 .btn-red{background:var(--red);color:#fff}.btn-red:hover{background:#961515}
+
+/* 상세 버튼 — 투톤 스플릿 + 그라데이션 (아이콘 배지: 골드 그라데이션 / 필: 네이비 그라데이션) */
+.btn-detail{
+  display:inline-flex;align-items:center;gap:7px;
+  background:linear-gradient(135deg,var(--navy-soft),var(--navy-dk));
+  color:#fff;border-radius:100px;border:none;cursor:pointer;
+  padding:3px 16px 3px 3px;font-size:12px;font-weight:700;
+  box-shadow:0 3px 10px rgba(47,52,66,.35);
+  transition:all .15s;
+}
+.btn-detail:hover{box-shadow:0 5px 14px rgba(47,52,66,.45);transform:translateY(-1px)}
+.btn-detail .ic{
+  background:linear-gradient(135deg,var(--gold-lt),var(--gold));
+  width:24px;height:24px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 1px 4px rgba(192,120,0,.4);
+}
+.btn-detail .ic svg{width:12px;height:12px;color:#fff;display:block}
 /* ── SHEETS CONFIG ── */
 .cfg-g{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .cfg-field{margin-bottom:13px}
@@ -732,6 +753,18 @@ table.rp-sum-grid tr.band-b td:not(.co){background:#EEF2F8}
   font-size:12px;color:var(--gray-400);
 }
 .ch-section-kpi span strong{color:var(--gray-800);font-weight:700}
+
+/* 내 실적 추이 차트 — 전체/평가단위 선택을 드롭다운 대신 버튼으로 */
+.my-trend-btns{display:flex;flex-wrap:wrap;gap:6px}
+.my-trend-btn{
+  appearance:none;cursor:pointer;
+  border:1.5px solid var(--gray-200);background:var(--white);
+  border-radius:100px;padding:6px 14px;
+  font-size:12.5px;font-weight:700;color:var(--gray-600);
+  transition:all .14s;
+}
+.my-trend-btn:hover{border-color:var(--gray-300);background:var(--gray-50)}
+.my-trend-btn.active{background:var(--navy);border-color:var(--navy);color:#fff}
 
 /* ══ 채널 서브메뉴 (앵커 이동, 대시보드/평가현황 공용) ══ */
 .ch-nav{
@@ -1389,7 +1422,7 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
       </div>
       <div id="ch-section-거점" class="ch-section tint-거점" style="display:none">
         <div class="ch-section-head">
-          <span class="ch ch-거점" style="font-size:12px;padding:4px 12px">거점도매</span>
+          <span class="ch ch-거점" style="font-size:42px;padding:6px 18px;font-weight:800">거점도매</span>
           <div class="ch-section-kpi" id="ch-kpi-거점"></div>
         </div>
         <div style="background:var(--white);border:0.5px solid var(--gray-200);border-radius:var(--radius);overflow:hidden">
@@ -1398,7 +1431,7 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
       </div>
       <div id="ch-section-종합" class="ch-section tint-종합" style="display:none">
         <div class="ch-section-head">
-          <span class="ch ch-종합" style="font-size:12px;padding:4px 12px">종합도매</span>
+          <span class="ch ch-종합" style="font-size:42px;padding:6px 18px;font-weight:800">종합도매</span>
           <div class="ch-section-kpi" id="ch-kpi-종합"></div>
         </div>
         <div style="background:var(--white);border:0.5px solid var(--gray-200);border-radius:var(--radius);overflow:hidden">
@@ -1407,7 +1440,7 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
       </div>
       <div id="ch-section-VC" class="ch-section tint-VC" style="display:none">
         <div class="ch-section-head">
-          <span class="ch ch-VC" style="font-size:12px;padding:4px 12px">VC</span>
+          <span class="ch ch-VC" style="font-size:42px;padding:6px 18px;font-weight:800">VC</span>
           <div class="ch-section-kpi" id="ch-kpi-VC"></div>
         </div>
         <div style="background:var(--white);border:0.5px solid var(--gray-200);border-radius:var(--radius);overflow:hidden">
@@ -1484,7 +1517,7 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
       <!-- 거점도매 섹션 -->
       <div id="my-sec-거점도매" class="ch-section tint-거점" style="display:none">
         <div class="ch-section-head">
-          <span class="ch ch-거점" style="font-size:12px;padding:4px 12px">거점도매</span>
+          <span class="ch ch-거점" style="font-size:42px;padding:6px 18px;font-weight:800">거점도매</span>
           <div class="ch-section-kpi" id="my-kpi-거점도매"></div>
         </div>
         <div class="my-kpi-g">
@@ -1503,24 +1536,15 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
         <div class="card" id="my-trend-card-거점도매" style="display:none;margin-top:10px">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap">
             <div class="card-t" style="margin-bottom:0">📈 내 거점도매 실적 추이 (최근 6개월 · 달성률)</div>
-            <select id="my-trend-sel-거점도매" onchange="drawMyTrendChart('거점도매',_myTrendData['거점도매'],this.value)" style="width:auto"></select>
+            <div class="my-trend-btns" id="my-trend-sel-거점도매"></div>
           </div>
-          <div style="position:relative;height:230px">
+          <div style="position:relative;height:345px">
             <canvas id="my-trend-canvas-거점도매" class="chart-canvas"></canvas>
           </div>
         </div>
         <div style="background:var(--white);border:0.5px solid var(--gray-200);border-radius:var(--radius);overflow:hidden">
-          <div class="tw"><table style="table-layout:fixed;width:100%">
-            <colgroup>
-              <col style="width:30%">
-              <col style="width:11%">
-              <col style="width:9%">
-              <col style="width:12%">
-              <col style="width:13%">
-              <col style="width:11%">
-              <col style="width:14%">
-            </colgroup>
-            <thead><tr><th style="text-align:left;padding-left:20px">평가단위</th><th>총점</th><th>만점</th><th>달성률</th><th>등급</th><th>순위</th><th>상세</th></tr></thead>
+          <div class="tw"><table style="width:100%">
+            <thead><tr id="my-thead-거점도매"><th style="text-align:left;padding-left:20px">평가단위</th><th>총점</th><th>달성률</th><th>등급</th><th>순위</th><th>상세</th></tr></thead>
             <tbody id="my-tbody-거점도매"></tbody>
           </table></div>
         </div>
@@ -1528,7 +1552,7 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
       <!-- 종합도매 섹션 -->
       <div id="my-sec-종합도매" class="ch-section tint-종합" style="display:none">
         <div class="ch-section-head">
-          <span class="ch ch-종합" style="font-size:12px;padding:4px 12px">종합도매</span>
+          <span class="ch ch-종합" style="font-size:42px;padding:6px 18px;font-weight:800">종합도매</span>
           <div class="ch-section-kpi" id="my-kpi-종합도매"></div>
         </div>
         <div class="my-kpi-g">
@@ -1547,24 +1571,15 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
         <div class="card" id="my-trend-card-종합도매" style="display:none;margin-top:10px">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap">
             <div class="card-t" style="margin-bottom:0">📈 내 종합도매 실적 추이 (최근 6개월 · 달성률)</div>
-            <select id="my-trend-sel-종합도매" onchange="drawMyTrendChart('종합도매',_myTrendData['종합도매'],this.value)" style="width:auto"></select>
+            <div class="my-trend-btns" id="my-trend-sel-종합도매"></div>
           </div>
-          <div style="position:relative;height:230px">
+          <div style="position:relative;height:345px">
             <canvas id="my-trend-canvas-종합도매" class="chart-canvas"></canvas>
           </div>
         </div>
         <div style="background:var(--white);border:0.5px solid var(--gray-200);border-radius:var(--radius);overflow:hidden">
-          <div class="tw"><table style="table-layout:fixed;width:100%">
-            <colgroup>
-              <col style="width:30%">
-              <col style="width:11%">
-              <col style="width:9%">
-              <col style="width:12%">
-              <col style="width:13%">
-              <col style="width:11%">
-              <col style="width:14%">
-            </colgroup>
-            <thead><tr><th style="text-align:left;padding-left:20px">평가단위</th><th>총점</th><th>만점</th><th>달성률</th><th>등급</th><th>순위</th><th>상세</th></tr></thead>
+          <div class="tw"><table style="width:100%">
+            <thead><tr id="my-thead-종합도매"><th style="text-align:left;padding-left:20px">평가단위</th><th>총점</th><th>달성률</th><th>등급</th><th>순위</th><th>상세</th></tr></thead>
             <tbody id="my-tbody-종합도매"></tbody>
           </table></div>
         </div>
@@ -1572,7 +1587,7 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
       <!-- VC 섹션 -->
       <div id="my-sec-VC" class="ch-section tint-VC" style="display:none">
         <div class="ch-section-head">
-          <span class="ch ch-VC" style="font-size:12px;padding:4px 12px">VC</span>
+          <span class="ch ch-VC" style="font-size:42px;padding:6px 18px;font-weight:800">VC</span>
           <div class="ch-section-kpi" id="my-kpi-VC"></div>
         </div>
         <div class="my-kpi-g">
@@ -1589,17 +1604,8 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
           </div>
         </div>
         <div style="background:var(--white);border:0.5px solid var(--gray-200);border-radius:var(--radius);overflow:hidden">
-          <div class="tw"><table style="table-layout:fixed;width:100%">
-            <colgroup>
-              <col style="width:30%">
-              <col style="width:11%">
-              <col style="width:9%">
-              <col style="width:12%">
-              <col style="width:13%">
-              <col style="width:11%">
-              <col style="width:14%">
-            </colgroup>
-            <thead><tr><th style="text-align:left;padding-left:20px">평가단위</th><th>총점</th><th>만점</th><th>달성률</th><th>등급</th><th>순위</th><th>상세</th></tr></thead>
+          <div class="tw"><table style="width:100%">
+            <thead><tr id="my-thead-VC"><th style="text-align:left;padding-left:20px">평가단위</th><th>총점</th><th>달성률</th><th>등급</th><th>순위</th><th>상세</th></tr></thead>
             <tbody id="my-tbody-VC"></tbody>
           </table></div>
         </div>
@@ -2184,6 +2190,12 @@ const GRADE_GUIDE={
 // 월별 총점 재집계와 상세 화면에서 동일하게 인식하도록 표준화합니다.
 const CLAIM_ITEM_NAMES=["배송지연 발생율","오배송 발생율","오출하 발생율","불량및파손 발생율"];
 const CLAIM_STATUS_SHEET_NAMES=["클레임현황","클레임 현황","고객클레임","고객 클레임","고객클레임점수","클레임점수"];
+// 채널별 정량평가 항목의 표준 표시 순서(실제로 존재하는 항목만 걸러서 씁니다)
+const BASIC_ITEM_NAMES=["배송관리","반품관리","재고관리","품질관리",
+  "정보제공·데이터 연계(DCM)","권역 외 유통","권역 커버리지",
+  "구색","재고금액","반품","품절","데이터 공유","월별평가결과 총점","6월 거점 실적 총점"];
+function isClaimItemRow(r){return CLAIM_ITEM_NAMES.includes(r.item_name)||!!canonicalClaimItemName(r.item_name||"");}
+function isBasicItemRow(r){return !isClaimItemRow(r)&&!!r.item_name&&r.score!==""&&!isNaN(parseFloat(r.score));}
 
 // ── DCM(데이터 연계) 미연동 상세 ──
 // "DCM미연동 리스트.csv"를 구글시트에 "DCM미연동" 탭으로 추가하면 그 데이터를 그대로 씁니다.
@@ -2410,7 +2422,7 @@ function unitGradeCardHtml(r,prevRow,prevMonthLabel){
   }else{
     const prevPending=isPendingRow(prevRow)||isPartialRow(prevRow);
     const prevGrade=prevPending?null:prevRow.grade;
-    const prevBadgeSm=prevPending?"산정중":gb(prevRow.grade);
+    const prevLabel=prevPending?"산정중":`${prevRow.grade}등급`;
     let changeHtml="";
     if(curGrade&&prevGrade){
       const rank={S:0,A:1,B:2,C:3,D:4};
@@ -2420,7 +2432,7 @@ function unitGradeCardHtml(r,prevRow,prevMonthLabel){
       else if(diff<0){color="#A32D2D";text=`${Math.abs(diff)}단계 하락`;}
       changeHtml=`<div class="change" style="color:${color}">(${text})</div>`;
     }
-    prevInfoHtml=`<div>${prevMonthLabel}평가 ${prevBadgeSm}</div>${changeHtml}`;
+    prevInfoHtml=`<div>${prevMonthLabel}평가 ${prevLabel}</div>${changeHtml}`;
   }
 
   return `<div class="my-kpi-card my-kpi-unit-card" style="border-top-color:${curColor}">
@@ -2432,7 +2444,7 @@ function unitGradeCardHtml(r,prevRow,prevMonthLabel){
 function detailButton(uid,evalType,month,fromPage,r){
   if(isPendingRow(r)&&!isPartialRow(r))return `<button class="btn btn-s btn-sm" disabled title="평가 산정 중입니다. 월초에 확인 가능합니다.">대기</button>`;
   const label=isPartialRow(r)?"항목확인":"상세";
-  return `<button class="btn btn-p btn-sm" onclick="openDetail('${uid}','${evalType}','${month}'${fromPage?`,'${fromPage}'`:""})">${label}</button>`;
+  return `<button class="btn-detail" onclick="openDetail('${uid}','${evalType}','${month}'${fromPage?`,'${fromPage}'`:""})"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>${label}</button>`;
 }
 function clearDataCache(){
   S._cache={sheets:new Map(),monthly:new Map(),details:new Map()};
@@ -4167,7 +4179,7 @@ async function loadMyEval(){
     }catch(e){ console.warn("[SLA] 전달 데이터 조회 실패:",e.message); }
   }
 
-  renderMyEvalSections(prevResults);
+  await renderMyEvalSections(prevResults);
   renderMyTrend();
 }
 
@@ -4177,23 +4189,25 @@ function avgAchievementRate(rows){
   return rates.length?rates.reduce((a,b)=>a+b,0)/rates.length:null;
 }
 
-function renderMyEvalSections(prevResults){
+async function renderMyEvalSections(prevResults){
   prevResults=prevResults||[];
   const month=document.getElementById("my-month")?.value;
   const results=S.results||[];
   const CHS=["거점도매","종합도매","VC"];
 
-  CHS.forEach(ch=>{
+  for(const ch of CHS){
     const secId=`my-sec-${ch}`;
     const tbodyId=`my-tbody-${ch}`;
     const kpiId=`my-kpi-${ch}`;
+    const theadRowId=`my-thead-${ch}`;
     const sec=document.getElementById(secId);
     const tbody=document.getElementById(tbodyId);
     const kpiEl=document.getElementById(kpiId);
-    if(!sec||!tbody)return;
+    const theadRow=document.getElementById(theadRowId);
+    if(!sec||!tbody)continue;
 
     const chData=results.filter(r=>r.eval_type===ch);
-    if(!chData.length){sec.style.display="none";setChNavBtnVisible("my-ch-nav",ch,false);return;}
+    if(!chData.length){sec.style.display="none";setChNavBtnVisible("my-ch-nav",ch,false);continue;}
 
     sec.style.display="block";
     setChNavBtnVisible("my-ch-nav",ch,true);
@@ -4244,22 +4258,51 @@ function renderMyEvalSections(prevResults){
       if(!rankMap.has(x.unit_id))rankMap.set(x.unit_id,{rank:curRank,total:peers.length});
     });
 
+    // 평가항목별 점수·달성률 — 이 채널 소속 단위들의 항목별상세점수를 한 번에 조회해
+    // 표에 항목별 컬럼으로 펼쳐줍니다. 항목 구성은 채널/월마다 실제 데이터 기준이라
+    // 고정 목록이 아니라 조회 결과에서 존재하는 항목만 뽑아 씁니다.
+    let itemNames=[];
+    const detailByUnit={};
+    if(S.cfg.url){
+      try{
+        const detailLists=await Promise.all(chData.map(r=>fetchDetailRowsWithClaim({eval_month:month,unit_id:r.unit_id,eval_type:ch})));
+        chData.forEach((r,i)=>{ detailByUnit[r.unit_id]=detailLists[i]||[]; });
+        const present=new Set();
+        Object.values(detailByUnit).forEach(rows=>rows.filter(isBasicItemRow).forEach(row=>present.add(row.item_name)));
+        itemNames=BASIC_ITEM_NAMES.filter(n=>present.has(n));
+        present.forEach(n=>{ if(!itemNames.includes(n))itemNames.push(n); }); // 표준 목록에 없는 항목명도 누락 없이 추가
+      }catch(e){ console.warn(`[SLA] ${ch} 항목별 점수 조회 실패:`,e.message); }
+    }
+
+    if(theadRow){
+      theadRow.innerHTML=`<th style="text-align:left;padding-left:20px">평가단위</th>`
+        +itemNames.map(n=>`<th style="font-size:12px;white-space:normal;min-width:76px">${n}</th>`).join("")
+        +`<th>총점</th><th>달성률</th><th>등급</th><th>순위</th><th>상세</th>`;
+    }
+
     // 테이블
     tbody.innerHTML=chData.map(r=>{
       const rk=rankMap.get(r.unit_id);
       const rankHtml=rk?`${rk.rank}<span style="color:var(--gray-400);font-weight:400">/${rk.total}위</span>`:"—";
       const prevRow=prevResults.find(p=>p.unit_id===r.unit_id&&p.eval_type===ch);
+      const itemCellsHtml=itemNames.map(n=>{
+        const item=(detailByUnit[r.unit_id]||[]).find(d=>d.item_name===n);
+        const sc=item?parseFloat(item.score):NaN, mx=item?parseFloat(item.max_score):NaN;
+        if(!item||isNaN(sc)||isNaN(mx)||mx===0)return `<td style="text-align:center;color:var(--gray-300)">—</td>`;
+        const rate=(sc/mx*100).toFixed(1);
+        return `<td style="text-align:center"><div>${rate}%</div><div style="font-size:10px;color:var(--gray-400);margin-top:1px">${fs(sc)}/${fs(mx)}</div></td>`;
+      }).join("");
       return `<tr class="${isPendingRow(r)?"pending-row":""}">
       <td class="left" style="padding-left:20px">${unitName(r.unit_id)}</td>
-      <td style="text-align:center">${scoreDisplay(r)}${scoreDeltaVsPrevHtml(r,prevRow)}</td>
-      <td style="text-align:center">${maxDisplay(r)}</td>
+      ${itemCellsHtml}
+      <td style="text-align:center">${scoreDisplay(r)} <small style="color:var(--gray-400);font-size:0.65em">/${maxDisplay(r)}</small>${scoreDeltaVsPrevHtml(r,prevRow)}</td>
       <td style="text-align:center">${rateDisplay(r)}</td>
       <td style="text-align:center">${gradeDisplay(r)}</td>
       <td style="text-align:center;font-size:12.5px;font-weight:700;color:var(--navy-dk)">${rankHtml}</td>
       <td style="text-align:center">${detailButton(r.unit_id,r.eval_type,month,"my-eval",r)}</td>
     </tr>`;
-    }).join("")||`<tr><td colspan="6"><div class="empty"><p>데이터 없음</p></div></td></tr>`;
-  });
+    }).join("")||`<tr><td colspan="${6+itemNames.length}"><div class="empty"><p>데이터 없음</p></div></td></tr>`;
+  }
 }
 
 function gradeRank(g){ return {S:5,A:4,B:3,C:2,D:1}[g]||0; }
@@ -4291,7 +4334,7 @@ async function renderTopCompareKpi(uid, evalType, month, r){
   if(prevRow.grade && gradeEl){
     const rankDelta=gradeRank(r.grade)-gradeRank(prevRow.grade);
     const arrowHtml=rankDelta===0?"":`<span style="color:${rankDelta>0?"#0F6E56":"#A32D2D"};font-weight:700">${rankDelta>0?"▲":"▼"}</span>`;
-    gradeEl.innerHTML=`전달 <b>${prevRow.grade}</b>등급 → 이번달 <b>${r.grade||"—"}</b>등급 ${arrowHtml}`;
+    gradeEl.innerHTML=`<span style="display:inline-flex;align-items:center;gap:5px;vertical-align:middle">전달 ${gb(prevRow.grade)} → 이번달 ${gb(r.grade)} ${arrowHtml}</span>`;
   }
 }
 
@@ -4305,8 +4348,7 @@ async function openDetail(uid,evalType,month,fromPage){
   const r=S.results.find(x=>x.unit_id===uid&&x.eval_type===evalType)||{};
   document.getElementById("det-score").textContent=isPartialRow(r)?"일부 항목 업데이트":(isPendingRow(r)?"산정중":fs(r.total_score));
   document.getElementById("det-max").textContent=(isPendingRow(r)||isPartialRow(r))?"—":fs(r.max_score);
-  document.getElementById("det-grade").textContent=(isPendingRow(r)||isPartialRow(r))?"산정중":(r.grade||"—");
-  document.getElementById("det-grade").style.color=r.grade==="S"?"var(--gold)":r.grade==="D"?"var(--red)":"var(--navy-dk)";
+  document.getElementById("det-grade").innerHTML=(isPendingRow(r)||isPartialRow(r))?`<span style="font-size:20px;color:var(--gray-400);font-weight:800">산정중</span>`:(r.grade?gb(r.grade,"lg"):"—");
   document.getElementById("det-ch-badge").innerHTML=cb(evalType);
   const pct=(r.max_score&&!isPartialRow(r))?parseFloat(r.total_score)/parseFloat(r.max_score)*100:0;
   document.getElementById("det-bar").style.width=Math.min(pct,100)+"%";
@@ -4341,8 +4383,6 @@ async function openDetail(uid,evalType,month,fromPage){
     dcmTopBtn.onclick = dcmAvailable ? ()=>openDcmDetail(uid, month) : null;
   }
 
-  const CLAIM_ITEMS = CLAIM_ITEM_NAMES;
-
   // 전달(직전 월) 항목별 점수를 한 번만 조회해서, 아래 표의 항목별 전달 대비
   // 표시와 "항목별 전달 대비" 도넛차트가 같은 데이터를 재사용하도록 합니다.
   const prevMonth=shiftMonthKey(month,-1);
@@ -4365,14 +4405,8 @@ async function openDetail(uid,evalType,month,fromPage){
     const partialNotice = isPartialRow(r)
       ? `<div style="margin-bottom:12px;padding:11px 14px;border:1px solid var(--gold-border);background:var(--gold-bg);border-radius:9px;font-size:12px;color:var(--gray-600);line-height:1.6"><strong style="color:var(--gold)">일부 항목 업데이트 상태입니다.</strong><br>아래 표에는 현재 업로드된 ${evalType} 항목만 표시되며, 전체 총점과 등급은 모든 항목 입력 후 산정됩니다.</div>`
       : "";
-    // 기본 운영: 기본 5개 카테고리 + 이외 항목
-    const BASIC_ITEM_NAMES = ["배송관리","반품관리","재고관리","품질관리",
-      "정보제공·데이터 연계(DCM)","권역 외 유통","권역 커버리지",
-      "구색","재고금액","반품","품절","데이터 공유","월별평가결과 총점","6월 거점 실적 총점"];
-    const isClaimRow = r => CLAIM_ITEMS.includes(r.item_name) || !!canonicalClaimItemName(r.item_name||"");
-    const isBasicRow = r => !isClaimRow(r) && !!r.item_name && r.score !== "" && !isNaN(parseFloat(r.score));
-    const basicRows = details.filter(r=>isBasicRow(r));
-    const claimRows = details.filter(r=>isClaimRow(r));
+    const basicRows = details.filter(r=>isBasicItemRow(r));
+    const claimRows = details.filter(r=>isClaimItemRow(r));
 
     function makeProgressBar(score, max){
       const pct = max ? Math.min((parseFloat(score)/parseFloat(max))*100,100) : 0;
@@ -6183,8 +6217,8 @@ async function renderMyTrend(){
       _myTrendData[t.key]=data;
       if(sel){
         const unitIds=Object.keys(data.byUnit);
-        sel.innerHTML=`<option value="__ALL__">전체</option>`+unitIds.map(uid=>`<option value="${uid}">${unitName(uid)}</option>`).join("");
-        sel.value="__ALL__";
+        sel.innerHTML=`<button type="button" class="my-trend-btn active" onclick="selectMyTrend('${t.key}',this,'__ALL__')">전체</button>`
+          +unitIds.map(uid=>`<button type="button" class="my-trend-btn" onclick="selectMyTrend('${t.key}',this,'${uid}')">${unitName(uid)}</button>`).join("");
       }
       drawMyTrendChart(t.key,data,"__ALL__");
     }catch(e){ console.warn(`[SLA] ${t.key} 내 추이 차트 로드 실패:`,e.message); }
@@ -6197,6 +6231,12 @@ function colorForUnitIndex(i){return UNIT_TREND_PALETTE[i%UNIT_TREND_PALETTE.len
 
 // selected: "__ALL__"(전체 평균 강조) 또는 특정 unit_id(그 거점 강조) — 강조되지 않은
 // 선도 평가단위 고유 색은 유지한 채 옅게(투명도만 낮춰) 배경 맥락으로 표시합니다.
+function selectMyTrend(key,btn,val){
+  const wrap=btn.parentElement;
+  wrap.querySelectorAll(".my-trend-btn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  drawMyTrendChart(key,_myTrendData[key],val);
+}
 function drawMyTrendChart(key,data,selected){
   const canvas=document.getElementById(`my-trend-canvas-${key}`);
   if(!canvas||!data)return;
@@ -6212,8 +6252,8 @@ function drawMyTrendChart(key,data,selected){
     borderColor:isOverallActive?"#1F2937":"rgba(31,41,55,0.3)",
     backgroundColor:"transparent",
     borderDash:[6,4],
-    borderWidth:isOverallActive?2.5:1.4,
-    pointRadius:isOverallActive?3:0,
+    borderWidth:isOverallActive?4:2,
+    pointRadius:isOverallActive?4:0,
     tension:0.3,spanGaps:true,fill:false,
     order:isOverallActive?0:9,
   });
@@ -6228,8 +6268,8 @@ function drawMyTrendChart(key,data,selected){
       data:data.byUnit[uid],
       borderColor:active?baseColor:hexToRgba(baseColor,0.3),
       backgroundColor:active?hexToRgba(baseColor,0.08):"transparent",
-      borderWidth:active?2.5:1.4,
-      pointRadius:active?3:0,
+      borderWidth:active?4:2,
+      pointRadius:active?4:0,
       pointBackgroundColor:baseColor,
       tension:0.3,spanGaps:true,fill:active,
       order:active?0:9,
@@ -6245,17 +6285,17 @@ function drawMyTrendChart(key,data,selected){
       maintainAspectRatio:false,
       layout:{padding:{top:22}},
       plugins:{
-        legend:{display:true,position:"bottom",labels:{boxWidth:10,usePointStyle:true,font:{size:10.5},padding:10}},
+        legend:{display:true,position:"bottom",labels:{boxWidth:12,usePointStyle:true,font:{size:13,weight:"600"},padding:12}},
         datalabels:{
           display:(ctx)=>ctx.datasetIndex===activeIndex,
-          align:"top",clamp:true,font:{size:14,weight:"800"},
+          align:"top",clamp:true,font:{size:15,weight:"800"},
           color:"#111827",
           formatter:v=>v!==null&&v!==undefined?v+"%":""
         },
       },
       scales:{
-        x:{grid:{display:false}},
-        y:{min:t.yMin,max:t.yMax,ticks:{callback:v=>v+"%"},grid:{display:false}}
+        x:{grid:{display:false},ticks:{font:{size:13}}},
+        y:{min:t.yMin,max:t.yMax,ticks:{callback:v=>v+"%",font:{size:13}},grid:{display:false}}
       },
     }
   });
