@@ -409,6 +409,9 @@ html,body{height:100%;font-family:'Pretendard','Noto Sans KR','Apple SD Gothic N
 .sb-logout{width:100%;padding:9px;border-radius:9px;background:rgba(255,255,255,.05);
   border:none;color:rgba(255,255,255,.45);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
 .sb-logout:hover{background:rgba(185,28,28,.2);color:#FCA5A5}
+.dcm-click-row{cursor:pointer;transition:box-shadow .15s ease,filter .15s ease}
+.dcm-click-row:hover{box-shadow:inset 3px 0 0 var(--red);filter:brightness(.985)}
+.dcm-click-row:focus-visible{outline:2px solid var(--red);outline-offset:-2px}
 /* ── MAIN ── */
 .main{flex:1;overflow-y:auto;background:var(--gray-50)}
 .pg{display:none;padding:28px}
@@ -4434,6 +4437,7 @@ async function openDetail(uid,evalType,month,fromPage){
     // 감점사유 칸 자체는 이제 기본 운영/고객 클레임 모든 항목에 공통으로 표시합니다.
     function makeRow(row, showDetail){
       const ded = parseFloat(row.score)<parseFloat(row.max_score);
+      const dcmClickable = !!DCM_UNIT_NAME_MAP[uid] && isDcmRow(row.item_name);
       // 원본 시트 reason에 실제 건수("0.12% (9건/7,537건)")가 있으면 그 값을 그대로 쓰고,
       // 없으면(기본 운영 항목 등 건수 데이터가 없는 경우) 감점 점수 기반 추정 문구로 대체합니다.
       const realCount = claimCountText(row.reason);
@@ -4480,10 +4484,17 @@ async function openDetail(uid,evalType,month,fromPage){
           <p>${reasonText}</p>
         </div>` : "";
 
+      const dcmRowAction = dcmClickable
+        ? `class="dcm-click-row" role="button" tabindex="0" title="DCM 미연동 상세 보기" onclick="openDcmDetail('${uid}','${month}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDcmDetail('${uid}','${month}')}"`
+        : "";
+      const itemHint = dcmClickable
+        ? `<span style="display:block;font-size:10px;font-weight:700;color:var(--red);margin-top:3px">행을 눌러 미연동 상세 보기 🔍</span>`
+        : "";
+
       return `
         <div style="border-top:0.5px solid #e5e7eb">
-          <div style="display:grid;grid-template-columns:${gridCols};align-items:center;background:${rowBg}">
-            <div style="padding:10px 14px;font-size:13px;font-weight:500;color:${nameColor}">${row.item_name}</div>
+          <div ${dcmRowAction} style="display:grid;grid-template-columns:${gridCols};align-items:center;background:${rowBg}">
+            <div style="padding:10px 14px;font-size:13px;font-weight:500;color:${nameColor}">${row.item_name}${itemHint}</div>
             ${makeProgressBar(row.score, row.max_score)}
             <div style="padding:10px 8px;text-align:center;font-size:14px;font-weight:600;color:#1F2937">${fs(row.score)}<span style="font-size:11px;font-weight:400;color:#9CA3AF">/${fs(row.max_score)}</span>${prevDeltaHtml}</div>
             <div style="padding:10px 8px;display:flex;justify-content:center">
