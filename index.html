@@ -5200,11 +5200,14 @@ function dcmField(row,keys){
 function updateDcmPartnerLink(dcmName){
   const link = document.getElementById("dcm-partner-link-btn");
   if(!link)return;
-  const isAdmin = !!(S.user && S.user.role==="admin");
   const brand = dcmName ? DCM_UNIT_TO_BRAND[dcmName] : null;
   const code = brand ? DCM_PARTNER_CODES[brand] : null;
-  // 접속코드가 소스에 들어있다는 걸 감안해, 링크 자체는 관리자 화면에서만 노출합니다.
-  if(isAdmin && brand && code){
+  // 2026-09-16: 예전엔 관리자 전용으로 숨겼는데, 접속코드는 이미 공개 소스에
+  // 다 들어있어서 관리자만 막아도 실질적 보호 효과가 없고, 정작 자기 회사
+  // 파트너 대시보드로 바로 가고 싶은 도매사 담당자만 못 쓰게 막는 셈이었습니다.
+  // 도매사 계정은 원래 자기 회사 상세만 볼 수 있으므로(다른 회사 접근 불가),
+  // role 제한 없이 dcmName만 맞으면 항상 노출합니다.
+  if(brand && code){
     link.href = `${DCM_PARTNER_BASE_URL}?partner=${encodeURIComponent(brand)}&code=${encodeURIComponent(code)}`;
     link.style.display = "inline-block";
   }else{
