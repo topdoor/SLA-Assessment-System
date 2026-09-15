@@ -1721,7 +1721,10 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
             <div id="dcm-modal-title" style="font-size:15px;font-weight:700;color:var(--navy)">DCM 미연동 상세</div>
             <div id="dcm-modal-sub" style="font-size:12px;color:var(--gray-400);margin-top:2px"></div>
           </div>
-          <button onclick="closeDcmModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray-400);padding:4px 8px">✕</button>
+          <div style="display:flex;align-items:center;gap:8px">
+            <a id="dcm-partner-link-btn" href="#" target="_blank" rel="noopener" style="display:none;font-size:12px;font-weight:700;color:#fff;background:var(--navy);border-radius:6px;padding:6px 12px;text-decoration:none;white-space:nowrap">파트너 대시보드에서 보기 ↗</a>
+            <button onclick="closeDcmModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray-400);padding:4px 8px">✕</button>
+          </div>
         </div>
         <div style="overflow-y:auto;padding:16px 22px;flex:1">
           <div id="dcm-modal-loading" style="text-align:center;padding:30px;color:var(--gray-400);display:none">불러오는 중...</div>
@@ -2215,6 +2218,31 @@ const DCM_UNIT_NAME_MAP={
   W019:"(주)인천약품",
   W020:"아이팜코리아(주)",
 };
+// DCM 미연동 상세 → 파트너 대시보드(yhbae106/SLA_DCM_2026_Partner) 연동.
+// 도매상명(DCM_UNIT_NAME_MAP 값) → 파트너 사이트의 업체 브랜드(5개) 매핑.
+const DCM_UNIT_TO_BRAND={
+  "유진약품(주)":"유진약품",
+  "대전백제약품":"백제약품",
+  "백제약품(주)원주지점":"백제약품",
+  "백제약품(주)영남본부":"백제약품",
+  "(주)복산나이스":"복산나이스",
+  "백제약품영등포지점":"백제약품",
+  "(주)인천약품":"인천약품",
+  "아이팜코리아(주)":"아이팜코리아",
+};
+// 주의: 이 코드는 정적 파일(index.html) 안에 그대로 들어가서, 로그인 여부와
+// 무관하게 페이지 소스를 열어보면 5개 전부 노출됩니다. 링크 자체는 관리자
+// 화면에서만 보이도록 아래에서 role 체크를 하지만, 소스 수준의 노출까지
+// 막지는 못합니다(완전히 막으려면 서버 프록시가 필요 — 현재 범위 밖. 사용자
+// 확인 후 그대로 진행하기로 함, 2026-09-15).
+const DCM_PARTNER_CODES={
+  "백제약품":"842306",
+  "인천약품":"062384",
+  "복산나이스":"068423",
+  "아이팜코리아":"238406",
+  "유진약품":"230684",
+};
+const DCM_PARTNER_BASE_URL="https://yhbae106.github.io/SLA_DCM_2026_Partner/";
 const DCM_AFFILIATES=["대웅제약","대웅바이오","한올바이오"];
 // 2026-09-14: 7~8월 도도매 리스트 원본은 관계사명을 "한올바이오파마"(정식명)로
 // 표기하는데, 기존 DCM_AFFILIATES/모달 컬럼은 "한올바이오"로 고정되어 있어
@@ -5141,6 +5169,21 @@ function dcmField(row,keys){
   }
   return "";
 }
+function updateDcmPartnerLink(dcmName){
+  const link = document.getElementById("dcm-partner-link-btn");
+  if(!link)return;
+  const isAdmin = !!(S.user && S.user.role==="admin");
+  const brand = dcmName ? DCM_UNIT_TO_BRAND[dcmName] : null;
+  const code = brand ? DCM_PARTNER_CODES[brand] : null;
+  // 접속코드가 소스에 들어있다는 걸 감안해, 링크 자체는 관리자 화면에서만 노출합니다.
+  if(isAdmin && brand && code){
+    link.href = `${DCM_PARTNER_BASE_URL}?partner=${encodeURIComponent(brand)}&code=${encodeURIComponent(code)}`;
+    link.style.display = "inline-block";
+  }else{
+    link.href = "#";
+    link.style.display = "none";
+  }
+}
 async function openDcmDetail(uid, month){
   const modal = document.getElementById("dcm-detail-modal");
   const title = document.getElementById("dcm-modal-title");
@@ -5155,9 +5198,11 @@ async function openDcmDetail(uid, month){
   body.style.display = "none";
   loading.style.display = "block";
   modal.style.display = "flex";
+  updateDcmPartnerLink(null);
 
   try{
     const dcmName = DCM_UNIT_NAME_MAP[uid];
+    updateDcmPartnerLink(dcmName);
     if(!dcmName){
       loading.style.display="none";
       body.style.display="block";
