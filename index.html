@@ -1123,6 +1123,20 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
   .login-right-title{font-size:19px !important;}
 }
 
+@keyframes dcmPartnerBorderSpin{to{--dcm-ang:360deg}}
+@property --dcm-ang{syntax:'<angle>';inherits:false;initial-value:0deg}
+.dcm-partner-wrap{
+  display:inline-block;padding:6px;border-radius:14px;
+  animation:dcmPartnerBorderSpin 2.4s linear infinite;
+  background:conic-gradient(from var(--dcm-ang),#5B21B6,var(--gray-100) 25%,#5B21B6 55%,#A855F7,#5B21B6);
+  box-shadow:0 0 16px 2px rgba(109,40,217,.45);
+}
+.dcm-partner-btn{
+  background:#6D28D9;color:#fff;border-radius:9px;
+  padding:12px 22px;font-size:15px;font-weight:700;
+  text-decoration:none;white-space:nowrap;display:block;
+}
+
 </style>
 </head>
 <body>
@@ -1741,8 +1755,10 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
             <div id="dcm-modal-title" style="font-size:15px;font-weight:700;color:var(--navy)">DCM 미연동 상세</div>
             <div id="dcm-modal-sub" style="font-size:12px;color:var(--gray-400);margin-top:2px"></div>
           </div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <a id="dcm-partner-link-btn" href="#" target="_blank" rel="noopener" style="display:none;font-size:12px;font-weight:700;color:#fff;background:var(--navy);border-radius:6px;padding:6px 12px;text-decoration:none;white-space:nowrap">파트너 대시보드에서 보기 ↗</a>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span id="dcm-partner-link-wrap" class="dcm-partner-wrap" style="display:none">
+              <a id="dcm-partner-link-btn" href="#" target="_blank" rel="noopener" class="dcm-partner-btn">파트너 대시보드에서 보기 ↗</a>
+            </span>
             <button onclick="closeDcmModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray-400);padding:4px 8px">✕</button>
           </div>
         </div>
@@ -5199,7 +5215,8 @@ function dcmField(row,keys){
 }
 function updateDcmPartnerLink(dcmName){
   const link = document.getElementById("dcm-partner-link-btn");
-  if(!link)return;
+  const wrap = document.getElementById("dcm-partner-link-wrap");
+  if(!link || !wrap)return;
   const brand = dcmName ? DCM_UNIT_TO_BRAND[dcmName] : null;
   const code = brand ? DCM_PARTNER_CODES[brand] : null;
   // 2026-09-16: 예전엔 관리자 전용으로 숨겼는데, 접속코드는 이미 공개 소스에
@@ -5209,10 +5226,10 @@ function updateDcmPartnerLink(dcmName){
   // role 제한 없이 dcmName만 맞으면 항상 노출합니다.
   if(brand && code){
     link.href = `${DCM_PARTNER_BASE_URL}?partner=${encodeURIComponent(brand)}&code=${encodeURIComponent(code)}`;
-    link.style.display = "inline-block";
+    wrap.style.display = "inline-block";
   }else{
     link.href = "#";
-    link.style.display = "none";
+    wrap.style.display = "none";
   }
 }
 async function openDcmDetail(uid, month){
