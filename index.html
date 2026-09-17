@@ -628,6 +628,7 @@ table.rp-sum-grid tr.band-b td:not(.co){background:#EEF2F8}
 .det-trend-legend strong{color:var(--navy-dk)}
 .det-trend-reset{font-size:10.5px;font-weight:700;color:#D33B3B;background:none;border:none;cursor:pointer;padding:2px 0;white-space:nowrap}
 .det-trend-reset:hover{text-decoration:underline}
+.det-trend-reset.dim{color:var(--gray-400)}
 .det-trend-canvas{position:relative;min-height:300px;flex:1}
 @media(max-width:900px){
   .det-cmp-layout{grid-template-columns:1fr}
@@ -6468,6 +6469,11 @@ function selectDetCompareItem(index){
   document.querySelectorAll(".det-cmp-item").forEach((el,i)=>el.classList.toggle("active",i===next));
   drawDetItemTrend(next);
 }
+function resetDetCompareView(){
+  _detCompareHighlight=null;
+  document.querySelectorAll(".det-cmp-item").forEach(el=>el.classList.remove("active"));
+  drawDetItemTrend(null);
+}
 // highlightIndex가 null이면 모든 항목을 각자 고유 색으로 동일한 굵기로 보여주고,
 // 특정 인덱스면 그 항목만 굵게·불투명하게 강조하고 나머지는 옅게 낮춥니다(항목 전환이 아니라 강조 토글).
 function drawDetItemTrend(highlightIndex){
@@ -6482,7 +6488,7 @@ function drawDetItemTrend(highlightIndex){
   const highlighted=highlightIndex!==null&&entries.some(e=>e.i===highlightIndex);
   if(titleEl)titleEl.textContent=highlighted?`${state.items[highlightIndex].name} · 월별 점수 추이`:"항목별 월별 점수 추이";
   const resetBtn=document.getElementById("det-trend-reset");
-  if(resetBtn)resetBtn.style.display=highlighted?"":"none";
+  if(resetBtn)resetBtn.classList.toggle("dim",!highlighted);
   if(!entries.length){canvas.parentElement.innerHTML='<div class="empty"><p>월별 추이 데이터가 없습니다</p></div>';return;}
   const ordered=[...entries.filter(e=>e.i!==highlightIndex),...entries.filter(e=>e.i===highlightIndex)];
   const datasets=ordered.map(e=>{
@@ -6491,10 +6497,10 @@ function drawDetItemTrend(highlightIndex){
     const baseColor=colorForItemIndex(e.i);
     return {
       label:e.item.name,data:e.data,isSelected:selected,
-      borderColor:dimmed?hexToRgba(baseColor,.16):baseColor,backgroundColor:"transparent",
-      borderWidth:selected?4:(highlighted?1.25:2.25),
+      borderColor:dimmed?hexToRgba(baseColor,.4):baseColor,backgroundColor:"transparent",
+      borderWidth:selected?4:(highlighted?1.5:2.25),
       pointRadius:selected?4:(highlighted?0:2),pointHoverRadius:selected?6:4,
-      pointBackgroundColor:dimmed?hexToRgba(baseColor,.25):baseColor,pointBorderColor:baseColor,
+      pointBackgroundColor:dimmed?hexToRgba(baseColor,.5):baseColor,pointBorderColor:baseColor,
       pointBorderWidth:selected?3:1,tension:.28,spanGaps:true,fill:false,order:selected?0:(dimmed?10:5),
     };
   });
@@ -6600,7 +6606,7 @@ async function renderDetCompareChart(uid, month, basicRows, claimRows, prevByIte
       <div class="det-trend-panel">
         <div class="det-trend-hd">
           <div><div class="det-trend-title" id="det-trend-title">항목별 월별 점수 추이</div><div class="det-trend-sub">5월부터 · 카드를 클릭하면 해당 항목이 강조됩니다</div></div>
-          <button type="button" class="det-trend-reset" id="det-trend-reset" style="display:none" onclick="selectDetCompareItem(-1)">전체 보기로 돌아가기</button>
+          <button type="button" class="det-trend-reset dim" id="det-trend-reset" onclick="resetDetCompareView()">모두 보기</button>
         </div>
         <div class="det-trend-canvas"><canvas id="det-unit-trend-canvas"></canvas></div>
       </div>
