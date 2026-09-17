@@ -1165,7 +1165,7 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
           <div class="lc-h">로그인</div>
           <div class="lc-sub">사용자 정보를 입력하세요</div>
           <div class="tabs">
-            <button class="tab on" id="tab-co" onclick="setTab('company')">🏢 도매사</button>
+            <button class="tab on" id="tab-co" onclick="setTab('company')">🏢 협력사</button>
             <button class="tab" id="tab-ad" onclick="setTab('admin')">🔧 관리자</button>
           </div>
           <div class="field"><label id="uid-lbl">아이디</label>
@@ -3602,7 +3602,7 @@ async function syncUnitMasterFromSheet(){
 function initApp(){
   const u=S.user;
   document.getElementById("sb-nm").textContent=u.name;
-  document.getElementById("sb-role").textContent=u.role==="admin"?"관리자":"도매사 담당자";
+  document.getElementById("sb-role").textContent=u.role==="admin"?"관리자":"협력사 담당자";
   renderSidebarCompanyLogo(u);
   buildSidebar();
   loadConfig();
@@ -5236,7 +5236,7 @@ function updateDcmPartnerLink(dcmName){
   const code = brand ? DCM_PARTNER_CODES[brand] : null;
   // 2026-09-16: 예전엔 관리자 전용으로 숨겼는데, 접속코드는 이미 공개 소스에
   // 다 들어있어서 관리자만 막아도 실질적 보호 효과가 없고, 정작 자기 회사
-  // 파트너 대시보드로 바로 가고 싶은 도매사 담당자만 못 쓰게 막는 셈이었습니다.
+  // 파트너 대시보드로 바로 가고 싶은 협력사 담당자만 못 쓰게 막는 셈이었습니다.
   // 도매사 계정은 원래 자기 회사 상세만 볼 수 있으므로(다른 회사 접근 불가),
   // role 제한 없이 dcmName만 맞으면 항상 노출합니다.
   if(brand && code){
