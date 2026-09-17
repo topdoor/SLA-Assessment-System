@@ -613,7 +613,8 @@ table.rp-sum-grid tr.band-b td:not(.co){background:#EEF2F8}
 .det-cmp-item.active{border:2px solid #D33B3B;box-shadow:0 3px 12px rgba(211,59,59,.14)}
 .det-cmp-item:focus-visible{outline:3px solid rgba(211,59,59,.24);outline-offset:2px}
 .det-cmp-name{font-size:12px;font-weight:700;color:var(--navy-dk);margin:0;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
+.det-cmp-dot{flex:none;width:9px;height:9px;border-radius:50%;box-shadow:0 0 0 2px rgba(255,255,255,.6)}
 .det-cmp-donut-wrap{position:relative;width:54px;height:54px;grid-column:2;grid-row:1/3;margin:0}
 .det-cmp-donut-wrap canvas{width:100%!important;height:100%!important}
 .det-cmp-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
@@ -625,6 +626,8 @@ table.rp-sum-grid tr.band-b td:not(.co){background:#EEF2F8}
 .det-trend-sub{font-size:10.5px;color:var(--gray-400);margin-top:3px}
 .det-trend-legend{font-size:10.5px;color:var(--gray-400);white-space:nowrap}
 .det-trend-legend strong{color:var(--navy-dk)}
+.det-trend-reset{font-size:10.5px;font-weight:700;color:#D33B3B;background:none;border:none;cursor:pointer;padding:2px 0;white-space:nowrap}
+.det-trend-reset:hover{text-decoration:underline}
 .det-trend-canvas{position:relative;min-height:300px;flex:1}
 @media(max-width:900px){
   .det-cmp-layout{grid-template-columns:1fr}
@@ -6345,6 +6348,7 @@ async function renderMyTrend(){
 // 평가단위(거점)마다 고유 색을 고정으로 부여 — 선택 여부와 무관하게 항상 같은 회사는 같은 색입니다.
 const UNIT_TREND_PALETTE=["#0E4C92","#0E9070","#D4A017","#C0392B","#7D3C98","#16A085","#D35400","#2C3E50","#1F7A8C","#9B2226"];
 function colorForUnitIndex(i){return UNIT_TREND_PALETTE[i%UNIT_TREND_PALETTE.length];}
+function colorForItemIndex(i){return UNIT_TREND_PALETTE[i%UNIT_TREND_PALETTE.length];}
 
 // selected: "__ALL__"(전체 평균 강조) 또는 특정 unit_id(그 거점 강조) — 강조되지 않은
 // 선도 평가단위 고유 색은 유지한 채 옅게(투명도만 낮춰) 배경 맥락으로 표시합니다.
@@ -6457,31 +6461,41 @@ async function fetchDetailItemTrends(months,evalType,companyId,itemNames){
   });
   return {months,unitIds,byItem};
 }
+let _detCompareHighlight=null;
 function selectDetCompareItem(index){
-  document.querySelectorAll(".det-cmp-item").forEach((el,i)=>el.classList.toggle("active",i===index));
-  drawDetItemTrend(index);
+  const next=(_detCompareHighlight===index)?null:index;
+  _detCompareHighlight=next;
+  document.querySelectorAll(".det-cmp-item").forEach((el,i)=>el.classList.toggle("active",i===next));
+  drawDetItemTrend(next);
 }
-function drawDetItemTrend(index){
+// highlightIndex가 null이면 모든 항목을 각자 고유 색으로 동일한 굵기로 보여주고,
+// 특정 인덱스면 그 항목만 굵게·불투명하게 강조하고 나머지는 옅게 낮춥니다(항목 전환이 아니라 강조 토글).
+function drawDetItemTrend(highlightIndex){
   const state=_detItemTrendData;
   const canvas=document.getElementById("det-unit-trend-canvas");
   if(!state||!canvas||!window.Chart)return;
   if(_detUnitTrendChart){_detUnitTrendChart.destroy();_detUnitTrendChart=null;}
-  const item=state.items[index];
-  const itemSeries=state.trend.byItem[item.name]||{};
-  const ids=state.trend.unitIds.filter(id=>(itemSeries[id]||[]).some(v=>v!==null));
+  const entries=state.items
+    .map((item,i)=>({item,i,data:(state.trend.byItem[item.name]||{})[state.uid]||[]}))
+    .filter(e=>e.data.some(v=>v!==null));
   const titleEl=document.getElementById("det-trend-title");
-  if(titleEl)titleEl.textContent=`${item.name} · 월별 점수 추이`;
-  if(!ids.length){canvas.parentElement.innerHTML='<div class="empty"><p>선택 항목의 월별 추이 데이터가 없습니다</p></div>';return;}
-  const ordered=[...ids.filter(id=>id!==state.uid),...ids.filter(id=>id===state.uid)];
-  const datasets=ordered.map((id,i)=>{
-    const selected=id===state.uid;
-    const baseColor=selected?"#D33B3B":colorForUnitIndex(i);
+  const highlighted=highlightIndex!==null&&entries.some(e=>e.i===highlightIndex);
+  if(titleEl)titleEl.textContent=highlighted?`${state.items[highlightIndex].name} · 월별 점수 추이`:"항목별 월별 점수 추이";
+  const resetBtn=document.getElementById("det-trend-reset");
+  if(resetBtn)resetBtn.style.display=highlighted?"":"none";
+  if(!entries.length){canvas.parentElement.innerHTML='<div class="empty"><p>월별 추이 데이터가 없습니다</p></div>';return;}
+  const ordered=[...entries.filter(e=>e.i!==highlightIndex),...entries.filter(e=>e.i===highlightIndex)];
+  const datasets=ordered.map(e=>{
+    const selected=highlighted&&e.i===highlightIndex;
+    const dimmed=highlighted&&!selected;
+    const baseColor=colorForItemIndex(e.i);
     return {
-      label:unitName(id),data:itemSeries[id],isSelected:selected,
-      borderColor:selected?baseColor:hexToRgba(baseColor,.16),backgroundColor:"transparent",
-      borderWidth:selected?4:1.25,pointRadius:selected?4:0,pointHoverRadius:selected?6:3,
-      pointBackgroundColor:selected?"#fff":hexToRgba(baseColor,.25),pointBorderColor:baseColor,
-      pointBorderWidth:selected?3:1,tension:.28,spanGaps:true,fill:false,order:selected?0:10,
+      label:e.item.name,data:e.data,isSelected:selected,
+      borderColor:dimmed?hexToRgba(baseColor,.16):baseColor,backgroundColor:"transparent",
+      borderWidth:selected?4:(highlighted?1.25:2.25),
+      pointRadius:selected?4:(highlighted?0:2),pointHoverRadius:selected?6:4,
+      pointBackgroundColor:dimmed?hexToRgba(baseColor,.25):baseColor,pointBorderColor:baseColor,
+      pointBorderWidth:selected?3:1,tension:.28,spanGaps:true,fill:false,order:selected?0:(dimmed?10:5),
     };
   });
   _detUnitTrendChart=new Chart(canvas.getContext("2d"),{
@@ -6504,6 +6518,7 @@ async function renderDetCompareChart(uid, month, basicRows, claimRows, prevByIte
   _detCompareCharts.forEach(c=>c.destroy());
   _detCompareCharts=[];
   _detItemTrendData=null;
+  _detCompareHighlight=null;
   if(_detUnitTrendChart){_detUnitTrendChart.destroy();_detUnitTrendChart=null;}
 
   const groupsInput=[
@@ -6565,8 +6580,8 @@ async function renderDetCompareChart(uid, month, basicRows, claimRows, prevByIte
         tileBg=delta>0?"#E7F5EF":delta<0?"#FCEEEE":"";
       }
       return `
-      <div class="det-cmp-item${i===0?" active":""}" role="button" tabindex="0" onclick="selectDetCompareItem(${i})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectDetCompareItem(${i})}"${tileBg?` style="background:${tileBg}"`:""}>
-        <div class="det-cmp-name" title="${it.name}">${it.name}</div>
+      <div class="det-cmp-item" role="button" tabindex="0" onclick="selectDetCompareItem(${i})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectDetCompareItem(${i})}"${tileBg?` style="background:${tileBg}"`:""}>
+        <div class="det-cmp-name" title="${it.name}"><span class="det-cmp-dot" style="background:${colorForItemIndex(i)}"></span>${it.name}</div>
         <div class="det-cmp-donut-wrap">
           <canvas id="det-cmp-c-${i}"></canvas>
           <div class="det-cmp-center">${it.cur}%</div>
@@ -6584,8 +6599,8 @@ async function renderDetCompareChart(uid, month, basicRows, claimRows, prevByIte
     <div class="det-cmp-layout">
       <div class="det-trend-panel">
         <div class="det-trend-hd">
-          <div><div class="det-trend-title" id="det-trend-title">월별 항목 점수 추이</div><div class="det-trend-sub">5월부터 · 카드를 선택해 항목 변경</div></div>
-          <div class="det-trend-legend"><strong>● 현재 평가단위</strong>&nbsp;&nbsp;● 다른 평가단위</div>
+          <div><div class="det-trend-title" id="det-trend-title">항목별 월별 점수 추이</div><div class="det-trend-sub">5월부터 · 카드를 클릭하면 해당 항목이 강조됩니다</div></div>
+          <button type="button" class="det-trend-reset" id="det-trend-reset" style="display:none" onclick="selectDetCompareItem(-1)">전체 보기로 돌아가기</button>
         </div>
         <div class="det-trend-canvas"><canvas id="det-unit-trend-canvas"></canvas></div>
       </div>
@@ -6647,7 +6662,7 @@ async function renderDetCompareChart(uid, month, basicRows, claimRows, prevByIte
     const items=groups.flatMap(g=>g.items);
     const trend=await fetchDetailItemTrends(months,evalType,companyId,items.map(it=>it.name));
     _detItemTrendData={uid,items,trend};
-    drawDetItemTrend(0);
+    drawDetItemTrend(null);
   }catch(e){
     console.warn("[SLA] 상세 월별 추이 로드 실패:",e.message);
     trendCanvas.parentElement.innerHTML='<div class="empty"><p>월별 추이를 불러오지 못했습니다</p></div>';
