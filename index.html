@@ -6508,7 +6508,7 @@ function drawDetItemTrend(highlightIndex){
     type:"line",data:{labels:state.trend.months,datasets},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},layout:{padding:{top:24,right:12}},plugins:{
       legend:{display:false},
-      datalabels:{display:ctx=>!!ctx.dataset.isSelected,align:"top",offset:4,clamp:true,color:"#B42323",font:{size:11,weight:"800"},formatter:v=>v===null||v===undefined?"":fs(v)+"점"},
+      datalabels:{display:ctx=>highlighted?!!ctx.dataset.isSelected:true,align:"top",offset:4,clamp:true,color:ctx=>highlighted?"#B42323":ctx.dataset.borderColor,font:{size:highlighted?11:10,weight:"800"},formatter:v=>v===null||v===undefined?"":fs(v)+"점"},
       tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y===null?"—":fs(ctx.parsed.y)+"점"}`}}
     },scales:{
       x:{grid:{display:false},ticks:{font:{size:11},callback:(v,i)=>`${parseInt(state.trend.months[i].slice(5),10)}월`}},
