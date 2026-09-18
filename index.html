@@ -590,6 +590,29 @@ table.rp-sum-grid tr.band-b td:not(.co){background:#EEF2F8}
 .rp-cmp-name{font-size:9.5px;color:var(--gray-600);font-weight:700;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rp-cmp-delta{font-size:9px;font-weight:700;margin-top:2px}
 .rp-grp-tag{font-size:9px;font-weight:800;color:var(--gray-400);margin:8px 0 3px}
+/* 보고서 출력 디자인: 정보 밀도와 페이지 구성은 유지하고 시각적 계층만 정리 */
+.rp-page{border-top:3px solid #173456;border-radius:2px}
+.rp-cover{min-height:105mm;align-items:flex-start;text-align:left;justify-content:center;
+  border-bottom:1px solid #dce3eb;margin-bottom:9mm}
+.rp-cover-head{display:flex;align-items:center;gap:10px;width:100%;padding-bottom:10px;
+  border-bottom:1px solid #dce3eb;margin-bottom:15mm}
+.rp-cover-mark{width:34px;height:34px;border-radius:8px;font-size:12px;margin:0;letter-spacing:-.08em}
+.rp-cover-brand{color:#173456;letter-spacing:0;font-size:11px}
+.rp-cover-kicker{font-size:10px;font-weight:800;color:#d16f2b;letter-spacing:1.5px}
+.rp-cover-title{font-size:25px;letter-spacing:-.04em;color:#173456;margin:9px 0 7px}
+.rp-cover-meta{display:flex;gap:14px;align-items:center;margin-top:7px}
+.rp-cover-scope{font-size:11px;margin:0;color:#5b6a7e}
+.rp-cover-period{font-size:11px;margin:0;padding:0;background:none;border-radius:0;color:#5b6a7e}
+.rp-sumhd .t{color:#173456;font-size:14px}
+table.rp-sum-grid th,table.rp-grid th{background:#edf2f7;color:#40526a;
+  border-top:1px solid #c6d3e0;border-bottom:1px solid #c6d3e0}
+table.rp-grid tr.claim td{background:#fff8f3}
+table.rp-grid tr.claim td.nm{border-left:3px solid #e78333;padding-left:5px}
+.rp-loc-title{border-top:2px solid #173456;padding-top:13px;color:#173456;font-size:18px}
+.rp-loc-sub{border-bottom:1px solid #dce3eb;color:#718096}
+.rp-ch-hd2 .score{color:#173456;font-size:18px}
+.rp-cmp-item{border:1px solid #dce3eb;border-radius:8px}
+.rp-cmp-center{color:#173456}
 /* ── FILTER ── */
 .frow{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
 .frow select,.frow input[type=text]{padding:8px 12px;border:1.5px solid var(--gray-200);
@@ -6975,11 +6998,10 @@ function buildCoverSummaryPage(companyIds,results,month,scopeLabel){
 
   return `<div class="rp-page">
     <div class="rp-cover">
-      <div class="rp-cover-mark">DW</div>
-      <div class="rp-cover-brand">대웅제약 유통지원팀</div>
+      <div class="rp-cover-head"><div class="rp-cover-mark">DW</div><div class="rp-cover-brand">대웅제약 유통지원팀</div></div>
+      <div class="rp-cover-kicker">MONTHLY PERFORMANCE REPORT</div>
       <div class="rp-cover-title">유통 협력사 평가 종합 보고서</div>
-      <div class="rp-cover-scope">${scopeLabel}</div>
-      <div class="rp-cover-period">평가기간 ${month}</div>
+      <div class="rp-cover-meta"><div class="rp-cover-period">평가기간 ${month}</div><div class="rp-cover-scope">${scopeLabel}</div></div>
     </div>
     <div class="rp-sumhd"><span class="t">📋 전체 평가 요약</span><span class="n">회사 · 평가단위별 총점/등급 한눈에 보기</span></div>
     <table class="rp-sum-grid">
@@ -7121,6 +7143,29 @@ function printReportWindow(){
       table.rp-grid td.dock{color:#B91C1C;font-weight:800}
       table.rp-grid tr.claim td{background:#FFFBEB}
       table.rp-grid tr.claim td.nm{color:#92400E}
+      /* 화면 시안과 동일한 인쇄용 색상·계층. 높이는 기존 A4 여백 안에 유지 */
+      .rp-page{border-top:2px solid #173456}
+      .rp-cover{min-height:100mm;align-items:flex-start;text-align:left;justify-content:center;
+        border-bottom:1px solid #dce3eb;margin-bottom:8mm}
+      .rp-cover-head{display:flex;align-items:center;gap:9px;width:100%;padding-bottom:9px;
+        border-bottom:1px solid #dce3eb;margin-bottom:13mm}
+      .rp-cover-mark{width:32px;height:32px;border-radius:7px;font-size:11px;margin:0;letter-spacing:-.08em}
+      .rp-cover-brand{color:#173456;letter-spacing:0;font-size:10px}
+      .rp-cover-kicker{font-size:9px;font-weight:800;color:#d16f2b;letter-spacing:1.3px}
+      .rp-cover-title{font-size:21px;letter-spacing:-.04em;color:#173456;margin:8px 0 6px}
+      .rp-cover-meta{display:flex;gap:13px;align-items:center;margin-top:6px}
+      .rp-cover-scope{font-size:10px;margin:0;color:#5b6a7e}
+      .rp-cover-period{font-size:10px;margin:0;padding:0;background:none;border-radius:0;color:#5b6a7e}
+      .rp-sumhd .t{color:#173456;font-size:12px}
+      table.rp-sum-grid th,table.rp-grid th{background:#edf2f7;color:#40526a;
+        border-top:1px solid #c6d3e0;border-bottom:1px solid #c6d3e0}
+      table.rp-grid tr.claim td{background:#fff8f3}
+      table.rp-grid tr.claim td.nm{border-left:3px solid #e78333;padding-left:3px}
+      .rp-loc-title{border-top:2px solid #173456;padding-top:10px;color:#173456;font-size:16px}
+      .rp-loc-sub{border-bottom:1px solid #dce3eb;color:#718096}
+      .rp-ch-hd2 .score{color:#173456;font-size:16px}
+      .rp-cmp-item{border:1px solid #dce3eb;border-radius:7px}
+      .rp-cmp-center{color:#173456}
       @page{size:A4 portrait;margin:10mm}
     </style></head><body>
     ${pages.join("")}
