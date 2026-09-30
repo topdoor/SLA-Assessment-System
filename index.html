@@ -2071,7 +2071,6 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
           <div class="sg-item"><div class="sg-name">🏪 평가단위마스터</div><div class="sg-cols">평가단위코드 · 평가단위명 · 회사코드 · 평가구분 · 권역/지역</div><div class="sg-note">거점·종합·VC 평가단위</div></div>
           <div class="sg-item"><div class="sg-name">📏 평가기준</div><div class="sg-cols">평가구분 · 평가항목 · 만점 · S기준 ~ D기준</div><div class="sg-note">SLA 배점기준</div></div>
           <div class="sg-item"><div class="sg-name">📋 항목별상세점수</div><div class="sg-cols">평가월 · 평가단위코드 · 평가구분 · 평가항목 · 획득점수 · 만점 · 감점사유</div><div class="sg-note">항목별 상세</div></div>
-          <div class="sg-item"><div class="sg-name">📊 월별평가결과</div><div class="sg-cols">평가월 · 평가단위코드 · 평가구분 · 총점 · 평가등급</div><div class="sg-note">월별 최종 결과</div></div>
           <div class="sg-item"><div class="sg-name">📝 개선사항이력</div><div class="sg-cols">평가월 · 평가단위코드 · 항목 · 개선원인 · 개선사항 · 완료예정일 · 상태</div><div class="sg-note">도매상 피드백 이력</div></div>
           <div class="sg-item"><div class="sg-name">📜 업로드이력</div><div class="sg-cols">업로드일시 · 업로드자 · 파일명 · 행수 · 상태</div><div class="sg-note">업로드 이력</div></div>
         </div>
@@ -2399,7 +2398,7 @@ const CLAIM_STATUS_SHEET_NAMES=["클레임현황","클레임 현황","고객클�
 // 채널별 정량평가 항목의 표준 표시 순서(실제로 존재하는 항목만 걸러서 씁니다)
 const BASIC_ITEM_NAMES=["배송관리","반품관리","재고관리","품질관리",
   "정보제공·데이터 연계(DCM)","권역 외 유통","권역 커버리지",
-  "구색","재고금액","반품","품절","데이터 공유","월별평가결과 총점","6월 거점 실적 총점"];
+  "구색","재고금액","반품","품절","데이터 공유"];
 function isClaimItemRow(r){return CLAIM_ITEM_NAMES.includes(r.item_name)||!!canonicalClaimItemName(r.item_name||"");}
 function isBasicItemRow(r){return !isClaimItemRow(r)&&!!r.item_name&&r.score!==""&&!isNaN(parseFloat(r.score));}
 
@@ -3382,123 +3381,6 @@ function fetchGvizRows(src){
   });
 }
 
-// ── 월별평가결과 가로형 점수 컬럼 보정
-// 6월 거점도매처럼 월별평가결과 시트에 항목별 점수가 가로 컬럼으로 저장된 경우
-// 기존 총점/등급 행으로 변환하고, 상세 화면에서도 항목별 점수가 보이도록 확장합니다.
-const WIDE_MONTHLY_ITEM_DEFS={
-  "거점도매":[
-    {item:"배송관리", keys:["배송관리","배송관리점수","배송 관리 점수","배송점수","배송 점수"], exclude:["배송지연","오배송"]},
-    {item:"고객클레임", keys:["고객클레임","고객클레임점수","고객 클레임 점수","클레임점수","클레임 점수","클레임현황점수","클레임 현황 점수"], exclude:["배송지연","오배송","오출하","오출고","불량","파손","합계"]},
-    {item:"반품관리", keys:["반품관리","반품관리점수","반품 관리 점수","반품점수","반품 점수"], exclude:[]},
-    {item:"재고관리", keys:["재고관리","재고관리점수","재고 관리 점수","재고점수","재고 점수"], exclude:["재고금액"]},
-    {item:"품질관리", keys:["품질관리","품질관리점수","품질 관리 점수","품질점수","품질 점수"], exclude:[]},
-  ],
-};
-const STANDARD_FIELD_KEYS=new Set([
-  "user_id","password","role","user_name","unit_id","unit_name","company_id","company_name",
-  "eval_month","eval_type","item_name","item","score","max_score","total_score","achievement_rate","grade",
-  "reason","rank","cause","plan","due_date","status","submit_id","submitted_at","submitted_by",
-  "uploaded_at","uploaded_by","file_name","row_count","s_crit","a_crit","b_crit","c_crit","d_crit",
-  "사용자ID","아이디","ID","비밀번호","권한","사용자명","평가단위코드","평가단위 코드","도매상코드","도매상 코드",
-  "평가단위명","평가단위 명","도매상명","도매상 명","회사명","회사코드","회사 코드","평가월","평가 월",
-  "평가년월","기준월","대상월","월","년월","평가구분","평가 구분","채널","구분","평가유형","유형",
-  "평가항목","평가 항목","항목명","항목","획득점수","획득 점수","점수","실점수","만점","배점",
-  "총점","총 점","최종점수","최종 점수","합계","합산점수","점수합계","합계점수","합계 점수",
-  "달성률","달성율","평가등급","평가 등급","등급","최종등급","SLA등급","감점사유","사유","비고","순위"
-].map(normalizeKey));
-function wideMonthlyDefsForRow(row){
-  const base=normalizeRow(row||{});
-  const ch=normalizeEvalType(base.eval_type || (UNITS.find(u=>u.id===base.unit_id)||{}).ch || "거점도매");
-  return WIDE_MONTHLY_ITEM_DEFS[ch] || [];
-}
-function headerLooksLikeWideItem(header,def){
-  const h=normalizeKey(header);
-  if(!h || STANDARD_FIELD_KEYS.has(h))return false;
-  const keys=(def.keys||[]).map(normalizeKey);
-  if(keys.includes(h))return true;
-  const ex=(def.exclude||[]).map(normalizeKey);
-  if(ex.some(x=>x && h.includes(x)))return false;
-  return keys.some(k=>k && (h.includes(k) || k.includes(h))) ||
-         (h.includes(normalizeKey(def.item)) && (h.includes("점수") || h.includes("score") || h===normalizeKey(def.item)));
-}
-function maxScoreFromHeader(header){
-  const s=String(header||"");
-  let m=s.match(/(?:만점|배점)?\s*(\d+(?:\.\d+)?)\s*점/);
-  if(m)return parseFloat(m[1]);
-  m=s.match(/[\(\[]\s*(\d+(?:\.\d+)?)\s*[\)\]]/);
-  if(m)return parseFloat(m[1]);
-  return "";
-}
-function extractWideMonthlyItemScores(row){
-  const base=normalizeRow(row||{});
-  if(!base.unit_id)return [];
-  const defs=wideMonthlyDefsForRow(row);
-  const out=[];
-  const usedHeaders=new Set();
-  defs.forEach(def=>{
-    let foundHeader="", foundVal="";
-    for(const [h,v] of Object.entries(row||{})){
-      if(usedHeaders.has(h))continue;
-      if(!headerLooksLikeWideItem(h,def))continue;
-      const score=numericScoreFromAny(v);
-      if(score==="")continue;
-      foundHeader=h; foundVal=v; break;
-    }
-    if(!foundHeader)return;
-    usedHeaders.add(foundHeader);
-    out.push(normalizeRow({
-      eval_month:base.eval_month,
-      unit_id:base.unit_id,
-      unit_name:base.unit_name,
-      company_id:base.company_id||unitCompanyId(base.unit_id),
-      company_name:base.company_name||coName(base.company_id||unitCompanyId(base.unit_id)),
-      eval_type:base.eval_type || (UNITS.find(u=>u.id===base.unit_id)||{}).ch || "거점도매",
-      item_name:def.item,
-      item:def.item,
-      score:numericScoreFromAny(foundVal),
-      max_score:maxScoreFromHeader(foundHeader),
-      reason:String(foundVal??"").trim(),
-      _from_monthly_wide:true
-    }));
-  });
-  return out;
-}
-function enrichMonthlyWideResults(rows,params={}){
-  return (rows||[]).map(raw=>{
-    const r=normalizeRow(raw);
-    const itemRows=extractWideMonthlyItemScores(raw);
-    if(itemRows.length<2)return r;
-    const itemSum=itemRows.reduce((s,x)=>s+(parseFloat(x.score)||0),0);
-    const curTotal=parseFloat(r.total_score);
-    const exp=expectedMaxForEvalType(r.eval_type||params.eval_type||"거점도매")||100;
-    const shouldApply = isNaN(curTotal) || curTotal===0 || itemSum>curTotal;
-    if(!shouldApply)return r;
-    return normalizeRow({
-      ...raw,
-      eval_month:r.eval_month||params.eval_month,
-      unit_id:r.unit_id,
-      unit_name:r.unit_name,
-      company_id:r.company_id||unitCompanyId(r.unit_id),
-      company_name:r.company_name||coName(r.company_id||unitCompanyId(r.unit_id)),
-      eval_type:r.eval_type||params.eval_type||(UNITS.find(u=>u.id===r.unit_id)||{}).ch||"거점도매",
-      total_score:parseFloat(itemSum.toFixed(1)),
-      max_score:r.max_score || exp,
-      achievement_rate:exp?parseFloat((itemSum/exp*100).toFixed(1)):"",
-      grade:r.grade || gradeFor(r.eval_type||params.eval_type||"거점도매",itemSum),
-      _monthly_wide_corrected:true
-    });
-  });
-}
-async function fetchMonthlyWideDetailRows(params={}){
-  try{
-    const d=await sheetsGet("월별평가결과",params);
-    const rows=d?.data||[];
-    const out=[];
-    rows.forEach(r=>out.push(...extractWideMonthlyItemScores(r)));
-    return localFilterRows(out,params);
-  }catch(e){return[];}
-}
-
 function directRowsToEvalRows(rawRows,src,params={}){
   const out=[];
   (rawRows||[]).forEach(raw=>{
@@ -3806,27 +3688,21 @@ function fillMonths(){
   });
 }
 
-// "이번 달"이 아니라 실제로 데이터가 있는 가장 최근 평가월을 평가월 선택의 기본값으로
-// 맞춥니다. 월별평가결과/항목별상세점수 두 시트를 (평가월 필터 없이) 통째로 조회해
-// 존재하는 eval_month 값 중 가장 최근 값을 찾아 모든 평가월 select에 반영합니다.
+// "이번 달"이 아니라 항목별상세점수에 실제로 존재하는 가장 최근 평가월을
+// 평가월 선택의 기본값으로 맞춥니다.
 // (예: 오늘이 7월이어도 아직 7월 실적이 없으면 6월이 기본으로 뜨고, 7월 실적이
 //  들어오는 순간부터는 자동으로 7월이 기본이 됩니다.)
 async function applyLatestDataMonth(){
   if(!S.cfg.url)return;
-  // Promise.all은 두 조회 중 하나만 실패해도 전체가 실패해서 아무것도 반영되지
-  // 않는 문제가 있었습니다(예: 항목별상세점수 조회만 느리거나 실패해도 월별평가결과
-  // 쪽 정상 결과까지 통째로 버려짐). allSettled로 바꿔 하나가 실패해도 나머지로
-  // 최대한 최근 월을 판단하도록 합니다.
-  const [mres,dres]=await Promise.allSettled([
-    sheetsGet("월별평가결과",{}),
-    sheetsGet("항목별상세점수",{})
-  ]);
-  if(mres.status==="rejected")console.warn("[SLA] 최근월 판단: 월별평가결과 조회 실패",mres.reason?.message);
-  if(dres.status==="rejected")console.warn("[SLA] 최근월 판단: 항목별상세점수 조회 실패",dres.reason?.message);
-
+  let ddata=[];
+  try{
+    const detail=await sheetsGet("항목별상세점수",{});
+    ddata=detail?.data||[];
+  }catch(e){
+    console.warn("[SLA] 최근월 판단: 항목별상세점수 조회 실패",e?.message);
+    return;
+  }
   const months=new Set();
-  const mdata=mres.status==="fulfilled"?(mres.value?.data||[]):[];
-  const ddata=dres.status==="fulfilled"?(dres.value?.data||[]):[];
   // monthKey()는 시트에 지저분한/잘못된 값(예: 다른 열이 밀려 들어온 텍스트)이 있으면
   // "2026-16"처럼 실제로는 존재하지 않는 월을 만들어낼 수 있습니다. 이런 값이
   // 그대로 "가장 최근 월"로 뽑혀서 화면에 잘못 표시되는 사고를 막기 위해,
@@ -3837,10 +3713,9 @@ async function applyLatestDataMonth(){
     const mo=parseInt(m[2],10);
     return mo>=1 && mo<=12;
   };
-  mdata.forEach(r=>{const mk=monthKey(r.eval_month);if(isValidMonthKey(mk))months.add(mk)});
   ddata.forEach(r=>{const mk=monthKey(r.eval_month);if(isValidMonthKey(mk))months.add(mk)});
   if(!months.size){
-    console.warn("[SLA] 최근월 판단: 두 시트 모두에서 유효한 평가월을 찾지 못했습니다. 기본값(이번 달) 유지");
+    console.warn("[SLA] 최근월 판단: 항목별상세점수에서 유효한 평가월을 찾지 못했습니다. 기본값(이번 달) 유지");
     return;
   }
   const latest=[...months].sort().pop(); // "YYYY-MM" 문자열 정렬 = 시간순 정렬
@@ -3928,35 +3803,14 @@ function goBack(){navTo(S.backPage)}
 
 
 // ══════════════════════════════════════════════════════════
-//  MONTHLY RESULT FALLBACK
-//  월별평가결과가 비어 있어도 항목별상세점수에서 5월 데이터를 자동 집계
+//  MONTHLY RESULT CALCULATION
+//  항목별상세점수를 유일한 평가 원본으로 사용해 월별 결과를 계산
 // ══════════════════════════════════════════════════════════
 function isSummaryTotalDetailRow(row){
   const r=normalizeRow(row||{});
   const it=cleanKey(r.item_name||r.item||"");
-  // 월별평가결과 총점 / 6월 거점 실적 총점 같은 요약행은
-  // 클레임 상세 40점과 합산하지 않고 해당 평가단위의 최종 점수로 사용합니다.
+  // 과거에 상세 시트에 적재된 총점 요약행은 개별 평가항목이 아니므로 합산에서 제외합니다.
   return !!r._from_monthly_summary || it.includes("월별평가결과총점") || it.includes("실적총점") || it.includes("최종총점") || it==="총점";
-}
-function makeMonthlyRowFromSummaryDetail(row){
-  const r=normalizeRow(row||{});
-  const total=numericScoreFromAny(r.score!==""?r.score:r.total_score);
-  const mx=numericScoreFromAny(r.max_score);
-  const cid=r.company_id||unitCompanyId(r.unit_id);
-  const out=normalizeRow({
-    eval_month:r.eval_month,
-    unit_id:r.unit_id,
-    unit_name:r.unit_name||unitName(r.unit_id),
-    company_id:cid,
-    company_name:r.company_name||coName(cid),
-    eval_type:normalizeEvalType(r.eval_type || (UNITS.find(u=>u.id===r.unit_id)||{}).ch),
-    total_score:total,
-    max_score:mx,
-    achievement_rate:(!isNaN(parseFloat(total))&&!isNaN(parseFloat(mx))&&parseFloat(mx)>0)?parseFloat((parseFloat(total)/parseFloat(mx)*100).toFixed(2)):(r.achievement_rate||""),
-    grade:r.grade || gradeFor(r.eval_type,total),
-    _from_detail_summary:true
-  });
-  return out;
 }
 function buildMonthlyResultsFromDetails(rows){
   const map=new Map();
@@ -3972,20 +3826,8 @@ function buildMonthlyResultsFromDetails(rows){
     grouped.get(key).push({...r,eval_type:ch});
   });
 
-  // 1순위: 항목별상세점수/월별평가결과에서 넘어온 "총점" 요약행
-  // 같은 평가단위에 클레임 40점 행이 함께 있어도 요약행을 최종 점수로 우선합니다.
+  // 개별 항목만 합산하며 과거 총점 요약행은 사용하지 않습니다.
   grouped.forEach((list,key)=>{
-    const summaries=list.filter(isSummaryTotalDetailRow)
-      .map(makeMonthlyRowFromSummaryDetail)
-      .filter(r=>r.total_score!==""&&!isNaN(parseFloat(r.total_score)));
-    if(summaries.length){
-      map.set(key,consolidateMonthlyRows(summaries)[0]);
-    }
-  });
-
-  // 2순위: 일반 항목별상세점수 합산
-  grouped.forEach((list,key)=>{
-    if(map.has(key))return;
     list.forEach(r=>{
       if(isSummaryTotalDetailRow(r))return;
       const ch=normalizeEvalType(r.eval_type || (UNITS.find(u=>u.id===r.unit_id)||{}).ch);
@@ -4078,118 +3920,21 @@ function expectedMaxForEvalType(ch){
   if(ch==="거점도매"||ch==="종합도매")return 100;
   return 0;
 }
-function monthlyNeedsDetailCorrection(rows, params={}){
-  const arr=(rows||[]).map(normalizeRow).filter(r=>!isPendingRow(r));
-  if(!arr.length)return true;
-  const invalid = arr.some(r=>{
-    const sc=parseFloat(r.total_score);
-    const mx=parseFloat(r.max_score);
-    if(isNaN(sc)||sc===0)return true;
-    if(isNaN(mx)||mx===0)return true;
-    if(!r.grade)return true;
-    const exp=expectedMaxForEvalType(r.eval_type);
-    if(exp && mx < exp*0.8)return true;
-    return false;
-  });
-  if(invalid)return true;
-
-  // ["월별평가결과" 요약 시트에 통째로 빠진 평가단위 감지]
-  // 예: VC처럼 새로 데이터가 들어온 평가구분은 항목별상세점수에는 입력됐지만
-  // 월별평가결과 요약행이 아직 만들어지지 않은 경우가 있습니다. 기존 로직은
-  // "있는 행"만 검사해서 이런 통째 누락은 못 잡았기 때문에, 조회 범위(회사/평가구분)에
-  // 해당하는 평가단위 중 요약 시트에 행 자체가 없는 단위가 하나라도 있으면
-  // 상세 재계산(항목별상세점수 합산)을 시도하도록 합니다.
-  const companyId=params.company_id||"";
-  const evalType=normalizeEvalType(params.eval_type||"");
-  const present=new Set(arr.map(r=>`${cleanKey(r.unit_id)}_${cleanKey(r.eval_type)}`));
-  const relevantUnits=UNITS.filter(u=>(!companyId||u.co===companyId)&&(!evalType||u.ch===evalType));
-  return relevantUnits.some(u=>!present.has(`${cleanKey(u.id)}_${cleanKey(u.ch)}`));
-}
-
-// 월별평가결과에 같은 평가월/평가단위/평가구분 행이 여러 번 들어올 때
-// 클레임 단독 행(40/40)보다 최종 요약 행(예: 460/460)을 우선 표시합니다.
-// 기존 5월 정상 조회를 해치지 않도록 "같은 키 안에서"만 정리합니다.
-function monthlyRowPriority(r){
-  r=normalizeRow(r||{});
-  const sc=parseFloat(r.total_score);
-  const mx=parseFloat(r.max_score);
-  const rate=parseFloat(r.achievement_rate);
-  let p=0;
-  if(!isNaN(mx))p+=mx*100000;
-  if(!isNaN(sc))p+=sc*100;
-  if(!isNaN(rate))p+=rate;
-  if(r.grade && r.grade!=="산정중")p+=10;
-  if(String(r.reason||"").includes("월별평가결과"))p+=1;
-  return p;
-}
-function consolidateMonthlyRows(rows){
-  const map=new Map();
-  (rows||[]).map(normalizeRow).forEach(r=>{
-    if(!r.eval_month || !r.unit_id || !r.eval_type)return;
-    const key=`${monthKey(r.eval_month)}_${cleanKey(r.unit_id)}_${cleanKey(r.eval_type)}`;
-    const cur=map.get(key);
-    if(!cur || monthlyRowPriority(r)>monthlyRowPriority(cur)) map.set(key,r);
-  });
-  return Array.from(map.values());
-}
-
-async function fetchMonthlySummaryDetailRows(params={}){
-  try{
-    const d=await sheetsGet("월별평가결과",params);
-    const rows=consolidateMonthlyRows(enrichMonthlyWideResults(d?.data||[],params));
-    return localFilterRows(rows,params).map(r=>normalizeRow({
-      eval_month:r.eval_month,
-      unit_id:r.unit_id,
-      unit_name:r.unit_name,
-      company_id:r.company_id||unitCompanyId(r.unit_id),
-      company_name:r.company_name||coName(r.company_id||unitCompanyId(r.unit_id)),
-      eval_type:r.eval_type,
-      item_name:"월별평가결과 총점",
-      item:"월별평가결과 총점",
-      score:r.total_score,
-      max_score:r.max_score,
-      reason:"월별평가결과 시트 기준",
-      _from_monthly_summary:true
-    })).filter(r=>r.score!==""&&!isNaN(parseFloat(r.score)));
-  }catch(e){return [];}
-}
-
 async function fetchMonthlyResults(params={}){
   const fKey=`${monthKey(params.eval_month||"")}::${params.company_id||""}::${normalizeEvalType(params.eval_type||"")}`;
   if(S._cache?.monthly?.has(fKey))return S._cache.monthly.get(fKey).map(r=>({...r}));
 
-  // [경량화] 백엔드(Code.gs)가 "월별평가결과"를 신뢰성 있게 반환하므로,
-  // 과거 백엔드 불안정 시절에 추가됐던 6월 전용 보정 조회(항목별상세점수 강제 재확인,
-  // 외부 공유시트 직접조회)는 더 이상 무조건 실행하지 않습니다. 데이터가 실제로
-  // 비어있거나 이상할 때(monthlyNeedsDetailCorrection)만 상세를 보정 조회합니다.
-  let monthly=[];
-  try{
-    const d=await sheetsGet("월별평가결과",params);
-    monthly=consolidateMonthlyRows((d?.data||[]).map(normalizeRow));
-  }catch(e){ monthly=[]; }
-
   let details=[];
-  if(monthlyNeedsDetailCorrection(monthly, params)){
-    try{ details=await fetchDetailRowsWithClaim(params); }catch(e){ details=[]; }
-  }
-
+  try{ details=await fetchDetailRowsWithClaim(params); }catch(e){ details=[]; }
   const rebuilt=buildMonthlyResultsFromDetails(details||[]);
-  const candidates=[...(monthly||[]),...(rebuilt||[])];
-
-  let out=localFilterRows(consolidateMonthlyRows(candidates),params);
-
-  if(!out.length && rebuilt.length) out=localFilterRows(rebuilt,params);
-  out=addPendingMonthlyRows(consolidateMonthlyRows(out),params);
+  let out=localFilterRows(rebuilt,params);
+  out=addPendingMonthlyRows(out,params);
   out=reconcileGradeAndRate_(out);
   S._cache.monthly.set(fKey,out.map(r=>({...r})));
   return out;
 }
 
-// [정합성 보정] "월별평가결과" 시트에 저장된 달성률/평가등급 컬럼이 총점 수정 후
-// 함께 갱신되지 않아 서로 안 맞는 경우가 있습니다(예: 종합도매 6월 — 총점만
-// 새로 반영되고 달성률·등급은 5월 값이 그대로 남아있던 사례). 총점/만점이 둘 다
-// 정상 숫자면 달성률·등급을 항상 총점 기준으로 다시 계산해서, 시트에 남아있는
-// 값이 오래됐거나 틀려도 화면에는 항상 총점과 일치하는 값이 보이도록 합니다.
+// 상세점수 합계와 만점을 기준으로 달성률·등급을 일관되게 계산합니다.
 function reconcileGradeAndRate_(rows){
   return (rows||[]).map(r=>{
     if(isPendingRow(r)||isPartialRow(r))return r;
