@@ -6688,15 +6688,24 @@ async function loadReport(){
 function buildReportPages(companyIds,results,detailMap,prevRowsByKey,prevDetailMap,month,scopeLabel){
   if(!companyIds.length)return [];
   const pages=[buildCoverSummaryPage(companyIds,results,month,scopeLabel)];
+  // 회사 계정(한 회사만 출력)에서 지점 페이지가 1장이고 그 안의 평가단위도 1개뿐이면
+  // (예: 인천약품 = 종합도매 1곳 + VC) VC를 따로 한 장 쓰지 않고 그 지점 페이지에 함께 붙입니다.
+  // 관리자 출력의 VC 페이지는 회사 간 비교용이라 지금처럼 모든 회사를 마지막 장에 모읍니다.
+  const singleCompany=companyIds.length===1;
+  const vcMergedCos=new Set();
   companyIds.forEach(cid=>{
     const coNm=coName(cid)||cid;
     const rows=results.filter(r=>(r.company_id||unitCompanyId(r.unit_id))===cid);
     const gjRows=rows.filter(r=>r.eval_type==="거점도매");
     const jhRows=rows.filter(r=>r.eval_type==="종합도매");
+    const vcRows=rows.filter(r=>r.eval_type==="VC");
     const groups=rpBuildLocationGroups(gjRows,jhRows);
-    groups.forEach(g=>pages.push(buildLocationPage(coNm,g,detailMap,prevDetailMap,prevRowsByKey)));
+    const mergeVc=singleCompany && vcRows.length>0 && groups.length===1 &&
+      (groups[0].gjList.length+groups[0].jhList.length)===1;
+    if(mergeVc)vcMergedCos.add(cid);
+    groups.forEach(g=>pages.push(buildLocationPage(coNm,g,detailMap,prevDetailMap,prevRowsByKey,mergeVc?vcRows:[])));
   });
-  const vcPage=buildVcPage(companyIds,results,detailMap,prevDetailMap,prevRowsByKey);
+  const vcPage=buildVcPage(companyIds.filter(cid=>!vcMergedCos.has(cid)),results,detailMap,prevDetailMap,prevRowsByKey);
   if(vcPage)pages.push(vcPage);
   return pages;
 }
@@ -6929,16 +6938,20 @@ function buildCoverSummaryPage(companyIds,results,month,scopeLabel){
 
 // 지점 1페이지: 그 위치에 속한 거점도매·종합도매 단위(1개 이상)를 한 페이지 안에 이어붙입니다.
 // (평택·파주처럼 같은 채널이 여러 개 섞이면 채널 pill 옆에 지점명도 함께 표시합니다.)
-function buildLocationPage(coNm, group, detailMap, prevDetailMap, prevRowsByKey){
+function buildLocationPage(coNm, group, detailMap, prevDetailMap, prevRowsByKey, vcList=[]){
   const {label, gjList=[], jhList=[]}=group;
-  const gjShowName=gjList.length>1, jhShowName=jhList.length>1;
+  const gjShowName=gjList.length>1, jhShowName=jhList.length>1, vcShowName=vcList.length>1;
   const blocks=[
     ...gjList.map(gj=>rpChannelBlock(gj,"거점도매",detailMap,prevDetailMap,prevRowsByKey[`${gj.unit_id}__거점도매`],gjShowName)),
     ...jhList.map(jh=>rpChannelBlock(jh,"종합도매",detailMap,prevDetailMap,prevRowsByKey[`${jh.unit_id}__종합도매`],jhShowName)),
+    ...vcList.map(vc=>rpChannelBlock(vc,"VC",detailMap,prevDetailMap,prevRowsByKey[`${vc.unit_id}__VC`],vcShowName)),
   ];
+  // 부제는 이 페이지에 실제로 들어 있는 채널로 표시합니다(거점도매만 있는 이지메디컴 등).
+  const chs=[gjList.length&&"거점도매",jhList.length&&"종합도매",vcList.length&&"VC"].filter(Boolean);
+  const subText=chs.length>1?`${chs.join("+")} 한 세트`:`${chs[0]||""} 평가`;
   return `<div class="rp-page">
     <div class="rp-loc-title">${label}</div>
-    <div class="rp-loc-sub">${coNm} · 거점도매+종합도매 한 세트</div>
+    <div class="rp-loc-sub">${coNm} · ${subText}</div>
     ${blocks.join("")}
   </div>`;
 }
