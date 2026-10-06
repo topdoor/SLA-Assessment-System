@@ -2201,7 +2201,7 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
         <label>현재 비밀번호</label>
         <input type="password" id="pw-old" placeholder="현재 비밀번호 입력">
         <label>새 비밀번호</label>
-        <input type="password" id="pw-new" placeholder="10자 이상, 영문·숫자·특수문자 포함" oninput="checkPwStrength()">
+        <input type="password" id="pw-new" placeholder="새 비밀번호 입력 (8자 이상)" oninput="checkPwStrength()">
         <div class="pw-strength" id="pw-strength"></div>
         <label>새 비밀번호 확인</label>
         <input type="password" id="pw-confirm" placeholder="새 비밀번호 재입력">
@@ -5821,9 +5821,9 @@ function checkPwStrength(){
   const pw=document.getElementById("pw-new").value;
   const bar=document.getElementById("pw-strength");
   if(!pw){bar.className="pw-strength";return;}
-  const kinds=[/[A-Za-z]/,/[0-9]/,/[^A-Za-z0-9]/].filter(re=>re.test(pw)).length;
-  if(pw.length<10||kinds<2){bar.className="pw-strength weak";}
-  else if(kinds<3||pw.length<12){bar.className="pw-strength mid";}
+  // 조합 조건은 없고 길이만 봅니다: 8자 미만은 사용 불가, 8~11자 보통, 12자 이상 강함
+  if(pw.length<8){bar.className="pw-strength weak";}
+  else if(pw.length<12){bar.className="pw-strength mid";}
   else{bar.className="pw-strength strong";}
 }
 
@@ -5841,8 +5841,7 @@ async function changePw(){
 
   if(!oldPw||!newPw||!confirmPw){showMsg("모든 항목을 입력하세요","var(--red)");return;}
   if(newPw!==confirmPw){showMsg("새 비밀번호가 일치하지 않습니다","var(--red)");return;}
-  const kinds=[/[A-Za-z]/,/[0-9]/,/[^A-Za-z0-9]/].filter(re=>re.test(newPw)).length;
-  if(newPw.length<10||kinds<3){showMsg("새 비밀번호는 10자 이상이고 영문·숫자·특수문자를 모두 포함해야 합니다","var(--red)");return;}
+  if(newPw.length<8){showMsg("새 비밀번호는 8자 이상이어야 합니다","var(--red)");return;}
   if(newPw===oldPw){showMsg("현재 비밀번호와 다른 비밀번호를 입력하세요","var(--red)");return;}
   if(!S.cfg.url){showMsg("서버 연결 설정이 없어 변경할 수 없습니다","var(--red)");return;}
 
