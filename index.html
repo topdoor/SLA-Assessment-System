@@ -981,10 +981,23 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
 
 @media print{
   .sb,.ph .btn,.frow,.sb-footer{display:none!important}
+  /* 화면용 레이아웃은 앱 전체를 화면 높이(100vh)에 고정하고 넘치는 부분을 숨깁니다.
+     인쇄 때도 그대로면 첫 화면 분량만 1장 찍히므로 높이·스크롤 제한을 풉니다. */
+  html,body{height:auto!important;overflow:visible!important}
+  #app.on{display:block!important;height:auto!important;overflow:visible!important}
   .main{overflow:visible!important}
   .pg.on{display:block!important}
   .card{box-shadow:none!important;border:1px solid var(--gray-200)!important}
+  /* 보고서 화면에서 Ctrl+P로 인쇄해도 "인쇄하기" 버튼과 같은 A4 페이지 구성이 나오도록 */
+  #pg-report.on{padding:0!important}
+  #pg-report.on .ph{display:none!important}
+  #pg-report.on *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #pg-report.on #report-root{display:block;background:none;padding:0;border-radius:0}
+  #pg-report.on .rp-page{page:report;width:auto;max-width:none;padding:0;box-shadow:none;border-radius:0}
+  #pg-report.on .rp-page+.rp-page{break-before:page;page-break-before:always}
+  #pg-report.on table.rp-grid tr,#pg-report.on table.rp-sum-grid tr,#pg-report.on .rp-cmp-item{break-inside:avoid;page-break-inside:avoid}
 }
+@page report{size:A4 portrait;margin:10mm}
 /* ── UPLOAD ── */
 .drop-zone{border:2px dashed var(--gray-200);border-radius:12px;padding:28px;text-align:center;
   cursor:pointer;transition:border-color .15s;margin-bottom:14px}
@@ -7072,6 +7085,15 @@ function printReportWindow(){
     </body></html>`);
   w.document.close();
 }
+
+// 보고서 화면에서 Ctrl+P(⌘+P)를 누르면 브라우저 기본 인쇄(화면 미리보기 스타일이라 페이지 구성이 달라짐)
+// 대신 "인쇄하기" 버튼과 똑같은 인쇄 전용 창을 엽니다. 다른 화면에서는 기본 인쇄 그대로입니다.
+document.addEventListener("keydown",e=>{
+  if(!(e.ctrlKey||e.metaKey)||e.shiftKey||e.altKey||(e.key||"").toLowerCase()!=="p")return;
+  if(S.page!=="report"||!S._reportCtx?.results?.length)return;
+  e.preventDefault();
+  printReportWindow();
+});
 
 document.addEventListener("DOMContentLoaded",()=>{
   // Chart.js datalabels 플러그인 전역 등록
