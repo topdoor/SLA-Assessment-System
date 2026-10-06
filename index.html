@@ -6967,6 +6967,12 @@ function buildVcPage(companyIds,results,detailMap,prevDetailMap,prevRowsByKey){
 // 인쇄용: 새 창에 전용 스타일로 동일한 보고서를 다시 그려서 인쇄합니다.
 // (본 화면의 다른 페이지 인쇄 설정에 영향을 주지 않기 위해 별도 창을 사용합니다.
 //  창에서 뜨는 인쇄 대화상자의 "프린터" 선택에서 "PDF로 저장"을 고르면 파일로 저장됩니다.)
+// 인쇄창 전용: 페이지 내용을 .rp-fit으로 한 번 감싸서, 인쇄창에서 페이지마다 A4 한 장에 맞게
+// 확대/축소(zoom)할 수 있게 합니다. 회사마다 지점 수·평가항목 수·감점사유 길이가 달라서
+// (예: 백제약품 평택·파주는 거점 2곳+종합 1곳이 한 장, 인천약품은 종합 1곳뿐) 고정 크기로는 맞출 수 없습니다.
+function rpWrapFit(pageHtml){
+  return pageHtml.replace('<div class="rp-page">','<div class="rp-page"><div class="rp-fit">').replace(/<\/div>\s*$/,'</div></div>');
+}
 function printReportWindow(){
   const ctx=S._reportCtx;
   if(!ctx||!ctx.results||!ctx.results.length){toast("먼저 평가월을 선택하세요","err");return}
@@ -7104,10 +7110,41 @@ function printReportWindow(){
           font-size:13px;font-weight:800;cursor:pointer;font-family:inherit}
       }
       @media print{.rp-print-bar{display:none}}
+      /* 페이지 맞춤 계산 중에는 창 너비와 상관없이 실제 인쇄 폭(A4 210mm - 좌우 여백 10mm)으로 잽니다 */
+      body.rp-measuring .rp-page{width:210mm!important;max-width:none!important;padding:10mm!important}
     </style></head><body>
     <div class="rp-print-bar"><span>보고서 출력 · ${ctx.month}</span><button onclick="window.print()">🖨️ 인쇄 / PDF 저장</button></div>
-    ${pages.join("")}
-    <script>window.onload=()=>{let done=false;const go=()=>{if(done)return;done=true;setTimeout(()=>window.print(),200)};(document.fonts?document.fonts.ready:Promise.resolve()).then(go);setTimeout(go,2000)}<\/script>
+    ${pages.map(rpWrapFit).join("")}
+    <script>
+      // 페이지마다 내용 높이를 재서 A4 인쇄 영역(297mm - 상하 여백 20mm, 안전여유 3mm = 274mm)에
+      // 맞게 확대/축소합니다. 넘치면 줄이고(최소 75%), 내용이 적은 페이지는 읽기 좋게 키웁니다(최대 120%).
+      function rpFitPages(){
+        var A=274*96/25.4, MIN=0.75, MAX=1.2;
+        document.body.classList.add("rp-measuring");
+        document.querySelectorAll(".rp-page").forEach(function(p){
+          var f=p.querySelector(".rp-fit"); if(!f)return;
+          var inner=function(){var cs=getComputedStyle(p);
+            return p.getBoundingClientRect().height-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)-parseFloat(cs.borderTopWidth);};
+          var z=1; f.style.zoom=1;
+          for(var i=0;i<5;i++){
+            var h=inner(); if(!(h>0))break;
+            var nz=Math.max(MIN,Math.min(MAX,z*A/h));
+            if(Math.abs(nz-z)<0.005)break;
+            z=nz; f.style.zoom=z;
+          }
+          // 확대 후 줄바꿈이 바뀌어 다시 넘치는 경우를 대비해 조금씩 더 줄입니다
+          while(inner()>A && z>MIN){ z=Math.max(MIN,z-0.02); f.style.zoom=z; }
+          p.setAttribute("data-fit",z.toFixed(2));
+        });
+        document.body.classList.remove("rp-measuring");
+      }
+      window.onload=function(){
+        var done=false;
+        var go=function(){ if(done)return; done=true; rpFitPages(); setTimeout(function(){window.print()},200); };
+        (document.fonts?document.fonts.ready:Promise.resolve()).then(go);
+        setTimeout(go,2000);
+      };
+    <\/script>
     </body></html>`);
   w.document.close();
 }
