@@ -1645,7 +1645,7 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
         </div>
         <div style="background:var(--white);border:0.5px solid var(--gray-200);border-radius:var(--radius);overflow:hidden">
           <div class="tw"><table style="width:100%">
-            <thead><tr id="my-thead-거점도매"><th style="text-align:left;padding-left:20px">평가단위</th><th>총점</th><th>달성률</th><th>등급</th><th>순위</th><th>상세</th></tr></thead>
+            <thead><tr id="my-thead-거점도매"><th style="text-align:left;padding-left:20px">평가단위</th><th>총점</th><th>달성률</th><th>등급</th><th>상세</th></tr></thead>
             <tbody id="my-tbody-거점도매"></tbody>
           </table></div>
         </div>
@@ -4264,6 +4264,8 @@ async function renderMyEvalSections(prevResults){
     // (예: 100점 8곳 공동 1위 → 다음 점수는 9위). 예전 코드는 동점 처리 없이 시트에
     // 나온 순서대로 1,2,3...을 매겨서, 만점인데도 순서상 뒤에 있으면 낮은 순위로
     // 보이는 문제가 있었습니다.
+    // 거점도매 채널은 순위를 노출하지 않습니다(2026-10 요청). 종합도매·VC만 순위 표시.
+    const showRank=ch!=="거점도매";
     const rankMap=new Map();
     const peers=(S.allResultsForRank||[]).filter(x=>x.eval_type===ch&&!isPendingRow(x)&&!isNaN(parseFloat(x.total_score)));
     const sortedPeers=[...peers].sort((a,b)=>parseFloat(b.total_score)-parseFloat(a.total_score));
@@ -4293,7 +4295,7 @@ async function renderMyEvalSections(prevResults){
     if(theadRow){
       theadRow.innerHTML=`<th style="text-align:left;padding-left:20px">평가단위</th>`
         +itemNames.map(n=>`<th style="font-size:12px;white-space:normal;min-width:76px">${n}</th>`).join("")
-        +`<th>총점</th><th>달성률</th><th>등급</th><th>순위</th><th>상세</th>`;
+        +`<th>총점</th><th>달성률</th><th>등급</th>${showRank?`<th>순위</th>`:""}<th>상세</th>`;
     }
 
     // 테이블
@@ -4314,10 +4316,10 @@ async function renderMyEvalSections(prevResults){
       <td style="text-align:center">${scoreDisplay(r)} <small style="color:var(--gray-400);font-size:0.65em">/${maxDisplay(r)}</small>${scoreDeltaVsPrevHtml(r,prevRow)}</td>
       <td style="text-align:center">${rateDisplay(r)}</td>
       <td style="text-align:center">${gradeDisplay(r)}</td>
-      <td style="text-align:center;font-size:12.5px;font-weight:700;color:var(--navy-dk)">${rankHtml}</td>
+      ${showRank?`<td style="text-align:center;font-size:12.5px;font-weight:700;color:var(--navy-dk)">${rankHtml}</td>`:""}
       <td style="text-align:center">${detailButton(r.unit_id,r.eval_type,month,"my-eval",r)}</td>
     </tr>`;
-    }).join("")||`<tr><td colspan="${6+itemNames.length}"><div class="empty"><p>데이터 없음</p></div></td></tr>`;
+    }).join("")||`<tr><td colspan="${5+(showRank?1:0)+itemNames.length}"><div class="empty"><p>데이터 없음</p></div></td></tr>`;
   }
 }
 
