@@ -596,6 +596,7 @@ table.rp-sum-grid tr.band-b td:not(.co){background:#EEF2F8}
 .rp-cmp-center{position:relative;z-index:1;font-size:10px;font-weight:900;color:var(--navy-dk)}
 .rp-cmp-name{font-size:9.5px;color:var(--gray-600);font-weight:700;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rp-cmp-delta{font-size:9px;font-weight:700;margin-top:2px}
+.rp-cmp-score{font-size:9.5px;color:var(--navy-dk);font-weight:800;margin-top:1px;white-space:nowrap}
 .rp-grp-tag{font-size:9px;font-weight:800;color:var(--gray-400);margin:8px 0 3px}
 /* 보고서 출력 디자인: 정보 밀도와 페이지 구성은 유지하고 시각적 계층만 정리 */
 .rp-page{border-top:3px solid #173456;border-radius:2px}
@@ -6754,7 +6755,7 @@ function rpPrevBadge(curRow,prevRow){
 }
 // 항목별 전달대비 도넛: Chart.js/canvas 대신 CSS conic-gradient로 그려서
 // 인쇄 새 창에서도 스크립트 로드 타이밍 문제 없이 동일하게 보이도록 합니다.
-function rpDonut(name,cur,prev){
+function rpDonut(name,cur,prev,score,max){
   const NO_PREV="#4A7BA6",UP="#4C9A78",DOWN="#C1554F",SAME="#8B96A5",FULL="#2F6FA8",SKY="#D8ECFA";
   let ring=SAME;
   if(prev===null)ring=NO_PREV;
@@ -6774,6 +6775,7 @@ function rpDonut(name,cur,prev){
       <div class="rp-cmp-center">${Math.round(cur)}%</div>
     </div>
     <div class="rp-cmp-name" title="${name}">${name}</div>
+    <div class="rp-cmp-score">${fs(score)}/${fs(max)}점</div>
     ${deltaHtml}
   </div>`;
 }
@@ -6820,7 +6822,7 @@ function rpChannelBlock(r, ch, detailMap, prevDetailMap, prevRow, showName){
     if(cur===null)return "";
     const prevIm=(prevDetailMap[uid]||{})[it.name];
     const prev=prevIm?rpRate(prevIm.score,prevIm.max):null;
-    return rpDonut(it.name,cur,prev);
+    return rpDonut(it.name,cur,prev,it.score,it.max);
   };
 
   let cmpHtml="",tableRows="";
@@ -7085,6 +7087,7 @@ function printReportWindow(){
       .rp-cmp-center{position:relative;z-index:1;font-size:8.5px;font-weight:900;color:#2F3442}
       .rp-cmp-name{font-size:7.8px;color:#6B7280;font-weight:700;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .rp-cmp-delta{font-size:7.5px;font-weight:700;margin-top:1px}
+      .rp-cmp-score{font-size:8px;color:#2F3442;font-weight:800;margin-top:1px;white-space:nowrap}
       .rp-grp-tag{font-size:7.5px;font-weight:800;color:#9CA3AF;margin:6px 0 2px}
       table.rp-grid{width:100%;border-collapse:collapse;font-size:9.5px}
       table.rp-grid-fixed{table-layout:fixed}
