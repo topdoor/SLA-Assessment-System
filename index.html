@@ -403,6 +403,18 @@ html,body{height:100%;font-family:'Pretendard','Noto Sans KR','Apple SD Gothic N
 .sb-item:hover{background:rgba(255,255,255,.07);color:#fff}
 .sb-item.on{background:var(--gold);color:#fff}
 .sb-item .ico{font-size:15px;width:18px;text-align:center}
+/* 세부 평가항목(관리자): 카테고리 접기/펼치기 + 하위 항목 */
+.sb-grp .caret{margin-left:auto;font-size:10px;opacity:.55;transition:transform .15s}
+.sb-grp.open .caret{transform:rotate(90deg)}
+.sb-sub{display:none;margin:0 0 6px 17px;padding-left:8px;border-left:1px solid rgba(255,255,255,.12)}
+.sb-sub.open{display:block}
+.sb-subitem{padding:6px 10px;font-size:11.5px;margin-bottom:1px}
+.itd-bar{height:6px;border-radius:3px;background:#e5e7eb;overflow:hidden;min-width:70px}
+.itd-bar>i{display:block;height:100%;border-radius:3px}
+.itd-mcell{text-align:center;font-size:12px;white-space:nowrap}
+.itd-mcell.cur{font-weight:800}
+.itd-mcell.low{color:#A32D2D}
+.itd-mcell.none{color:var(--gray-300)}
 .sb-footer{padding:11px;border-top:1px solid rgba(255,255,255,.07)}
 .sb-logout{width:100%;padding:9px;border-radius:9px;background:rgba(255,255,255,.05);
   border:none;color:rgba(255,255,255,.45);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
@@ -1947,6 +1959,25 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
         <select id="report-month" onchange="loadReport()"><option value="">평가월 선택</option></select>
       </div>
       <div id="report-root"></div>
+    </div>
+
+    <!-- 세부 평가항목 (관리자 전용): 항목 1개를 전체 평가단위 기준으로 모아보기 -->
+    <div class="pg" id="pg-item-detail">
+      <div class="ph"><div class="ph-left">
+        <div class="pt" id="itd-title">🔎 세부 평가항목</div>
+        <div class="ps" id="itd-sub">왼쪽 메뉴에서 평가항목을 선택하세요</div>
+      </div></div>
+      <div class="frow">
+        <select id="itd-month" onchange="loadItemDetail()"><option value="">평가월 선택</option></select>
+      </div>
+      <div class="kpi-g" id="itd-kpi" style="grid-template-columns:repeat(4,1fr)"></div>
+      <div class="card">
+        <div class="card-t" id="itd-card-t">📋 평가단위별 현황</div>
+        <div class="tw"><table>
+          <thead><tr id="itd-thead"></tr></thead>
+          <tbody id="itd-tbody"><tr><td colspan="7"><div class="empty"><p>왼쪽 메뉴에서 평가항목을 선택하세요</p></div></td></tr></tbody>
+        </table></div>
+      </div>
     </div>
 
     <!-- 회사별 현황 (관리자) -->
@@ -3763,7 +3794,7 @@ function fillMonths(){
     const d=new Date(now.getFullYear(),now.getMonth()-i,1);
     months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`);
   }
-  ["dash-month","my-month","imp-month","co-month","claim-month","cs-month","grade-dist-month","report-month"].forEach(sid=>{
+  ["dash-month","my-month","imp-month","co-month","claim-month","cs-month","grade-dist-month","report-month","itd-month"].forEach(sid=>{
     const el=document.getElementById(sid);
     if(!el)return;
     const cur=el.value;
@@ -3808,7 +3839,7 @@ async function applyLatestDataMonth(){
   const latest=[...months].sort().pop(); // "YYYY-MM" 문자열 정렬 = 시간순 정렬
   console.log("[SLA] 평가월 기본값 자동 설정:",latest);
   S.cfg.month=latest;
-  ["dash-month","my-month","imp-month","co-month","claim-month","cs-month","grade-dist-month","report-month"].forEach(sid=>{
+  ["dash-month","my-month","imp-month","co-month","claim-month","cs-month","grade-dist-month","report-month","itd-month"].forEach(sid=>{
     const el=document.getElementById(sid);
     if(!el)return;
     // fillMonths()가 채운 목록(최근 12개월 롤링)에 latest가 없을 수도 있으므로
@@ -3837,6 +3868,8 @@ function buildSidebar(){
     <div class="sb-item" data-p="companies" onclick="navTo('companies')"><span class="ico">🏢</span> 회사별 현황</div>
     <div class="sb-item" data-p="claim-status" onclick="navTo('claim-status')"><span class="ico">🚨</span> 클레임 현황</div>
     <div class="sb-item" data-p="report" onclick="navTo('report')"><span class="ico">🖨️</span> 보고서 출력</div>
+    <div class="sb-sec">세부 평가항목</div>
+    ${itemDetailNavHtml()}
     <div class="sb-sec">DCM 파트너</div>
     ${dcmItems}
     <div class="sb-sec">관리</div>
@@ -3863,6 +3896,181 @@ function buildSidebar(){
   }
 }
 
+// ══════════════════════════════════════════════════════════
+//  세부 평가항목 (관리자 전용)
+//  사이드메뉴에서 카테고리(거점도매/종합도매/VC) → 평가항목을 고르면,
+//  그 항목 하나만 전체 평가단위 기준으로 모아서(이번 달 점수/만점·달성률·전월 대비·
+//  5월부터 월별 점수·감점사유) 보여줍니다.
+// ══════════════════════════════════════════════════════════
+const ITEM_DETAIL_MENU=[
+  {cat:"거점도매",ico:"🏭",items:[
+    {key:"배송관리",label:"배송관리"},
+    {key:"배송지연 발생율",label:"배송지연"},
+    {key:"오배송 발생율",label:"오배송"},
+    {key:"오출하 발생율",label:"오출하"},
+    {key:"불량및파손 발생율",label:"불량·파손"},
+    {key:"재고관리",label:"재고관리"},
+    {key:"품질관리",label:"품질관리"},
+    {key:"중대클레임",label:"중대클레임"},
+    {key:"반품관리",label:"반품관리 (~7월)"},
+  ]},
+  {cat:"종합도매",ico:"🏢",items:[
+    {key:"DCM",label:"데이터 연계(DCM)"},
+    {key:"권역 외 유통",label:"권역 외 유통"},
+    {key:"권역 커버리지",label:"권역 커버리지"},
+  ]},
+  {cat:"VC",ico:"📦",items:[
+    {key:"구색",label:"구색"},
+    {key:"재고금액",label:"재고금액"},
+    {key:"반품",label:"반품"},
+    {key:"품절",label:"품절"},
+  ]},
+];
+// 시트의 항목명이 달·채널마다 조금씩 달라도(예: "배송지연"/"배송지연 발생율") 같은 항목으로 묶습니다.
+function itemDetailMatches(key,rawName){
+  const name=String(rawName||"").trim();
+  if(!name)return false;
+  if(key==="DCM")return name.includes("DCM")||cleanKey(name).includes("데이터연계");
+  if(key==="중대클레임")return name.includes("중대");
+  const canon=canonicalClaimItemName(name);
+  if(canon)return canon===key;
+  return cleanKey(name)===cleanKey(key);
+}
+function itemDetailNavHtml(){
+  return ITEM_DETAIL_MENU.map((g,gi)=>`
+    <div class="sb-item sb-grp" data-cat="${g.cat}" onclick="toggleItemGrp('${g.cat}')"><span class="ico">${g.ico}</span> ${g.cat}<span class="caret">▶</span></div>
+    <div class="sb-sub" data-cat="${g.cat}">${g.items.map((it,ii)=>`<div class="sb-item sb-subitem" data-cat="${g.cat}" data-key="${it.key}" onclick="openItemDetail('${g.cat}','${it.key}')">${it.label}</div>`).join("")}</div>`).join("");
+}
+function toggleItemGrp(cat){
+  document.querySelectorAll(`.sb-grp[data-cat="${cat}"],.sb-sub[data-cat="${cat}"]`).forEach(el=>el.classList.toggle("open"));
+}
+function openItemDetail(cat,key){
+  if(S.user?.role!=="admin")return;
+  S.itemSel={cat,key};
+  navTo("item-detail");
+}
+function fs2(v){const n=parseFloat(v);return isNaN(n)?"—":String(+n.toFixed(2));} // 소수 둘째 자리까지(감점 -1.25 등이 반올림되지 않게)
+async function loadItemDetail(){
+  if(S.user?.role!=="admin"){ navTo("my-eval"); return; }
+  const sel=S.itemSel;
+  const titleEl=document.getElementById("itd-title"), subEl=document.getElementById("itd-sub");
+  const kpiEl=document.getElementById("itd-kpi"), theadEl=document.getElementById("itd-thead"), tbody=document.getElementById("itd-tbody");
+  if(!sel||!tbody)return;
+  const grp=ITEM_DETAIL_MENU.find(g=>g.cat===sel.cat);
+  const meta=grp?.items.find(i=>i.key===sel.key);
+  const itemLabel=meta?.label||sel.key;
+
+  // 사이드메뉴: 선택한 항목만 강조하고 그 카테고리는 펼쳐둡니다.
+  document.querySelectorAll(".sb-subitem").forEach(el=>el.classList.toggle("on",el.dataset.cat===sel.cat&&el.dataset.key===sel.key));
+  document.querySelectorAll(`.sb-grp[data-cat="${sel.cat}"],.sb-sub[data-cat="${sel.cat}"]`).forEach(el=>el.classList.add("open"));
+
+  if(titleEl)titleEl.textContent=`🔎 ${sel.cat} · ${itemLabel}`;
+  const month=document.getElementById("itd-month")?.value;
+  if(!month){ if(subEl)subEl.textContent="평가월을 선택하세요"; return; }
+  if(subEl)subEl.textContent=`${month} 평가 · 이 항목만 전체 평가단위 기준으로 모아봅니다`;
+  if(!S.cfg.url){ tbody.innerHTML=`<tr><td colspan="7"><div class="empty"><p>Apps Script URL이 설정되지 않았습니다</p></div></td></tr>`; return; }
+
+  const reqId=S._itdReq=(S._itdReq||0)+1;
+  tbody.innerHTML=`<tr><td colspan="7"><div class="empty"><p>불러오는 중…</p></div></td></tr>`;
+  let months=evaluationMonthsFromMay(month);
+  if(!months.length)months=[month];
+  let rowsByMonth=[];
+  try{
+    loading(true);
+    rowsByMonth=await Promise.all(months.map(m=>fetchDetailRowsWithClaim({eval_month:m,eval_type:sel.cat}).catch(()=>[])));
+  }finally{ loading(false); }
+  if(reqId!==S._itdReq)return; // 월/항목을 빠르게 바꾼 경우 늦게 온 이전 응답은 버립니다
+
+  const pick=(rows,uid)=>(rows||[]).find(r=>r.unit_id===uid&&itemDetailMatches(sel.key,r.item_name));
+  const last=months.length-1;
+  const unitIds=[...new Set((rowsByMonth[last]||[]).filter(r=>itemDetailMatches(sel.key,r.item_name)).map(r=>r.unit_id).filter(Boolean))];
+  const monthLabel=m=>`${parseInt(m.slice(5),10)}월`;
+  const num=v=>{const n=parseFloat(v);return isNaN(n)?null:n;};
+
+  const list=unitIds.map(uid=>{
+    const cells=months.map((m,i)=>{
+      const row=pick(rowsByMonth[i],uid);
+      return row?{sc:num(row.score),mx:num(row.max_score),reason:row.reason||""}:null;
+    });
+    const cur=cells[last], prev=last>0?cells[last-1]:null;
+    const rate=(c)=>(c&&c.sc!==null&&c.mx)?c.sc/c.mx*100:null;
+    return {uid,cells,cur,rate:rate(cur),prevRate:rate(prev)};
+  }).sort((a,b)=>(a.rate??999)-(b.rate??999)||unitName(a.uid).localeCompare(unitName(b.uid),"ko"));
+
+  // 중대클레임처럼 만점이 0(감점 전용)인 항목은 달성률 대신 감점 여부로 표시합니다.
+  const penaltyOnly=list.length>0&&list.every(x=>x.cur&&x.cur.mx===0);
+  if(theadEl)theadEl.innerHTML=`<th style="text-align:left;padding-left:20px">회사</th><th style="text-align:left">평가단위</th><th>점수/만점</th>`
+    +`<th>${penaltyOnly?"상태":"달성률"}</th><th>전월 대비</th>`
+    +months.map(m=>`<th style="white-space:nowrap">${monthLabel(m)}</th>`).join("")+`<th style="text-align:left">감점사유</th>`;
+  const colSpan=6+months.length;
+
+  if(!list.length){
+    if(kpiEl)kpiEl.innerHTML="";
+    tbody.innerHTML=`<tr><td colspan="${colSpan}"><div class="empty"><p>${month}에는 이 항목 데이터가 없습니다${sel.key==="중대클레임"?" (중대클레임이 발생한 평가단위만 기록됩니다)":""}</p></div></td></tr>`;
+    return;
+  }
+
+  const rated=list.filter(x=>x.rate!==null);
+  const avgRate=rated.length?rated.reduce((s,x)=>s+x.rate,0)/rated.length:null;
+  const scored=list.filter(x=>x.cur&&x.cur.sc!==null);
+  const avgScore=scored.length?scored.reduce((s,x)=>s+x.cur.sc,0)/scored.length:null;
+  const full=list.filter(x=>x.rate!==null&&x.rate>=100).length;
+  const under=list.filter(x=>x.rate!==null&&x.rate<100).length;
+  const kpi=(cls,l,v,d)=>`<div class="kpi ${cls}"><div class="kpi-l">${l}</div><div class="kpi-v">${v}</div><div class="kpi-d">${d}</div></div>`;
+  if(kpiEl)kpiEl.innerHTML=penaltyOnly
+    ? kpi("k-red","감점 발생",`${list.length}곳`,"중대클레임 발생 평가단위")
+      +kpi("k-gold","감점 합계",fs2(scored.reduce((s,x)=>s+x.cur.sc,0))+"점","이번 달")
+      +kpi("k-mint","조회 월",monthLabel(month),sel.cat)
+      +kpi("k-gold","항목",itemLabel,sel.cat)
+    : kpi("k-gold","평가단위",`${list.length}곳`,`${sel.cat} · ${itemLabel}`)
+      +kpi("k-mint","평균 달성률",avgRate===null?"—":avgRate.toFixed(1)+"%",avgScore===null?"":`평균 ${avgScore.toFixed(1)}점`)
+      +kpi("k-mint","만점 달성",`${full}곳`,"달성률 100%")
+      +kpi("k-red","만점 미달",`${under}곳`,"감점 발생");
+
+  const badge=(label,bg,bd,col)=>`<span style="display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:9px;background:${bg};border:1px solid ${bd};color:${col};margin-left:6px;white-space:nowrap">${label}</span>`;
+  tbody.innerHTML=list.map(x=>{
+    const c=x.cur;
+    const unitLbl=unitName(x.uid), coLbl=coName(unitCompanyId(x.uid))||"—";
+    let rateCell, state;
+    if(c&&c.mx===0){
+      state=(c.sc!==null&&c.sc<0)?"fail":"pass";
+      rateCell=state==="fail"?badge("감점","#FCEBEB","#F09595","#791F1F"):badge("없음","#EAF3DE","#C0DD97","#27500A");
+    }else if(x.rate===null){
+      state="none"; rateCell=`<span style="color:var(--gray-300)">—</span>`;
+    }else{
+      const pct=Math.min(x.rate,100);
+      state=x.rate>=100?"pass":x.rate<60?"fail":"warn";
+      const barColor=state==="fail"?"#E24B4A":state==="warn"?"#EF9F27":"#1D9E75";
+      const pctColor=state==="fail"?"#A32D2D":state==="warn"?"#854F0B":"#0F6E56";
+      const bd=state==="pass"?badge("달성","#EAF3DE","#C0DD97","#27500A"):badge("미달",state==="fail"?"#FCEBEB":"#FAEEDA",state==="fail"?"#F09595":"#FAC775",state==="fail"?"#791F1F":"#633806");
+      rateCell=`<div style="display:flex;align-items:center;gap:8px;min-width:150px"><div class="itd-bar" style="flex:1"><i style="width:${pct}%;background:${barColor}"></i></div><span style="font-size:12px;font-weight:600;color:${pctColor};min-width:40px;text-align:right">${x.rate.toFixed(1)}%</span>${bd}</div>`;
+    }
+    let deltaCell=`<span style="color:var(--gray-300)">—</span>`;
+    if(x.rate!==null&&x.prevRate!==null){
+      const d=parseFloat((x.rate-x.prevRate).toFixed(1));
+      deltaCell=d>0?`<span style="color:#0F6E56;font-weight:700">▲ +${d}%p</span>`:d<0?`<span style="color:#A32D2D;font-weight:700">▼ ${d}%p</span>`:`<span style="color:#64748B">동일</span>`;
+    }
+    const monthCells=x.cells.map((cell,i)=>{
+      const isCur=i===last;
+      if(!cell||cell.sc===null)return `<td class="itd-mcell none${isCur?" cur":""}">—</td>`;
+      const low=cell.mx!==null&&(cell.mx===0?cell.sc<0:cell.sc<cell.mx);
+      return `<td class="itd-mcell${isCur?" cur":""}${low?" low":""}">${fs2(cell.sc)}</td>`;
+    }).join("");
+    const reason=c&&c.reason?c.reason:"—";
+    return `<tr>
+      <td class="left" style="padding-left:20px;white-space:nowrap">${coLbl}</td>
+      <td class="left" style="white-space:nowrap">${unitLbl}</td>
+      <td style="text-align:center;white-space:nowrap">${c&&c.sc!==null?`<b>${fs2(c.sc)}</b> <small style="color:var(--gray-400);font-size:.7em">/ ${fs2(c.mx)}점</small>`:"—"}</td>
+      <td>${rateCell}</td>
+      <td style="text-align:center;font-size:12px;white-space:nowrap">${deltaCell}</td>
+      ${monthCells}
+      <td class="left" style="font-size:12px;color:var(--gray-600);min-width:260px">${reason}</td>
+    </tr>`;
+  }).join("");
+  const cardT=document.getElementById("itd-card-t");
+  if(cardT)cardT.textContent=`📋 ${itemLabel} · 평가단위별 현황 (${monthLabel(months[0])}~${monthLabel(month)})`;
+}
+
 function navTo(p){
   S.page=p;
   document.querySelectorAll(".sb-item").forEach(el=>el.classList.toggle("on",el.dataset.p===p));
@@ -3876,6 +4084,7 @@ function navTo(p){
   if(p==="upload")     loadUploadHist();
   if(p==="companies")  loadCompanies();
   if(p==="report")     loadReport();
+  if(p==="item-detail") loadItemDetail();
   if(p==="claim-status") loadClaimStatus();
   if(p==="notice")     loadNotice();
   if(p==="pw")         initPwPage();
