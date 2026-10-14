@@ -415,6 +415,9 @@ html,body{height:100%;font-family:'Pretendard','Noto Sans KR','Apple SD Gothic N
 .itd-mcell.cur{font-weight:800}
 .itd-mcell.low{color:#A32D2D}
 .itd-mcell.none{color:var(--gray-300)}
+.itd-seg{display:inline-flex;border:1px solid var(--gray-200,#E5E7EB);border-radius:8px;overflow:hidden}
+.itd-seg button{border:none;background:#fff;padding:5px 12px;font-size:12px;font-weight:600;color:var(--gray-500,#64748B);cursor:pointer}
+.itd-seg button.on{background:#D33B3B;color:#fff}
 .sb-footer{padding:11px;border-top:1px solid rgba(255,255,255,.07)}
 .sb-logout{width:100%;padding:9px;border-radius:9px;background:rgba(255,255,255,.05);
   border:none;color:rgba(255,255,255,.45);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
@@ -1854,6 +1857,36 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
         </div>
         <div style="padding:12px 22px;border-top:1px solid var(--gray-100);text-align:right">
           <button onclick="closeClaimModal()" class="btn btn-s">닫기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 세부 평가항목: 월별 추이·과거 데이터 팝업 (관리자 전용) -->
+    <div id="itd-hist-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center" onclick="if(event.target===this)closeItemHistory()">
+      <div style="background:var(--white);border-radius:16px;width:92%;max-width:880px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+        <div style="padding:18px 22px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <div style="min-width:0">
+            <div id="itd-hist-title" style="font-size:15px;font-weight:700;color:var(--navy)">월별 추이</div>
+            <div id="itd-hist-sub" style="font-size:12px;color:var(--gray-400);margin-top:2px"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex:none">
+            <span id="itd-hist-mode" class="itd-seg"><button type="button" data-mode="score" class="on" onclick="setItemHistMode('score')">점수</button><button type="button" data-mode="rate" onclick="setItemHistMode('rate')">달성률</button></span>
+            <button onclick="closeItemHistory()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray-400);padding:4px 8px">✕</button>
+          </div>
+        </div>
+        <div style="overflow-y:auto;padding:16px 22px;flex:1">
+          <div id="itd-hist-loading" style="text-align:center;padding:30px;color:var(--gray-400);display:none">불러오는 중...</div>
+          <div id="itd-hist-body" style="display:none">
+            <div style="position:relative;height:270px"><canvas id="itd-hist-canvas"></canvas></div>
+            <div style="font-size:12px;font-weight:700;color:var(--navy-dk);margin:16px 0 8px">📋 월별 과거 데이터</div>
+            <div class="tw"><table>
+              <thead><tr><th style="text-align:left;padding-left:16px">평가월</th><th>점수/만점</th><th>달성률</th><th>전월 대비</th><th style="text-align:left">감점사유</th></tr></thead>
+              <tbody id="itd-hist-tbody"></tbody>
+            </table></div>
+          </div>
+        </div>
+        <div style="padding:12px 22px;border-top:1px solid var(--gray-100);text-align:right">
+          <button onclick="closeItemHistory()" class="btn btn-s">닫기</button>
         </div>
       </div>
     </div>
@@ -4057,7 +4090,7 @@ async function loadItemDetail(){
       return `<td class="itd-mcell${isCur?" cur":""}${low?" low":""}">${fs2(cell.sc)}</td>`;
     }).join("");
     const reason=c&&c.reason?c.reason:"—";
-    return `<tr>
+    return `<tr class="dcm-click-row" tabindex="0" title="클릭하면 월별 추이 그래프와 과거 데이터를 볼 수 있습니다" onclick="openItemHistory('${x.uid}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openItemHistory('${x.uid}')}">
       <td class="left" style="padding-left:20px;white-space:nowrap">${coLbl}</td>
       <td class="left" style="white-space:nowrap">${unitLbl}</td>
       <td style="text-align:center;white-space:nowrap">${c&&c.sc!==null?`<b>${fs2(c.sc)}</b> <small style="color:var(--gray-400);font-size:.7em">/ ${fs2(c.mx)}점</small>`:"—"}</td>
@@ -4068,7 +4101,128 @@ async function loadItemDetail(){
     </tr>`;
   }).join("");
   const cardT=document.getElementById("itd-card-t");
-  if(cardT)cardT.textContent=`📋 ${itemLabel} · 평가단위별 현황 (${monthLabel(months[0])}~${monthLabel(month)})`;
+  if(cardT)cardT.innerHTML=`📋 ${itemLabel} · 평가단위별 현황 (${monthLabel(months[0])}~${monthLabel(month)}) <span style="font-size:11px;font-weight:500;color:var(--gray-400);margin-left:6px">행을 클릭하면 과거 데이터·그래프를 볼 수 있습니다</span>`;
+  S._itdData={sel,itemLabel,month};
+}
+
+// ── 세부 평가항목: 행 클릭 → 과거 월별 데이터 + 추이 그래프 팝업 ──
+let _itdHistChart=null;
+let _itdHist=null; // {uid,sel,itemLabel,months,cells,penaltyOnly,mode}
+async function openItemHistory(uid){
+  if(S.user?.role!=="admin"||!S._itdData)return;
+  const {sel,itemLabel,month}=S._itdData;
+  const modal=document.getElementById("itd-hist-modal");
+  if(!modal)return;
+  modal.style.display="flex";
+  document.getElementById("itd-hist-title").textContent=`${coName(unitCompanyId(uid))||""} · ${unitName(uid)}`.replace(/^ · /,"");
+  document.getElementById("itd-hist-sub").textContent=`${sel.cat} · ${itemLabel} · 불러오는 중…`;
+  document.getElementById("itd-hist-body").style.display="none";
+  document.getElementById("itd-hist-loading").style.display="block";
+  // 선택한 평가월이 아니라 데이터가 있는 가장 최근 월까지 전체 기간을 보여줍니다.
+  const latest=[month,S.cfg.month].filter(Boolean).sort().pop();
+  let months=evaluationMonthsFromMay(latest);
+  if(!months.length)months=[month];
+  let rowsByMonth=[];
+  try{
+    rowsByMonth=await Promise.all(months.map(m=>fetchDetailRowsWithClaim({eval_month:m,eval_type:sel.cat}).catch(()=>[])));
+  }catch(e){ rowsByMonth=months.map(()=>[]); }
+  const num=v=>{const n=parseFloat(v);return isNaN(n)?null:n;};
+  const cells=months.map((m,i)=>{
+    const row=(rowsByMonth[i]||[]).find(r=>r.unit_id===uid&&itemDetailMatches(sel.key,r.item_name));
+    return row?{sc:num(row.score),mx:num(row.max_score),reason:row.reason||""}:null;
+  });
+  const has=cells.filter(c=>c&&c.sc!==null);
+  const penaltyOnly=has.length>0&&has.every(c=>c.mx===0);
+  _itdHist={uid,sel,itemLabel,months,cells,penaltyOnly,mode:"score",month};
+  document.getElementById("itd-hist-loading").style.display="none";
+  document.getElementById("itd-hist-body").style.display="block";
+  document.getElementById("itd-hist-sub").textContent=`${sel.cat} · ${itemLabel} · ${parseInt(months[0].slice(5),10)}월~${parseInt(months[months.length-1].slice(5),10)}월`;
+  const modeWrap=document.getElementById("itd-hist-mode");
+  if(modeWrap)modeWrap.style.display=penaltyOnly?"none":"inline-flex";
+  setItemHistMode("score");
+  renderItemHistTable();
+}
+function setItemHistMode(mode){
+  if(!_itdHist)return;
+  _itdHist.mode=mode;
+  document.querySelectorAll("#itd-hist-mode button").forEach(b=>b.classList.toggle("on",b.dataset.mode===mode));
+  drawItemHistChart();
+}
+function drawItemHistChart(){
+  const h=_itdHist, canvas=document.getElementById("itd-hist-canvas");
+  if(!h||!canvas||!window.Chart)return;
+  if(_itdHistChart){_itdHistChart.destroy();_itdHistChart=null;}
+  const labels=h.months.map(m=>`${parseInt(m.slice(5),10)}월`);
+  const isRate=h.mode==="rate"&&!h.penaltyOnly;
+  const val=c=>{
+    if(!c||c.sc===null)return null;
+    if(!isRate)return +c.sc.toFixed(2);
+    return c.mx?+(c.sc/c.mx*100).toFixed(1):null;
+  };
+  const data=h.cells.map(val);
+  const maxes=h.cells.map(c=>c&&c.mx!==null?c.mx:null);
+  const datasets=[{
+    label:isRate?"달성률":"점수",data,borderColor:"#D33B3B",backgroundColor:"rgba(211,59,59,.10)",fill:true,
+    borderWidth:3,pointRadius:5,pointHoverRadius:7,pointBackgroundColor:"#D33B3B",tension:.28,spanGaps:true,order:1,
+  }];
+  // 기준선: 점수 모드는 월별 만점(점선), 달성률 모드는 100%(점선)
+  const refData=isRate?h.cells.map(c=>c&&c.sc!==null?100:null):(h.penaltyOnly?null:maxes);
+  if(refData)datasets.push({
+    label:isRate?"기준 100%":"만점",data:refData,borderColor:"#94A3B8",borderDash:[6,4],borderWidth:2,pointRadius:0,
+    fill:false,tension:0,spanGaps:true,order:2,datalabels:{display:false},
+  });
+  const fmt=(v,i)=>{
+    if(v===null||v===undefined)return "";
+    if(isRate)return `${v}%`;
+    const mx=maxes[i];
+    return mx?`${fs2(v)}/${fs2(mx)}점`:`${fs2(v)}점`;
+  };
+  _itdHistChart=new Chart(canvas.getContext("2d"),{
+    type:"line",data:{labels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},layout:{padding:{top:26,right:34,left:6}},
+      plugins:{
+        legend:{display:!h.penaltyOnly,labels:{usePointStyle:true,boxWidth:8,font:{size:11}}},
+        datalabels:{display:ctx=>ctx.datasetIndex===0,align:"top",offset:6,clamp:true,color:"#B42323",font:{size:11,weight:"800"},formatter:(v,ctx)=>fmt(v,ctx.dataIndex)},
+        tooltip:{callbacks:{label:ctx=>ctx.datasetIndex===0?`${ctx.dataset.label}: ${fmt(ctx.parsed.y,ctx.dataIndex)}`:`${ctx.dataset.label}: ${isRate?"100%":fs2(ctx.parsed.y)+"점"}`}},
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:11}}},
+        y:{beginAtZero:!h.penaltyOnly,grace:"15%",ticks:{font:{size:10},callback:v=>isRate?v+"%":v+"점"},grid:{color:"rgba(148,163,184,.14)"}},
+      },
+    },
+  });
+}
+function renderItemHistTable(){
+  const h=_itdHist, tb=document.getElementById("itd-hist-tbody");
+  if(!h||!tb)return;
+  const rateOf=c=>(c&&c.sc!==null&&c.mx)?c.sc/c.mx*100:null;
+  const rows=h.months.map((m,i)=>({m,c:h.cells[i],prev:i>0?h.cells[i-1]:null})).reverse(); // 최근 월이 위로
+  tb.innerHTML=rows.map(({m,c,prev})=>{
+    const isSel=m===h.month;
+    const label=`${m.slice(0,4)}년 ${parseInt(m.slice(5),10)}월`;
+    if(!c||c.sc===null)return `<tr${isSel?' style="background:#FFF8E1"':""}><td class="left" style="padding-left:16px;white-space:nowrap">${label}</td><td colspan="4" style="color:var(--gray-300);text-align:center">해당 월 데이터 없음</td></tr>`;
+    const r=rateOf(c), pr=rateOf(prev);
+    let rateTxt="—", stateColor="#1F2937";
+    if(c.mx===0){ rateTxt=c.sc<0?"감점":"—"; stateColor=c.sc<0?"#A32D2D":"#1F2937"; }
+    else if(r!==null){ rateTxt=r.toFixed(1)+"%"; stateColor=r>=100?"#0F6E56":r<60?"#A32D2D":"#854F0B"; }
+    let delta=`<span style="color:var(--gray-300)">—</span>`;
+    if(r!==null&&pr!==null){
+      const d=parseFloat((r-pr).toFixed(1));
+      delta=d>0?`<span style="color:#0F6E56;font-weight:700">▲ +${d}%p</span>`:d<0?`<span style="color:#A32D2D;font-weight:700">▼ ${d}%p</span>`:`<span style="color:#64748B">동일</span>`;
+    }
+    return `<tr${isSel?' style="background:#FFF8E1"':""}>
+      <td class="left" style="padding-left:16px;white-space:nowrap;font-weight:${isSel?800:500}">${label}${isSel?' <small style="color:var(--gold)">조회월</small>':""}</td>
+      <td style="text-align:center;white-space:nowrap"><b>${fs2(c.sc)}</b> <small style="color:var(--gray-400);font-size:.7em">/ ${fs2(c.mx)}점</small></td>
+      <td style="text-align:center;font-weight:700;color:${stateColor}">${rateTxt}</td>
+      <td style="text-align:center;font-size:12px;white-space:nowrap">${delta}</td>
+      <td class="left" style="font-size:12px;color:var(--gray-600);min-width:240px">${c.reason||"—"}</td>
+    </tr>`;
+  }).join("");
+}
+function closeItemHistory(){
+  const modal=document.getElementById("itd-hist-modal");
+  if(modal)modal.style.display="none";
+  if(_itdHistChart){_itdHistChart.destroy();_itdHistChart=null;}
 }
 
 function navTo(p){
@@ -5670,7 +5824,7 @@ function closeDcmModal(){
 }
 // ESC 키로 닫기
 document.addEventListener("keydown", e => {
-  if (e.key === "Escape") { closeClaimModal(); closeGradeModal(); closeDcmModal(); }
+  if (e.key === "Escape") { closeClaimModal(); closeGradeModal(); closeDcmModal(); closeItemHistory(); }
 });
 
 // ══════════════════════════════════════════════════════════
