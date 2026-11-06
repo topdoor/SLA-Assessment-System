@@ -926,6 +926,20 @@ table.rp-grid tr.claim td.nm{border-left:3px solid #e78333;padding-left:5px}
 .imp-pending summary{cursor:pointer;font-weight:800;color:var(--red);padding:4px 0}
 .imp-pending li{margin:3px 0 0 18px}
 .imp-co-empty{padding:6px 2px;font-size:12.5px;color:var(--gray-400)}
+.imp-co-table td,.imp-co-table th{text-align:center}
+.imp-co-table td.left,.imp-co-table th.left{text-align:left;padding-left:16px}
+.imp-co-table tbody tr[data-co]{cursor:pointer}
+.imp-co-table tbody tr[data-co]:hover{background:var(--gray-50)}
+.imp-co-table tr.sel{background:var(--gold-bg)}
+.imp-co-table tr.total{background:var(--gray-50);font-weight:800}
+.imp-co-table .nm{display:inline-flex;align-items:center;gap:8px;font-weight:800;color:var(--navy-dk)}
+.imp-co-table .dot{width:10px;height:10px;border-radius:3px;background:var(--co,var(--navy))}
+.imp-co-table .n-ok{color:var(--mint);font-weight:800}
+.imp-co-table .n-wait{color:var(--red);font-weight:800}
+.imp-rate{display:flex;align-items:center;gap:8px}
+.imp-rate-bar{flex:1;height:8px;border-radius:100px;background:var(--gray-100);overflow:hidden}
+.imp-rate-bar i{display:block;height:100%;background:var(--mint);border-radius:100px}
+.imp-rate b{min-width:40px;text-align:right;font-size:12.5px}
 
 /* ══ 회사 카드 균등 그리드 ══ */
 .co-g{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:8px}
@@ -1999,6 +2013,10 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
       </div>
       <div class="card" id="imp-admin-card" style="display:none">
         <div class="card-t" style="margin-bottom:10px">🏢 업체별 개선사항 작성 내용</div>
+        <div class="tw" style="margin-bottom:14px"><table class="imp-co-table">
+          <thead><tr><th class="left">회사</th><th>감점 항목</th><th>제출 완료</th><th>미제출</th><th style="min-width:150px">제출률</th></tr></thead>
+          <tbody id="imp-co-table-body"></tbody>
+        </table></div>
         <div class="imp-co-chips" id="imp-co-chips"></div>
         <div id="imp-admin-body"></div>
       </div>
@@ -5348,6 +5366,15 @@ function drawImpAdminView(){
   const totalSub=active.reduce((n,c)=>n+groups.get(c.id).sub.length,0);
   document.getElementById("imp-co-chips").innerHTML=
     chip("ALL","전체",totalSub,totalPend)+active.map(c=>{const g=groups.get(c.id);return chip(c.id,impEsc(c.name),g.sub.length,g.pend.length);}).join("");
+  const rateCell=(sub,tot)=>{const p=tot?Math.round(sub/tot*100):null;return p===null?"—":`<div class="imp-rate"><div class="imp-rate-bar"><i style="width:${p}%"></i></div><b>${p}%</b></div>`;};
+  const sumDed=active.reduce((n,c)=>n+groups.get(c.id).dedCnt,0);
+  const sumDone=sumDed-totalPend;
+  document.getElementById("imp-co-table-body").innerHTML=active.map(c=>{
+    const g=groups.get(c.id),done=g.dedCnt-g.pend.length;
+    return`<tr data-co="${c.id}" class="${S.impCoFilter===c.id?"sel":""}" style="--co:${IMP_CO_COLORS[c.id]||"#3F4C6C"}" onclick="setImpCoFilter('${S.impCoFilter===c.id?"ALL":c.id}')">
+      <td class="left"><span class="nm"><span class="dot"></span>${impEsc(c.name)}</span></td>
+      <td>${g.dedCnt}건</td><td class="n-ok">${done}건</td><td class="${g.pend.length?"n-wait":""}">${g.pend.length}건</td><td>${rateCell(done,g.dedCnt)}</td></tr>`;
+  }).join("")+`<tr class="total"><td class="left">합계</td><td>${sumDed}건</td><td class="n-ok">${sumDone}건</td><td class="${totalPend?"n-wait":""}">${totalPend}건</td><td>${rateCell(sumDone,sumDed)}</td></tr>`;
   const shown=active.filter(c=>S.impCoFilter==="ALL"||S.impCoFilter===c.id);
   document.getElementById("imp-admin-body").innerHTML=shown.map(c=>{
     const g=groups.get(c.id);
