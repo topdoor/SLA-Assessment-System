@@ -3198,9 +3198,11 @@ function vcItemRateText(row){
     return percent+"%";
   }
   const reason=String(row.reason??"");
-  const match=reason.match(/(?:실적률?|실제율|실측률|측정값)\s*[:：]?\s*(\d+(?:\.\d+)?)\s*%/)
+  const match=reason.match(/(?:구색률|품절률|처리율|실적률?|실제율|실측률|측정값)\s*[:：]?\s*(\d+(?:\.\d+)?)\s*%/)
     ||reason.match(/^\s*(\d+(?:\.\d+)?)\s*%\s*(?:\([^)]*\)\s*)?$/);
-  return match?match[1]+"%":"—";
+  if(match)return match[1]+"%";
+  const stock=reason.match(/재고금액\s*[:：]?\s*([\d,]+(?:\.\d+)?)\s*억/);
+  return stock?stock[1]+"억 원":"—";
 }
 function normalizeRow(row){
   const r={...row};
@@ -5083,7 +5085,7 @@ async function openDetail(uid,evalType,month,fromPage){
     html += `
       <div style="display:grid;grid-template-columns:160px 140px 90px 58px 1fr;background:#2F3B52">
         <div style="padding:9px 14px;font-size:12px;font-weight:500;color:#C8D4E8">평가항목</div>
-        <div style="padding:9px 14px;font-size:12px;font-weight:500;color:#C8D4E8">${evalType==="VC"?"실적률":"달성률"}</div>
+        <div style="padding:9px 14px;font-size:12px;font-weight:500;color:#C8D4E8">${evalType==="VC"?"실적":"달성률"}</div>
         <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">점수</div>
         <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">상태</div>
         <div style="padding:9px 14px;font-size:12px;font-weight:500;color:#C8D4E8">감점사유</div>
