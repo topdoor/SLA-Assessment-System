@@ -1752,6 +1752,7 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
           <div style="position:relative;height:345px">
             <canvas id="my-trend-canvas-거점도매" class="chart-canvas"></canvas>
           </div>
+          <div id="my-trend-average-거점도매" style="margin-top:8px;color:#15803D;font-size:12px;font-weight:700;line-height:1.8"></div>
         </div>
         <div style="background:var(--white);border:0.5px solid var(--gray-200);border-radius:var(--radius);overflow:hidden">
           <div class="tw"><table style="width:100%">
@@ -1788,6 +1789,7 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
           <div style="position:relative;height:345px">
             <canvas id="my-trend-canvas-종합도매" class="chart-canvas"></canvas>
           </div>
+          <div id="my-trend-average-종합도매" style="margin-top:8px;color:#15803D;font-size:12px;font-weight:700;line-height:1.8"></div>
         </div>
         <div style="background:var(--white);border:0.5px solid var(--gray-200);border-radius:var(--radius);overflow:hidden">
           <div class="tw"><table style="width:100%">
@@ -1824,6 +1826,7 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
           <div style="position:relative;height:345px">
             <canvas id="my-trend-canvas-VC" class="chart-canvas"></canvas>
           </div>
+          <div id="my-trend-average-VC" style="margin-top:8px;color:#15803D;font-size:12px;font-weight:700;line-height:1.8"></div>
         </div>
         <div style="background:var(--white);border:0.5px solid var(--gray-200);border-radius:var(--radius);overflow:hidden">
           <div class="tw"><table style="width:100%">
@@ -7011,6 +7014,14 @@ async function renderMyTrend(){
         fetchTrendSeries(months,{eval_type:t.key}),
       ]);
       data.benchmark=benchmark.map(point=>point.avg);
+      const averageSummary=document.getElementById(`my-trend-average-${t.key}`);
+      if(averageSummary){
+        const values=benchmark.filter(point=>point.avg!==null)
+          .map(point=>`${Number(point.month.slice(5))}월 ${point.avg.toFixed(1)}%`);
+        averageSummary.textContent=values.length
+          ? `전체 평가단위 평균 · ${values.join(" / ")}`
+          : "전체 평가단위 평균 · 조회 가능한 데이터 없음";
+      }
       const hasData=data.overall.some(v=>v!==null);
       if(card)card.style.display=hasData?"":"none"; // 해당 유형 데이터가 없는 회사는 카드 자체를 숨김
       if(!hasData){
