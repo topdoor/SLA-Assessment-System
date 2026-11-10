@@ -2706,12 +2706,7 @@ const ITEM_META = {
   "DCM":             { unit:"%", target:99, countPer:1, countUnit:"개처", label:"DCM 연동률" },
   "권역 외 유통":    { unit:"%", target:10, countPer:1, countUnit:"건", label:"권역외유통률" },
   "권역 커버리지":   { unit:"%", target:100, countPer:1, countUnit:"개처", label:"커버리지" },
-  // ── VC ──
-  "구색":            { unit:"%", target:110, countPer:1, countUnit:"품목", label:"구색확보율" },
-  "재고금액":        { unit:"%", target:110, countPer:1, countUnit:"품목", label:"재고금액 달성률" },
-  "반품":            { unit:"%", target:110, countPer:1, countUnit:"건", label:"반품처리율" },
-  "품절":            { unit:"건", target:0,  countPer:1, countUnit:"품목", label:"품절 발생" },
-  "데이터 공유":     { unit:"%", target:110, countPer:1, countUnit:"건", label:"데이터 공유율" },
+
 };
 
 /**
@@ -2723,6 +2718,7 @@ const ITEM_META = {
  * @param {string} rawReason - Sheets에 저장된 원본 사유 (있으면 우선 사용)
  */
 function buildReasonText(itemName, score, maxScore, evalType, rawReason) {
+  if(evalType==="VC")return buildVcReasonText(itemName,score,maxScore,rawReason);
   // 원본 사유가 의미 있는 텍스트면 그대로 사용
   if (rawReason && rawReason.trim() &&
       !rawReason.match(/^[\d.]+점?$/) &&          // "18점" 같은 숫자만 있는 경우 제외
@@ -3188,6 +3184,27 @@ function claimCellScore(v){
   if(m)return parseFloat(m[1]);
   const n=parseFloat(s);
   return isNaN(n)?"":n;
+}
+function buildVcReasonText(itemName, score, maxScore, rawReason){
+  const reason=String(rawReason??"").trim();
+  const earned=parseFloat(score), maximum=parseFloat(maxScore);
+  if(!Number.isFinite(earned)||!Number.isFinite(maximum)||maximum<=0)return reason||"—";
+
+  const deduction=+(maximum-earned).toFixed(2);
+  const points=fs(earned)+"/"+fs(maximum)+"점"+(deduction>0?" ("+deduction+"점 감점)":"");
+  if(reason && !reason.includes("항목 점수는 원본 등급과 기존 배점으로 환산") &&
+      !/^[\d.]+점?$/.test(reason) && !/^(만점|획득점수|점수)\s*\d/.test(reason)){
+    return reason+" / "+points;
+  }
+
+  const actual=vcItemRateText({reason});
+  const sourceGrade=reason.match(/원본\s+([SABCD])등급/)?.[1];
+  const metricLabels={"구색":"구색률","품절":"품절률","반품":"2일 이내 반품 처리율","재고금액":"재고금액","데이터 공유":"데이터 공유율"};
+  const metric=actual==="—"?"":(metricLabels[itemName]||itemName)+" "+actual;
+  const result=[metric,sourceGrade?"원본 "+sourceGrade+"등급":"","환산 "+points].filter(Boolean).join(" · ");
+  if(deduction<=0)return result;
+  if(!sourceGrade)return result+". 원본에 등급과 감점 산식이 기재되지 않아 세부 원인을 확인할 수 없습니다.";
+  return result+". 원본 등급과 배점에 따른 환산 결과이며, 세부 환산 기준은 원본에 기재되지 않았습니다.";
 }
 function vcItemRateText(row){
   const value=firstVal(row,["actual_rate","actual_percent","performance_rate","실적률","실적율","실적률(%)","실적(%)","실측률","실제율","측정값(%)"]);
@@ -5012,7 +5029,9 @@ async function openDetail(uid,evalType,month,fromPage){
       // 원본 시트 reason에 실제 건수("0.12% (9건/7,537건)")가 있으면 그 값을 그대로 쓰고,
       // 없으면(기본 운영 항목 등 건수 데이터가 없는 경우) 감점 점수 기반 추정 문구로 대체합니다.
       const realCount = claimCountText(row.reason);
-      const reasonText = realCount
+      const reasonText = evalType==="VC"
+        ? buildReasonText(row.item_name,row.score,row.max_score,evalType,row.reason)
+        : realCount
         ? realCount
         : (ded ? buildReasonText(row.item_name,row.score,row.max_score,evalType,row.reason) : (row.reason||"—"));
       const state = ded ? (parseFloat(row.score)/parseFloat(row.max_score)<0.6?"fail":"warn") : "pass";
@@ -5494,7 +5513,7 @@ function openImp(d){
   document.getElementById("imp-modal-sub").textContent=
     `${unitName(d.uid)} · ${cb(d.ch).replace(/<[^>]+>/g,"")} · ${d.item}`;
   // 감점사유 info 박스 — buildReasonText로 자동 생성
-  const reasonText=buildReasonText(d.item,d.score||0,d.max_score||0,d.ch,d.reason);
+  const reasonText=d.reason||"—";
   document.getElementById("imp-modal-info").innerHTML=
     `<strong>평가단위</strong> ${unitName(d.uid)}&nbsp;&nbsp;
      <strong>항목</strong> ${d.item}<br>
@@ -7547,7 +7566,7 @@ function rpDetailRow(item,evalType,withReason){
   let reasonCell="";
   if(withReason){
     const realCount=claimCountText(reason);
-    const reasonText=realCount?realCount:(docked?buildReasonText(name,score,max,evalType,reason):(reason||"—"));
+    const reasonText=evalType==="VC"?buildReasonText(name,score,max,evalType,reason):realCount?realCount:(docked?buildReasonText(name,score,max,evalType,reason):(reason||"—"));
     reasonCell=`<td class="rs">${reasonText}</td>`;
   }
   return `<tr class="${isClaim?'claim':''}">
