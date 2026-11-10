@@ -7083,9 +7083,9 @@ function drawMyTrendChart(key,data,selected){
         subtitle:{display:true,text:"빨간색은 해당 월 전체 평균 미만",color:TREND_BELOW_COLOR},
         legend:{display:true,position:"bottom",labels:{boxWidth:12,usePointStyle:true,font:{size:13,weight:"600"},padding:12}},
         datalabels:{
-          display:(ctx)=>ctx.datasetIndex===1,
-          align:"top",clamp:true,font:{size:15,weight:"800"},
-          color:ctx=>belowAverage(ctx.dataIndex)?TREND_BELOW_COLOR:"#111827",
+          display:true,
+          align:ctx=>ctx.datasetIndex===0?"bottom":"top",clamp:true,font:{size:15,weight:"800"},
+          color:ctx=>ctx.datasetIndex===0?TREND_AVERAGE_COLOR:belowAverage(ctx.dataIndex)?TREND_BELOW_COLOR:"#111827",
           formatter:v=>v!==null&&v!==undefined?v+"%":""
         },
       },
