@@ -4438,7 +4438,7 @@ function expectedMaxForEvalType(ch){
   return 0;
 }
 async function fetchMonthlyResults(params={}){
-  const fKey=`${monthKey(params.eval_month||"")}::${params.company_id||""}::${normalizeEvalType(params.eval_type||"")}`;
+  const fKey=JSON.stringify([monthKey(params.eval_month||""),params.company_id||"",params.unit_id||"",normalizeEvalType(params.eval_type||""),params.limit||""]);
   if(S._cache?.monthly?.has(fKey))return S._cache.monthly.get(fKey).map(r=>({...r}));
 
   let details=[];
@@ -4856,6 +4856,8 @@ function gradeRank(g){ return {S:5,A:4,B:3,C:2,D:1}[g]||0; }
 // 상단 총점/등급 카드에 전달 대비 정보를 채웁니다. (총점/만점 카드 아래,
 // 최종 등급 카드 아래에 작은 회색 텍스트로 "전달 대비" 문구를 추가)
 async function renderTopCompareKpi(uid, evalType, month, r){
+  const request=Symbol();
+  S.topCompareRequest=request;
   const scoreEl=document.getElementById("det-score-prev");
   const gradeEl=document.getElementById("det-grade-prev");
   if(scoreEl)scoreEl.textContent="";
@@ -4866,9 +4868,9 @@ async function renderTopCompareKpi(uid, evalType, month, r){
   let prevRow=null;
   try{
     const prevResults=await fetchMonthlyResults({eval_month:prevMonth,unit_id:uid,eval_type:evalType});
-    prevRow=(prevResults||[]).find(x=>!isPendingRow(x))||null;
+    prevRow=localFilterRows(prevResults,{eval_month:prevMonth,unit_id:uid,eval_type:evalType})[0]||null;
   }catch(e){ prevRow=null; }
-  if(!prevRow || isPendingRow(prevRow) || isPartialRow(prevRow))return;
+  if(S.topCompareRequest!==request || !prevRow || isPendingRow(prevRow) || isPartialRow(prevRow))return;
 
   const curScore=parseFloat(r.total_score), prevScore=parseFloat(prevRow.total_score);
   if(!isNaN(curScore) && !isNaN(prevScore) && scoreEl){
@@ -4891,7 +4893,7 @@ async function openDetail(uid,evalType,month,fromPage){
   S.backPage=fromPage||(S.user.role==="admin"?"dashboard":"my-eval");
   document.getElementById("det-title").textContent=unitName(uid);
   document.getElementById("det-sub").textContent=`${month} · ${evalType}`;
-  const r=S.results.find(x=>x.unit_id===uid&&x.eval_type===evalType)||{};
+  const r=localFilterRows(S.results,{eval_month:month,unit_id:uid,eval_type:evalType})[0]||{};
   document.getElementById("det-score").textContent=isPartialRow(r)?"일부 항목 업데이트":(isPendingRow(r)?"산정중":fs(r.total_score));
   document.getElementById("det-max").textContent=(isPendingRow(r)||isPartialRow(r))?"—":fs(r.max_score);
   document.getElementById("det-grade").innerHTML=(isPendingRow(r)||isPartialRow(r))?`<span style="font-size:20px;color:var(--gray-400);font-weight:800">산정중</span>`:(r.grade?gb(r.grade,"lg"):"—");
@@ -4914,7 +4916,7 @@ async function openDetail(uid,evalType,month,fromPage){
 
   let details=[];
   if(S.cfg.url){
-    try{loading(true);details=await fetchDetailRowsWithClaim({eval_month:month,unit_id:uid});loading(false)}
+    try{loading(true);details=await fetchDetailRowsWithClaim({eval_month:month,unit_id:uid,eval_type:evalType});loading(false)}
     catch(e){loading(false);toast("오류: "+e.message,"err")}
   }
   // 현재 상세 조회 컨텍스트 저장 (클레임 팝업에서 사용)
@@ -4935,7 +4937,7 @@ async function openDetail(uid,evalType,month,fromPage){
   let prevByItem={};
   if(S.cfg.url){
     try{
-      const prevDetails=await fetchDetailRowsWithClaim({eval_month:prevMonth,unit_id:uid});
+      const prevDetails=await fetchDetailRowsWithClaim({eval_month:prevMonth,unit_id:uid,eval_type:evalType});
       prevDetails.forEach(pr=>{
         const sc=parseFloat(pr.score),mx=parseFloat(pr.max_score);
         if(isNaN(sc)||isNaN(mx)||mx===0)return;
