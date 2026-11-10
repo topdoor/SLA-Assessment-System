@@ -4504,8 +4504,27 @@ async function fetchMonthlyResults(params={}){
 }
 
 // 상세점수 합계와 만점을 기준으로 달성률·등급을 일관되게 계산합니다.
+// 10월 최종 평가 엑셀의 종합 관리장 및 업체별 VC 평가결과.
+const VC_OCTOBER_RESULTS={
+  W021:{total_score:79,grade:"B",items:{"구색":"B","품절":"C","재고금액":"S","반품":"B"}},
+  W022:{total_score:84,grade:"B",items:{"구색":"B","품절":"C","재고금액":"S","반품":"A"}},
+  W023:{total_score:86,grade:"B",items:{"구색":"B","품절":"B","재고금액":"S","반품":"A"}},
+};
+function vcOctoberResult(month,channel,unitId){
+  return month==="2026-10"&&channel==="VC"?VC_OCTOBER_RESULTS[unitId]:undefined;
+}
+function vcWorkbookReason(reason){
+  return String(reason||"").replace(/\s*[·,]\s*원본\s+\w+등급.*$/,"")||"—";
+}
 function reconcileGradeAndRate_(rows){
   return (rows||[]).map(r=>{
+    const source=vcOctoberResult(r.eval_month,r.eval_type,r.unit_id);
+    if(source && !isPendingRow(r)){
+      // 엑셀 배점 합계: 구색 30, 품절 25, 재고금액 15, 반품 25.
+      const max=95;
+      return {...r,total_score:source.total_score,max_score:max,grade:source.grade,
+        achievement_rate:+(source.total_score/max*100).toFixed(1)};
+    }
     if(isPendingRow(r)||isPartialRow(r))return r;
     const sc=parseFloat(r.total_score), mx=parseFloat(r.max_score);
     if(isNaN(sc)||isNaN(mx)||mx<=0)return r;
@@ -4887,6 +4906,8 @@ async function renderMyEvalSections(prevResults){
         const item=(detailByUnit[r.unit_id]||[]).find(d=>d.item_name===n);
         const sc=item?parseFloat(item.score):NaN, mx=item?parseFloat(item.max_score):NaN;
         if(!item||isNaN(sc)||isNaN(mx)||mx===0)return `<td style="text-align:center;color:var(--gray-300)">—</td>`;
+        const source=vcOctoberResult(r.eval_month,ch,r.unit_id);
+        if(source)return `<td style="text-align:center"><div>${vcItemRateText(item)}</div>${gb(source.items[n])}</td>`;
         const rate=ch==="VC"?vcItemRateText(item):(sc/mx*100).toFixed(1)+"%";
         return `<td style="text-align:center"><div>${rate}</div><div style="font-size:10px;color:var(--gray-400);margin-top:1px">${fs(sc)}/${fs(mx)}</div></td>`;
       }).join("");
@@ -5023,13 +5044,14 @@ async function openDetail(uid,evalType,month,fromPage){
 
     // showDetail: 고객 클레임 항목처럼 원본 클레임 DB 조회(상세 🔍 버튼)가 가능한 행인지 여부.
     // 감점사유 칸 자체는 이제 기본 운영/고객 클레임 모든 항목에 공통으로 표시합니다.
+    const vcSource=vcOctoberResult(month,evalType,uid);
     function makeRow(row, showDetail){
       const ded = parseFloat(row.score)<parseFloat(row.max_score);
       const dcmClickable = !!DCM_UNIT_NAME_MAP[uid] && isDcmRow(row.item_name);
       // 원본 시트 reason에 실제 건수("0.12% (9건/7,537건)")가 있으면 그 값을 그대로 쓰고,
       // 없으면(기본 운영 항목 등 건수 데이터가 없는 경우) 감점 점수 기반 추정 문구로 대체합니다.
       const realCount = claimCountText(row.reason);
-      const reasonText = evalType==="VC"
+      const reasonText = vcSource ? vcWorkbookReason(row.reason) : evalType==="VC"
         ? buildReasonText(row.item_name,row.score,row.max_score,evalType,row.reason)
         : realCount
         ? realCount
@@ -5087,9 +5109,9 @@ async function openDetail(uid,evalType,month,fromPage){
           <div ${dcmRowAction} style="display:grid;grid-template-columns:${gridCols};align-items:center;background:${rowBg}">
             <div style="padding:10px 14px;font-size:13px;font-weight:500;color:${nameColor}">${row.item_name}${itemHint}</div>
             ${evalType==="VC"?`<div style="padding:10px 14px;text-align:center">${vcItemRateText(row)}</div>`:makeProgressBar(row.score,row.max_score)}
-            <div style="padding:10px 8px;text-align:center;font-size:14px;font-weight:600;color:#1F2937">${fs(row.score)}<span style="font-size:11px;font-weight:400;color:#9CA3AF">/${fs(row.max_score)}</span>${prevDeltaHtml}</div>
+            <div style="padding:10px 8px;text-align:center;font-size:14px;font-weight:600;color:#1F2937">${vcSource?gb(vcSource.items[row.item_name]):`${fs(row.score)}<span style="font-size:11px;font-weight:400;color:#9CA3AF">/${fs(row.max_score)}</span>${prevDeltaHtml}`}</div>
             <div style="padding:10px 8px;display:flex;justify-content:center">
-              <span style="font-size:11px;font-weight:500;padding:3px 8px;border-radius:10px;background:${badgeBg};color:${badgeColor};border:0.5px solid ${badgeBorder}">${badgeLabel}</span>
+              <span style="font-size:11px;font-weight:500;padding:3px 8px;border-radius:10px;background:${badgeBg};color:${badgeColor};border:0.5px solid ${badgeBorder}">${vcSource?"—":badgeLabel}</span>
             </div>
             ${reasonCell}
             ${detailBtn}
@@ -5105,7 +5127,7 @@ async function openDetail(uid,evalType,month,fromPage){
       <div style="display:grid;grid-template-columns:160px 140px 90px 58px 1fr;background:#2F3B52">
         <div style="padding:9px 14px;font-size:12px;font-weight:500;color:#C8D4E8">평가항목</div>
         <div style="padding:9px 14px;font-size:12px;font-weight:500;color:#C8D4E8">${evalType==="VC"?"실적":"달성률"}</div>
-        <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">점수</div>
+        <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">${vcSource?"평가등급":"점수"}</div>
         <div style="padding:9px 8px;font-size:12px;font-weight:500;color:#C8D4E8;text-align:center">상태</div>
         <div style="padding:9px 14px;font-size:12px;font-weight:500;color:#C8D4E8">감점사유</div>
       </div>
@@ -5135,7 +5157,7 @@ async function openDetail(uid,evalType,month,fromPage){
     }
 
     document.getElementById("det-eval-table").innerHTML = partialNotice + html;
-    renderDetCompareChart(uid, month, basicRows, claimRows, prevByItem, prevMonth);
+    renderDetCompareChart(uid, month, vcSource?[]:basicRows, vcSource?[]:claimRows, prevByItem, prevMonth);
   }
 
   document.querySelectorAll(".sb-item").forEach(el=>el.classList.remove("on"));
@@ -7559,19 +7581,19 @@ function rpDonut(name,cur,prev,score,max){
     ${deltaHtml}
   </div>`;
 }
-function rpDetailRow(item,evalType,withReason){
+function rpDetailRow(item,evalType,withReason,source){
   const {name,score,max,reason}=item;
   const docked=parseFloat(score)<parseFloat(max);
   const isClaim=rpIsClaim(name);
   let reasonCell="";
   if(withReason){
     const realCount=claimCountText(reason);
-    const reasonText=evalType==="VC"?buildReasonText(name,score,max,evalType,reason):realCount?realCount:(docked?buildReasonText(name,score,max,evalType,reason):(reason||"—"));
+    const reasonText=source?`${vcItemRateText({reason})} · ${vcWorkbookReason(reason)}`:evalType==="VC"?buildReasonText(name,score,max,evalType,reason):realCount?realCount:(docked?buildReasonText(name,score,max,evalType,reason):(reason||"—"));
     reasonCell=`<td class="rs">${reasonText}</td>`;
   }
   return `<tr class="${isClaim?'claim':''}">
     <td class="nm">${name}</td>
-    <td class="${docked?'dock':''}">${fs(score)}/${fs(max)}</td>
+    <td class="${docked?'dock':''}">${source?gb(source.items[name]):`${fs(score)}/${fs(max)}`}</td>
     ${reasonCell}
   </tr>`;
 }
@@ -7581,6 +7603,7 @@ function rpDetailRow(item,evalType,withReason){
 function rpChannelBlock(r, ch, detailMap, prevDetailMap, prevRow, showName){
   const uid=r.unit_id;
   const items=rpUnitItems(uid,detailMap);
+  const vcSource=vcOctoberResult(r.eval_month,ch,uid);
   // 예전에는 VC만 감점사유 열을 뺐지만, VC 항목(구색/재고금액/반품/데이터 공유)도
   // ITEM_META에 기준값이 있어 다른 채널과 동일하게 사유 문구를 만들 수 있으므로 통일합니다.
   const withReason=true;
@@ -7615,9 +7638,9 @@ function rpChannelBlock(r, ch, detailMap, prevDetailMap, prevRow, showName){
     if(claimDonuts.length)cmpHtml+=`<div class="rp-grp-tag">고객 클레임</div><div class="rp-cmp-grid" style="grid-template-columns:repeat(${claimDonuts.length},1fr)">${claimDonuts.join("")}</div>`;
     tableRows=basic.map(it=>rpDetailRow(it,ch,withReason)).join("")+claim.map(it=>rpDetailRow(it,ch,withReason)).join("");
   } else {
-    const donuts=items.map(donutFor).filter(Boolean);
+    const donuts=vcSource?[]:items.map(donutFor).filter(Boolean);
     if(donuts.length)cmpHtml=`<div class="rp-cmp-grid" style="grid-template-columns:repeat(${donuts.length},1fr)">${donuts.join("")}</div>`;
-    tableRows=items.map(it=>rpDetailRow(it,ch,withReason)).join("");
+    tableRows=items.map(it=>rpDetailRow(it,ch,withReason,vcSource)).join("");
   }
 
   const colgroup=withReason
@@ -7628,7 +7651,7 @@ function rpChannelBlock(r, ch, detailMap, prevDetailMap, prevRow, showName){
     ${header}
     ${cmpHtml?`<div class="rp-cmp-hd">📈 항목별 전달 대비</div>${cmpHtml}`:""}
     <table class="rp-grid rp-grid-fixed">${colgroup}
-      <thead><tr><th style="text-align:left">평가항목</th><th>점수</th>${withReason?'<th style="text-align:left">감점사유</th>':""}</tr></thead>
+      <thead><tr><th style="text-align:left">평가항목</th><th>${vcSource?"평가등급":"점수"}</th>${withReason?'<th style="text-align:left">감점사유</th>':""}</tr></thead>
       <tbody>${tableRows}</tbody>
     </table>
   </div>`;
