@@ -1798,7 +1798,7 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
         </div>
         <div style="background:var(--white);border:0.5px solid var(--gray-200);border-radius:var(--radius);overflow:hidden">
           <div class="tw"><table style="width:100%">
-            <thead><tr id="my-thead-종합도매"><th style="text-align:left;padding-left:20px">평가단위</th><th>총점</th><th>달성률</th><th>등급</th><th>상세</th></tr></thead>
+            <thead><tr id="my-thead-종합도매"><th style="text-align:left;padding-left:20px">평가단위</th><th>총점</th><th>달성률</th><th>등급</th><th>순위</th><th>상세</th></tr></thead>
             <tbody id="my-tbody-종합도매"></tbody>
           </table></div>
         </div>
@@ -2891,7 +2891,7 @@ function wholesaleGradeColor(grade){
 function wholesaleGradeRankHtml(grade,rk,size){
   return `<div style="color:${wholesaleGradeColor(grade)};line-height:1.2;text-align:center">
     ${gb(grade,size)}
-    ${rk?`<div style="margin-top:6px;font-size:clamp(18px,2vw,26px);font-weight:900">${rk.rank}위 / ${rk.total}개 회사</div>`:""}
+    ${rk?`<div style="margin-top:6px;font-size:clamp(12px,1.35vw,18px);font-weight:900">${rk.rank}위 / ${rk.total}개 회사</div>`:""}
   </div>`;
 }
 function unitGradeCardHtml(r,prevRow,prevMonthLabel,rank){
@@ -4864,8 +4864,8 @@ async function renderMyEvalSections(prevResults){
     // (예: 100점 8곳 공동 1위 → 다음 점수는 9위). 예전 코드는 동점 처리 없이 시트에
     // 나온 순서대로 1,2,3...을 매겨서, 만점인데도 순서상 뒤에 있으면 낮은 순위로
     // 보이는 문제가 있었습니다.
-    // 종합도매는 등급 아래에, VC는 별도 열에 순위를 표시합니다.
-    const showRank=ch==="VC";
+    // 종합도매와 VC의 평가표에는 별도 순위 열을 표시합니다.
+    const showRank=ch!=="거점도매";
     const rankMap=new Map();
     const peers=(S.allResultsForRank||[]).filter(x=>x.eval_type===ch&&!isPendingRow(x)&&!isNaN(parseFloat(x.total_score)));
     const sortedPeers=[...peers].sort((a,b)=>parseFloat(b.total_score)-parseFloat(a.total_score));
@@ -4934,7 +4934,7 @@ async function renderMyEvalSections(prevResults){
       ${itemCellsHtml}
       <td style="text-align:center">${scoreDisplay(r)} <small style="color:var(--gray-400);font-size:0.65em">/${maxDisplay(r)}</small>${scoreDeltaVsPrevHtml(r,prevRow)}</td>
       <td style="text-align:center">${rateDisplay(r)}</td>
-      <td style="text-align:center">${ch==="종합도매"&&!isPendingRow(r)&&!isPartialRow(r)&&r.grade?wholesaleGradeRankHtml(r.grade,rk):gradeDisplay(r)}</td>
+      <td style="text-align:center">${gradeDisplay(r)}</td>
       ${showRank?`<td style="text-align:center;font-size:12.5px">${rankHtml}</td>`:""}
       <td style="text-align:center">${detailButton(r.unit_id,r.eval_type,month,"my-eval",r)}</td>
     </tr>`;
