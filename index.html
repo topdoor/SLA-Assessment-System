@@ -1683,19 +1683,19 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
         </table></div>
       </div>
       <div class="card">
-        <div class="card-t">📈 거점도매 월별 실적 추이 (최근 6개월 · 전체 평가단위 평균 달성률)</div>
+        <div class="card-t">📈 거점도매 월별 실적 추이 (최근 6개월 · 협력사 평균 달성률)</div>
         <div style="position:relative;height:260px">
           <canvas id="dash-trend-canvas-거점도매" class="chart-canvas"></canvas>
         </div>
       </div>
       <div class="card">
-        <div class="card-t">📈 종합도매 월별 실적 추이 (최근 6개월 · 전체 평가단위 평균 달성률)</div>
+        <div class="card-t">📈 종합도매 월별 실적 추이 (최근 6개월 · 협력사 평균 달성률)</div>
         <div style="position:relative;height:260px">
           <canvas id="dash-trend-canvas-종합도매" class="chart-canvas"></canvas>
         </div>
       </div>
       <div class="card">
-        <div class="card-t">📈 VC 월별 실적 추이 (최근 6개월 · 전체 평가단위 평균 달성률)</div>
+        <div class="card-t">📈 VC 월별 실적 추이 (최근 6개월 · 협력사 평균 달성률)</div>
         <div style="position:relative;height:260px">
           <canvas id="dash-trend-canvas-VC" class="chart-canvas"></canvas>
         </div>
@@ -1793,7 +1793,7 @@ canvas.chart-canvas{width:100%!important;height:100%!important}
         </div>
         <div style="background:var(--white);border:0.5px solid var(--gray-200);border-radius:var(--radius);overflow:hidden">
           <div class="tw"><table style="width:100%">
-            <thead><tr id="my-thead-종합도매"><th style="text-align:left;padding-left:20px">평가단위</th><th>총점</th><th>달성률</th><th>등급</th><th>순위</th><th>상세</th></tr></thead>
+            <thead><tr id="my-thead-종합도매"><th style="text-align:left;padding-left:20px">평가단위</th><th>총점</th><th>달성률</th><th>등급</th><th>상세</th></tr></thead>
             <tbody id="my-tbody-종합도매"></tbody>
           </table></div>
         </div>
@@ -2877,10 +2877,23 @@ function rankBadgeHtml(rk){
 
 // 평가단위 1개당 정사각형 카드 1개 — 이름 / 이번달 등급 배지 / 전달 등급·변화 단계
 const GRADE_COLOR={S:"#0EA5E9",A:"#2563EB",B:"var(--gray-600)",C:"#D97706",D:"var(--red)"};
-function unitGradeCardHtml(r,prevRow,prevMonthLabel){
+function wholesaleGradeColor(grade){
+  if(grade==="S"||grade==="A")return "#15803D";
+  if(grade==="B")return "#111827";
+  if(grade==="C"||grade==="D")return "#B91C1C";
+  return "var(--gray-400)";
+}
+function wholesaleGradeRankHtml(grade,rk){
+  return `<div style="color:${wholesaleGradeColor(grade)};line-height:1.25;text-align:center">
+    <strong>${grade}등급</strong>
+    ${rk?`<div style="margin-top:3px;font-size:13px;font-weight:900;white-space:nowrap">${rk.rank}위 / ${rk.total}곳</div>`:""}
+  </div>`;
+}
+function unitGradeCardHtml(r,prevRow,prevMonthLabel,rank){
   const curPending=isPendingRow(r)||isPartialRow(r);
   const curGrade=curPending?null:r.grade;
-  const curColor=curPending?"var(--gray-400)":(GRADE_COLOR[r.grade]||"var(--gray-600)");
+  const showWholesaleRank=!curPending&&r.eval_type==="종합도매"&&r.grade;
+  const curColor=showWholesaleRank?wholesaleGradeColor(r.grade):curPending?"var(--gray-400)":(GRADE_COLOR[r.grade]||"var(--gray-600)");
   const curBadge=curPending?`<span style="font-size:13px;color:var(--gray-400);font-weight:800">산정중</span>`:gb(r.grade,"lg");
 
   let prevInfoHtml;
@@ -2904,7 +2917,7 @@ function unitGradeCardHtml(r,prevRow,prevMonthLabel){
 
   return `<div class="my-kpi-card my-kpi-unit-card" style="border-top-color:${curColor}">
     <div class="name">${unitName(r.unit_id)}</div>
-    <div class="cur-grade">${curBadge}</div>
+    <div class="cur-grade">${showWholesaleRank?wholesaleGradeRankHtml(r.grade,rank):curBadge}</div>
     <div class="prev-info">${prevInfoHtml}</div>
   </div>`;
 }
@@ -4840,31 +4853,14 @@ async function renderMyEvalSections(prevResults){
     const myStatusPillEl=document.getElementById(`my-status-${ch}`);
     if(myStatusPillEl)myStatusPillEl.innerHTML=chStatusPillHtml(status);
 
-    // 평가단위별 정사각형 카드 — 이 채널 소속 평가단위만, 등급/전달 등급 대비 변화를 카드 1개씩으로
-    const unitsListEl=document.getElementById(`my-units-list-${ch}`);
-    if(unitsListEl){
-      const prevMonthLabel=`${parseInt(shiftMonthKey(month,-1).split("-")[1],10)}월`;
-      unitsListEl.innerHTML=chData.length
-        ? chData.map(r=>{
-            const prevRow=prevResults.find(p=>p.unit_id===r.unit_id&&p.eval_type===ch);
-            return unitGradeCardHtml(r,prevRow,prevMonthLabel);
-          }).join("")
-        : "";
-    }
-
-    // 평균 달성률 카드 — 이 채널만의 평균 + 전달(같은 채널) 대비 증감
-    const chAvgRate=avgAchievementRate(chData);
-    const chPrevAvgRate=avgAchievementRate(prevResults.filter(r=>r.eval_type===ch));
-    renderMyRateGauge(chAvgRate,chPrevAvgRate,ch);
-
     // 순위: 이 채널의 전체(타사 포함) 평가단위를 총점 기준으로 정렬해
     // 이 평가단위가 몇 위인지만 계산합니다. 다른 도매상 이름/점수는 화면에 표시하지 않습니다.
     // 동점인 경우 같은 순위를 부여하고, 다음 점수는 동점 인원 수만큼 순위를 건너뜁니다
     // (예: 100점 8곳 공동 1위 → 다음 점수는 9위). 예전 코드는 동점 처리 없이 시트에
     // 나온 순서대로 1,2,3...을 매겨서, 만점인데도 순서상 뒤에 있으면 낮은 순위로
     // 보이는 문제가 있었습니다.
-    // 거점도매 채널은 순위를 노출하지 않습니다(2026-10 요청). 종합도매·VC만 순위 표시.
-    const showRank=ch!=="거점도매";
+    // 종합도매는 등급 아래에, VC는 별도 열에 순위를 표시합니다.
+    const showRank=ch==="VC";
     const rankMap=new Map();
     const peers=(S.allResultsForRank||[]).filter(x=>x.eval_type===ch&&!isPendingRow(x)&&!isNaN(parseFloat(x.total_score)));
     const sortedPeers=[...peers].sort((a,b)=>parseFloat(b.total_score)-parseFloat(a.total_score));
@@ -4874,6 +4870,23 @@ async function renderMyEvalSections(prevResults){
       if(prevScore===null||sc!==prevScore){ curRank=i+1; prevScore=sc; }
       if(!rankMap.has(x.unit_id))rankMap.set(x.unit_id,{rank:curRank,total:peers.length});
     });
+
+    // 평가단위별 정사각형 카드 — 이 채널 소속 평가단위만, 등급/전달 등급 대비 변화를 카드 1개씩으로
+    const unitsListEl=document.getElementById(`my-units-list-${ch}`);
+    if(unitsListEl){
+      const prevMonthLabel=`${parseInt(shiftMonthKey(month,-1).split("-")[1],10)}월`;
+      unitsListEl.innerHTML=chData.length
+        ? chData.map(r=>{
+            const prevRow=prevResults.find(p=>p.unit_id===r.unit_id&&p.eval_type===ch);
+            return unitGradeCardHtml(r,prevRow,prevMonthLabel,rankMap.get(r.unit_id));
+          }).join("")
+        : "";
+    }
+
+    // 평균 달성률 카드 — 이 채널만의 평균 + 전달(같은 채널) 대비 증감
+    const chAvgRate=avgAchievementRate(chData);
+    const chPrevAvgRate=avgAchievementRate(prevResults.filter(r=>r.eval_type===ch));
+    renderMyRateGauge(chAvgRate,chPrevAvgRate,ch);
 
     // 평가항목별 점수·달성률 — 이 채널 소속 단위들의 항목별상세점수를 한 번에 조회해
     // 표에 항목별 컬럼으로 펼쳐줍니다. 항목 구성은 채널/월마다 실제 데이터 기준이라
@@ -4916,7 +4929,7 @@ async function renderMyEvalSections(prevResults){
       ${itemCellsHtml}
       <td style="text-align:center">${scoreDisplay(r)} <small style="color:var(--gray-400);font-size:0.65em">/${maxDisplay(r)}</small>${scoreDeltaVsPrevHtml(r,prevRow)}</td>
       <td style="text-align:center">${rateDisplay(r)}</td>
-      <td style="text-align:center">${gradeDisplay(r)}</td>
+      <td style="text-align:center">${ch==="종합도매"&&!isPendingRow(r)&&!isPartialRow(r)&&r.grade?wholesaleGradeRankHtml(r.grade,rk):gradeDisplay(r)}</td>
       ${showRank?`<td style="text-align:center;font-size:12.5px">${rankHtml}</td>`:""}
       <td style="text-align:center">${detailButton(r.unit_id,r.eval_type,month,"my-eval",r)}</td>
     </tr>`;
@@ -6959,7 +6972,7 @@ async function renderDashTrend(){
     try{
       const series=await fetchTrendSeries(months,{eval_type:t.key});
       const dataset={
-        label:"전체 평가단위 평균",
+        label:"협력사 평균",
         data:series.map(x=>x.avg),
         borderColor:TREND_AVERAGE_COLOR,
         backgroundColor:hexToRgba(TREND_AVERAGE_COLOR,0.08),
@@ -7075,8 +7088,8 @@ async function renderMyTrend(){
         const values=benchmark.filter(point=>point.avg!==null)
           .map(point=>`${Number(point.month.slice(5))}월 ${point.avg.toFixed(1)}%`);
         averageSummary.textContent=values.length
-          ? `전체 평가단위 평균 · ${values.join(" / ")}`
-          : "전체 평가단위 평균 · 조회 가능한 데이터 없음";
+          ? `협력사 평균 · ${values.join(" / ")}`
+          : "협력사 평균 · 조회 가능한 데이터 없음";
       }
       const hasData=data.overall.some(v=>v!==null);
       if(card)card.style.display=hasData?"":"none"; // 해당 유형 데이터가 없는 회사는 카드 자체를 숨김
@@ -7116,7 +7129,7 @@ function drawMyTrendChart(key,data,selected){
   const ownColor="#0E4C92";
   const datasets=[
     {
-      label:"전체 평가단위 평균",
+      label:"협력사 평균",
       data:data.benchmark,
       borderColor:TREND_AVERAGE_COLOR,
       backgroundColor:TREND_AVERAGE_COLOR,
@@ -7147,11 +7160,16 @@ function drawMyTrendChart(key,data,selected){
       maintainAspectRatio:false,
       layout:{padding:{top:22}},
       plugins:{
-        subtitle:{display:true,text:"빨간색은 해당 월 전체 평균 미만",color:TREND_BELOW_COLOR},
+        subtitle:{display:true,text:"빨간색은 해당 월 협력사 평균 미만",color:TREND_BELOW_COLOR},
         legend:{display:true,position:"bottom",labels:{boxWidth:12,usePointStyle:true,font:{size:13,weight:"600"},padding:12}},
         datalabels:{
           display:true,
-          align:ctx=>ctx.datasetIndex===0?"bottom":"top",clamp:true,font:{size:15,weight:"800"},
+          align:ctx=>{
+            const i=ctx.dataIndex;
+            if(ownValues[i]==null || data.benchmark[i]==null)return "top";
+            const above=ctx.datasetIndex===0?belowAverage(i):!belowAverage(i);
+            return above?"top":"bottom";
+          },clamp:true,font:{size:15,weight:"800"},
           color:ctx=>ctx.datasetIndex===0?TREND_AVERAGE_COLOR:belowAverage(ctx.dataIndex)?TREND_BELOW_COLOR:"#111827",
           formatter:v=>v!==null&&v!==undefined?v+"%":""
         },
