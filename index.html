@@ -2883,10 +2883,10 @@ function wholesaleGradeColor(grade){
   if(grade==="C"||grade==="D")return "#B91C1C";
   return "var(--gray-400)";
 }
-function wholesaleGradeRankHtml(grade,rk){
-  return `<div style="color:${wholesaleGradeColor(grade)};line-height:1.25;text-align:center">
-    <strong>${grade}등급</strong>
-    ${rk?`<div style="margin-top:3px;font-size:13px;font-weight:900;white-space:nowrap">${rk.rank}위 / ${rk.total}곳</div>`:""}
+function wholesaleGradeRankHtml(grade,rk,size){
+  return `<div style="color:${wholesaleGradeColor(grade)};line-height:1.2;text-align:center">
+    ${gb(grade,size)}
+    ${rk?`<div style="margin-top:6px;font-size:clamp(18px,2vw,26px);font-weight:900">${rk.rank}위 / ${rk.total}개 회사</div>`:""}
   </div>`;
 }
 function unitGradeCardHtml(r,prevRow,prevMonthLabel,rank){
@@ -2917,7 +2917,7 @@ function unitGradeCardHtml(r,prevRow,prevMonthLabel,rank){
 
   return `<div class="my-kpi-card my-kpi-unit-card" style="border-top-color:${curColor}">
     <div class="name">${unitName(r.unit_id)}</div>
-    <div class="cur-grade">${showWholesaleRank?wholesaleGradeRankHtml(r.grade,rank):curBadge}</div>
+    <div class="cur-grade">${showWholesaleRank?wholesaleGradeRankHtml(r.grade,rank,"lg"):curBadge}</div>
     <div class="prev-info">${prevInfoHtml}</div>
   </div>`;
 }
